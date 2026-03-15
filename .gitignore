@@ -1,6 +1,6 @@
 # Rust
 target/
-Cargo.lock
+# Note: Cargo.lock should be committed for binary projects
 
 # Docker volumes
 volumes/
