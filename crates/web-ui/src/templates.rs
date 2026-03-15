@@ -45,6 +45,27 @@ pub struct MqttMessage {
     pub timestamp: String,
 }
 
+/// Miniserver Monitor template
+#[derive(Template)]
+#[template(path = "miniserver/monitor.html")]
+pub struct MiniserverMonitorTemplate {
+    pub title: String,
+}
+
+/// Miniserver communication message for display
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MiniserverMessage {
+    pub direction: String,      // "sent", "received", "error"
+    pub protocol: String,        // "http", "udp"
+    pub miniserver_name: String,
+    pub url: Option<String>,
+    pub params: Option<String>,
+    pub response: Option<String>,
+    pub code: Option<String>,
+    pub error: Option<String>,
+    pub timestamp: String,
+}
+
 /// Miniserver list template
 #[derive(Template)]
 #[template(path = "miniserver/list.html")]

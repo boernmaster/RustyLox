@@ -2,14 +2,20 @@
 
 use crate::templates::{
     MiniserverDisplay, MiniserverEditTemplate, MiniserverForm, MiniserverListTemplate,
+    MiniserverMessage, MiniserverMonitorTemplate,
 };
 use askama::Template;
+use axum::response::sse::{Event, KeepAlive};
 use axum::{
     extract::{Path, State},
-    response::Html,
+    response::{Html, Sse},
     Form,
 };
+use futures::stream::Stream;
 use serde::Deserialize;
+use std::convert::Infallible;
+use tokio::sync::broadcast;
+use tokio_stream::wrappers::BroadcastStream;
 use web_api::AppState;
 
 /// List all Miniservers
@@ -282,4 +288,60 @@ pub async fn test_connection(
             e
         )),
     }
+}
+
+/// Miniserver Monitor page (displays the UI)
+pub async fn monitor(State(_state): State<AppState>) -> Html<String> {
+    let template = MiniserverMonitorTemplate {
+        title: "Miniserver Monitor - Real-time Communication Viewer".to_string(),
+    };
+
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
+}
+
+/// Miniserver Monitor real-time stream (Server-Sent Events)
+/// This streams Miniserver communication in real-time to the browser
+pub async fn monitor_stream(
+    State(state): State<AppState>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    // Create a channel for forwarding messages to UI
+    let (tx, rx) = broadcast::channel::<MiniserverMessage>(100);
+
+    // For now, we'll send a placeholder message
+    // TODO: In Phase 5, integrate with actual miniserver-client to broadcast messages
+    tokio::spawn(async move {
+        // Send initial status message
+        let _ = tx.send(MiniserverMessage {
+            direction: "received".to_string(),
+            protocol: "http".to_string(),
+            miniserver_name: "Monitoring Active".to_string(),
+            url: None,
+            params: None,
+            response: Some("Miniserver monitor is running. Actual messages will appear here when Miniserver communication occurs.".to_string()),
+            code: Some("200".to_string()),
+            error: None,
+            timestamp: chrono::Utc::now()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
+        });
+    });
+
+    // Convert broadcast channel to SSE stream
+    let stream = BroadcastStream::new(rx).map(|result| match result {
+        Ok(msg) => {
+            // Serialize message to JSON for the client
+            let json = serde_json::to_string(&msg).unwrap_or_default();
+            Ok(Event::default().data(json))
+        }
+        Err(_) => {
+            // Channel closed
+            Ok(Event::default().data("Miniserver monitor not available"))
+        }
+    });
+
+    Sse::new(stream).keep_alive(KeepAlive::default())
 }

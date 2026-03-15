@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miniserver Monitor - LoxBerry</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .miniserver-monitor {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+        }
+
+        .monitor-controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .monitor-messages {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+        }
+
+        .message {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .message:hover {
+            background: #f9f9f9;
+        }
+
+        .message-sent {
+            background: #e3f2fd;
+        }
+
+        .message-received {
+            background: #f1f8e9;
+        }
+
+        .message-error {
+            background: #ffebee;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .message-direction {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+
+        .direction-sent {
+            background: #1976d2;
+            color: white;
+        }
+
+        .direction-received {
+            background: #558b2f;
+            color: white;
+        }
+
+        .direction-error {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .message-miniserver {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .message-timestamp {
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .message-content {
+            margin-top: 8px;
+            padding: 8px;
+            background: #fafafa;
+            border-left: 3px solid #1976d2;
+            border-radius: 3px;
+        }
+
+        .message-sent .message-content {
+            border-left-color: #1976d2;
+        }
+
+        .message-received .message-content {
+            border-left-color: #558b2f;
+        }
+
+        .message-error .message-content {
+            border-left-color: #d32f2f;
+        }
+
+        .message-url {
+            color: #1976d2;
+            word-break: break-all;
+        }
+
+        .message-params {
+            margin-top: 5px;
+            padding: 5px;
+            background: #fff;
+            border-radius: 3px;
+        }
+
+        .message-response {
+            margin-top: 5px;
+            padding: 5px;
+            background: #fff;
+            border-radius: 3px;
+            color: #2e7d32;
+        }
+
+        .message-error-text {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        .status-connected {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-disconnected {
+            color: red;
+            font-weight: bold;
+        }
+
+        #messageCount {
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        select, input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .badge-http {
+            background: #2196f3;
+            color: white;
+        }
+
+        .badge-udp {
+            background: #ff9800;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver" class="active">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>{{ title }}</h1>
+        <p style="color: #666; margin-bottom: 20px;">
+            Real-time monitoring of communication between RustyLox and Miniserver(s)
+        </p>
+
+        <div class="miniserver-monitor">
+            <!-- Controls -->
+            <div class="monitor-controls">
+                <button id="pauseBtn" class="btn btn-primary" onclick="togglePause()">Pause</button>
+                <button id="clearBtn" class="btn btn-secondary" onclick="clearMessages()">Clear</button>
+
+                <div class="filter-controls">
+                    <label for="miniserverFilter">Miniserver:</label>
+                    <select id="miniserverFilter" onchange="filterMessages()">
+                        <option value="">All</option>
+                    </select>
+
+                    <label for="directionFilter">Direction:</label>
+                    <select id="directionFilter" onchange="filterMessages()">
+                        <option value="">All</option>
+                        <option value="sent">Sent →</option>
+                        <option value="received">← Received</option>
+                        <option value="error">Errors</option>
+                    </select>
+
+                    <label for="protocolFilter">Protocol:</label>
+                    <select id="protocolFilter" onchange="filterMessages()">
+                        <option value="">All</option>
+                        <option value="http">HTTP</option>
+                        <option value="udp">UDP</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-secondary" onclick="exportMessages()">Export JSON</button>
+
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                    <span>Messages: <span id="messageCount">0</span></span>
+                    <span id="connectionStatus" class="status-disconnected">Connecting...</span>
+                </div>
+            </div>
+
+            <!-- Message Display -->
+            <div id="messages" class="monitor-messages">
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    Waiting for Miniserver communication...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v4.0.0 | &copy; 2026</p>
+    </footer>
+
+    <script>
+        let messages = [];
+        let paused = false;
+        let filters = {
+            miniserver: '',
+            direction: '',
+            protocol: ''
+        };
+        let eventSource = null;
+        let miniservers = new Set();
+
+        // Connect to SSE stream
+        function connectStream() {
+            eventSource = new EventSource('/miniserver/monitor/stream');
+
+            eventSource.onopen = function() {
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                document.getElementById('connectionStatus').className = 'status-connected';
+            };
+
+            eventSource.onmessage = function(event) {
+                if (!paused) {
+                    try {
+                        const message = JSON.parse(event.data);
+                        addMessage(message);
+                    } catch (e) {
+                        console.error('Failed to parse message:', e);
+                    }
+                }
+            };
+
+            eventSource.onerror = function() {
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+                document.getElementById('connectionStatus').className = 'status-disconnected';
+
+                // Reconnect after 5 seconds
+                setTimeout(connectStream, 5000);
+            };
+        }
+
+        function addMessage(msg) {
+            messages.unshift(msg); // Add to beginning
+
+            // Track miniservers
+            if (msg.miniserver_name) {
+                miniservers.add(msg.miniserver_name);
+                updateMiniserverFilter();
+            }
+
+            // Limit to 1000 messages
+            if (messages.length > 1000) {
+                messages = messages.slice(0, 1000);
+            }
+
+            updateDisplay();
+        }
+
+        function updateMiniserverFilter() {
+            const select = document.getElementById('miniserverFilter');
+            const currentValue = select.value;
+
+            select.innerHTML = '<option value="">All</option>';
+            Array.from(miniservers).sort().forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+
+            select.value = currentValue;
+        }
+
+        function updateDisplay() {
+            const messagesDiv = document.getElementById('messages');
+            const filteredMessages = messages.filter(m => {
+                if (filters.miniserver && m.miniserver_name !== filters.miniserver) return false;
+                if (filters.direction && m.direction !== filters.direction) return false;
+                if (filters.protocol && m.protocol !== filters.protocol) return false;
+                return true;
+            });
+
+            document.getElementById('messageCount').textContent = filteredMessages.length;
+
+            if (filteredMessages.length === 0) {
+                messagesDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No messages match filters</div>';
+                return;
+            }
+
+            messagesDiv.innerHTML = filteredMessages.map(msg => formatMessage(msg)).join('');
+        }
+
+        function formatMessage(msg) {
+            const messageClass = msg.direction === 'error' ? 'message-error' :
+                                (msg.direction === 'sent' ? 'message-sent' : 'message-received');
+
+            const directionClass = msg.direction === 'error' ? 'direction-error' :
+                                  (msg.direction === 'sent' ? 'direction-sent' : 'direction-received');
+
+            const directionText = msg.direction === 'error' ? '⚠ ERROR' :
+                                 (msg.direction === 'sent' ? '→ SENT' : '← RECEIVED');
+
+            const protocolBadge = msg.protocol === 'http' ?
+                '<span class="badge badge-http">HTTP</span>' :
+                '<span class="badge badge-udp">UDP</span>';
+
+            let content = '';
+            if (msg.direction === 'sent') {
+                content = `
+                    <div class="message-url"><strong>URL:</strong> ${escapeHtml(msg.url || '')}</div>
+                    ${msg.params ? `<div class="message-params"><strong>Parameters:</strong> ${escapeHtml(msg.params)}</div>` : ''}
+                `;
+            } else if (msg.direction === 'received') {
+                content = `
+                    <div class="message-response"><strong>Response:</strong> ${escapeHtml(msg.response || '')}</div>
+                    ${msg.code ? `<div><strong>Code:</strong> ${escapeHtml(msg.code)}</div>` : ''}
+                `;
+            } else if (msg.direction === 'error') {
+                content = `
+                    <div class="message-error-text">${escapeHtml(msg.error || 'Unknown error')}</div>
+                    ${msg.url ? `<div class="message-url"><strong>URL:</strong> ${escapeHtml(msg.url)}</div>` : ''}
+                `;
+            }
+
+            return `
+                <div class="message ${messageClass}">
+                    <div class="message-header">
+                        <div>
+                            <span class="message-direction ${directionClass}">${directionText}</span>
+                            ${protocolBadge}
+                            <span class="message-miniserver">${escapeHtml(msg.miniserver_name || 'Unknown')}</span>
+                        </div>
+                        <span class="message-timestamp">${escapeHtml(msg.timestamp)}</span>
+                    </div>
+                    <div class="message-content">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+
+        function togglePause() {
+            paused = !paused;
+            document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
+            document.getElementById('pauseBtn').className = paused ? 'btn btn-danger' : 'btn btn-primary';
+        }
+
+        function clearMessages() {
+            messages = [];
+            updateDisplay();
+        }
+
+        function filterMessages() {
+            filters.miniserver = document.getElementById('miniserverFilter').value;
+            filters.direction = document.getElementById('directionFilter').value;
+            filters.protocol = document.getElementById('protocolFilter').value;
+            updateDisplay();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function exportMessages() {
+            const dataStr = JSON.stringify(messages, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'miniserver-messages-' + new Date().toISOString() + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Start streaming on page load
+        connectStream();
+    </script>
+</body>
+</html>
