@@ -28,7 +28,10 @@
     <main class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h1>Miniserver Management</h1>
-            <a href="/miniserver/add" class="btn btn-primary">Add Miniserver</a>
+            <div style="display: flex; gap: 10px;">
+                <a href="/miniserver/monitor" class="btn btn-secondary">📡 Monitor Communication</a>
+                <a href="/miniserver/add" class="btn btn-primary">Add Miniserver</a>
+            </div>
         </div>
 
         {% if miniservers.is_empty() %}

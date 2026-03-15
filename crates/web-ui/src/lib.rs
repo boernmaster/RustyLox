@@ -20,6 +20,8 @@ pub fn create_ui_router(state: AppState) -> Router {
         .route("/dashboard", get(handlers::dashboard::index))
         // Miniserver management
         .route("/miniserver", get(handlers::miniserver::list))
+        .route("/miniserver/monitor", get(handlers::miniserver::monitor))
+        .route("/miniserver/monitor/stream", get(handlers::miniserver::monitor_stream))
         .route("/miniserver/add", get(handlers::miniserver::add_form))
         .route("/miniserver/add", post(handlers::miniserver::add_submit))
         .route("/miniserver/:id/edit", get(handlers::miniserver::edit_form))
