@@ -49,9 +49,7 @@ impl BackupScheduler {
             self.schedule.interval_hours
         );
 
-        let mut interval = interval(Duration::from_secs(
-            self.schedule.interval_hours * 3600,
-        ));
+        let mut interval = interval(Duration::from_secs(self.schedule.interval_hours * 3600));
 
         loop {
             interval.tick().await;

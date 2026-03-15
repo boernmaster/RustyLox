@@ -6,9 +6,9 @@
 //! - Log level management
 //! - Web UI log access
 
-pub mod rotation;
-pub mod plugin_logger;
 pub mod config;
+pub mod plugin_logger;
+pub mod rotation;
 
 use loxberry_core::Result;
 use std::path::PathBuf;
@@ -16,8 +16,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 
 /// Initialize the global logging system
 pub fn init_logging(log_dir: PathBuf, log_level: &str) -> Result<()> {
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(log_level));
+    let env_filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(log_level));
 
     // Console output layer
     let console_layer = tracing_subscriber::fmt::layer()
@@ -26,10 +26,7 @@ pub fn init_logging(log_dir: PathBuf, log_level: &str) -> Result<()> {
         .with_line_number(false);
 
     // File output layer with rotation
-    let file_appender = tracing_appender::rolling::daily(
-        log_dir.join("system"),
-        "loxberry.log",
-    );
+    let file_appender = tracing_appender::rolling::daily(log_dir.join("system"), "loxberry.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     let file_layer = tracing_subscriber::fmt::layer()

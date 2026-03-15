@@ -1,10 +1,10 @@
 //! Backup creation
 
+use chrono::{DateTime, Utc};
 use loxberry_core::Result;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::PathBuf;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BackupMetadata {
@@ -37,10 +37,7 @@ impl BackupManager {
         tracing::info!("Creating backup: {}", backup_path.display());
 
         // Create metadata
-        let mut includes = vec![
-            "config/system".to_string(),
-            "data/system".to_string(),
-        ];
+        let mut includes = vec!["config/system".to_string(), "data/system".to_string()];
 
         if include_plugins {
             includes.push("config/plugins".to_string());
@@ -109,11 +106,7 @@ impl BackupManager {
 
             if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("gz") {
                 let metadata = tokio::fs::metadata(&path).await?;
-                let name = path
-                    .file_name()
-                    .unwrap()
-                    .to_string_lossy()
-                    .to_string();
+                let name = path.file_name().unwrap().to_string_lossy().to_string();
 
                 // Try to extract metadata from backup
                 let backup_metadata = self.read_backup_metadata(&path).ok();
@@ -158,7 +151,9 @@ impl BackupManager {
         let backup_path = backup_dir.join(backup_name);
 
         if !backup_path.exists() {
-            return Err(loxberry_core::Error::backup(format!("Backup not found: {}", backup_name)).into());
+            return Err(
+                loxberry_core::Error::backup(format!("Backup not found: {}", backup_name)).into(),
+            );
         }
 
         tokio::fs::remove_file(&backup_path).await?;

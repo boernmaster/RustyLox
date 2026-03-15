@@ -10,7 +10,7 @@ pub mod backup;
 pub mod restore;
 pub mod scheduler;
 
-pub use backup::{BackupManager, BackupMetadata, create_backup};
+pub use backup::{create_backup, BackupManager, BackupMetadata};
 pub use restore::restore_backup;
 pub use scheduler::BackupScheduler;
 
