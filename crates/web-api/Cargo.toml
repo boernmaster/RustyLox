@@ -1,0 +1,26 @@
+[package]
+name = "web-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loxberry-core = { path = "../loxberry-core" }
+loxberry-config = { path = "../loxberry-config" }
+miniserver-client = { path = "../miniserver-client" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+# Web framework
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Shared state
+dashmap = { workspace = true }

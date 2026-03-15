@@ -1,0 +1,35 @@
+[package]
+name = "miniserver-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loxberry-core = { path = "../loxberry-core" }
+loxberry-config = { path = "../loxberry-config" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+# HTTP client
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls"] }
+
+# Async runtime with network features
+tokio = { workspace = true, features = ["net"] }
+
+# Thread-safe cache for delta-sending
+dashmap = { workspace = true }
+
+# URL encoding
+urlencoding = "2.1"
+
+# HTTP Basic Auth
+base64 = "0.22"
+
+# XML parsing for Miniserver responses
+quick-xml = { version = "0.36", features = ["serialize"] }
+
+# MD5 for reboot detection cache keys
+md5 = "0.7"
