@@ -31,32 +31,54 @@ pub async fn monitor(State(_state): State<AppState>) -> Html<String> {
 pub async fn monitor_stream(
     State(state): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    // Create a channel for MQTT messages
+    // Create a channel for forwarding messages to UI
     let (tx, rx) = broadcast::channel::<MqttMessage>(100);
 
     // Check if MQTT gateway is available
     if let Some(mqtt_gateway) = &state.mqtt_gateway {
-        // Clone for spawned task
-        let _gateway = mqtt_gateway.clone();
+        // Subscribe to gateway messages
+        let mut gateway_rx = mqtt_gateway.subscribe_messages();
 
-        // Spawn a task to receive MQTT messages and forward them
-        // This is a simplified version - in production, integrate with gateway's broadcast
+        // Spawn a task to receive gateway messages and forward to UI
         tokio::spawn(async move {
-            // Simulate receiving messages (replace with actual gateway subscription)
-            let mut interval = tokio::time::interval(Duration::from_secs(5));
             loop {
-                interval.tick().await;
+                match gateway_rx.recv().await {
+                    Ok(gateway_msg) => {
+                        // Convert GatewayMessage to MqttMessage for UI
+                        let ui_msg = match gateway_msg {
+                            mqtt_gateway::GatewayMessage::MqttReceived { topic, payload } => {
+                                Some(MqttMessage {
+                                    topic,
+                                    payload: String::from_utf8_lossy(&payload).to_string(),
+                                    qos: 0,
+                                    retain: false,
+                                    timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                                })
+                            }
+                            mqtt_gateway::GatewayMessage::UdpReceived { topic, value } => {
+                                Some(MqttMessage {
+                                    topic,
+                                    payload: value,
+                                    qos: 0,
+                                    retain: false,
+                                    timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                                })
+                            }
+                            _ => None, // Ignore other message types
+                        };
 
-                let msg = MqttMessage {
-                    topic: "system/heartbeat".to_string(),
-                    payload: format!("{{\"timestamp\":\"{}\"}}", chrono::Utc::now().to_rfc3339()),
-                    qos: 0,
-                    retain: false,
-                    timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-                };
-
-                if tx.send(msg).is_err() {
-                    break;
+                        if let Some(msg) = ui_msg {
+                            if tx.send(msg).is_err() {
+                                break; // UI disconnected
+                            }
+                        }
+                    }
+                    Err(broadcast::error::RecvError::Lagged(n)) => {
+                        tracing::warn!("MQTT monitor lagged by {} messages", n);
+                    }
+                    Err(broadcast::error::RecvError::Closed) => {
+                        break; // Gateway stopped
+                    }
                 }
             }
         });
