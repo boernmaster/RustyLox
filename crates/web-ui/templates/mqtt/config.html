@@ -274,9 +274,24 @@
                                    required placeholder="Home Automation">
                         </div>
                         <div class="form-group">
+                            <label for="sub-filter">Filter Expression (RegEx)</label>
+                            <input type="text" id="sub-filter" name="filter"
+                                   placeholder="^sensor_(temp|humidity)$">
+                            <small>Regular expression to filter messages. Matching messages are NOT forwarded to Miniserver. Topic slashes (/) are replaced with underscores (_) before filtering.</small>
+                        </div>
+                        <div class="form-group">
                             <label>
                                 <input type="checkbox" name="enabled" checked> Enabled
                             </label>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px; padding: 12px; background: #e8f5e9; border-radius: 4px;">
+                            <strong>ℹ️ Subscription Filter Expressions (RegEx)</strong>
+                            <p style="margin: 8px 0 0 0; font-size: 0.9em; color: #333;">
+                                Subscriptions may route a lot of data to the Miniserver, some of which is never required for your logic.
+                                Filter expressions are Regular Expressions (RegEx) that filter the JSON expanded data.
+                                A filter match is NOT forwarded to the Miniserver. At the stage of the filter, all topic delimiters (/) are
+                                replaced with underscores (_), even with UDP transmission.
+                            </p>
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">Add</button>

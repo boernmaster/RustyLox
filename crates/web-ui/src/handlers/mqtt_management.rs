@@ -12,6 +12,7 @@ use web_api::AppState;
 pub struct SubscriptionForm {
     pub topic: String,
     pub name: String,
+    pub filter: Option<String>,
     pub enabled: Option<String>,
 }
 
@@ -45,12 +46,26 @@ pub async fn list_subscriptions(State(state): State<AppState>) -> Html<String> {
                 "subscription-item disabled"
             };
 
+            let filter_display = if let Some(ref filter) = sub.filter {
+                if !filter.is_empty() {
+                    format!(
+                        "<br><small style='color: #666;'>🔍 Filter: <code>{}</code></small>",
+                        filter
+                    )
+                } else {
+                    String::new()
+                }
+            } else {
+                String::new()
+            };
+
             html.push_str(&format!(
                 r#"<div class="{}">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <strong>{}</strong>
                             <br><code style="color: #1976D2;">{}</code>
+                            {}
                             {}
                         </div>
                         <div>
@@ -66,6 +81,7 @@ pub async fn list_subscriptions(State(state): State<AppState>) -> Html<String> {
                 enabled_class,
                 sub.name,
                 sub.topic,
+                filter_display,
                 if sub.enabled {
                     "<span class='badge badge-success'>Active</span>"
                 } else {
@@ -99,11 +115,22 @@ pub async fn add_subscription(
         .collect::<String>();
 
     // Append new subscription
+    let filter_line = if let Some(ref filter) = form.filter {
+        if !filter.is_empty() {
+            format!("FILTER={}\n", filter)
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
     content.push_str(&format!(
-        "\n[{}]\nTOPIC={}\nNAME={}\nENABLED={}\n",
+        "\n[{}]\nTOPIC={}\nNAME={}\n{}ENABLED={}\n",
         section_name,
         form.topic,
         form.name,
+        filter_line,
         if form.enabled.is_some() { "1" } else { "0" }
     ));
 
@@ -123,12 +150,26 @@ pub async fn add_subscription(
         "subscription-item disabled"
     };
 
+    let filter_display = if let Some(ref filter) = form.filter {
+        if !filter.is_empty() {
+            format!(
+                "<br><small style='color: #666;'>🔍 Filter: <code>{}</code></small>",
+                filter
+            )
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
     Html(format!(
         r#"<div class="{}">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong>{}</strong>
                     <br><code style="color: #1976D2;">{}</code>
+                    {}
                     {}
                 </div>
                 <div>
@@ -144,6 +185,7 @@ pub async fn add_subscription(
         enabled_class,
         form.name,
         form.topic,
+        filter_display,
         if enabled {
             "<span class='badge badge-success'>Active</span>"
         } else {
@@ -174,11 +216,22 @@ pub async fn delete_subscription(
     let mut new_content = String::new();
     for (i, sub) in subscriptions.iter().enumerate() {
         let section_name = format!("Subscription{}", i + 1);
+        let filter_line = if let Some(ref filter) = sub.filter {
+            if !filter.is_empty() {
+                format!("FILTER={}\n", filter)
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
+
         new_content.push_str(&format!(
-            "[{}]\nTOPIC={}\nNAME={}\nENABLED={}\n\n",
+            "[{}]\nTOPIC={}\nNAME={}\n{}ENABLED={}\n\n",
             section_name,
             sub.topic,
             sub.name,
+            filter_line,
             if sub.enabled { "1" } else { "0" }
         ));
     }
@@ -357,6 +410,7 @@ pub async fn delete_conversion(
 struct ParsedSubscription {
     topic: String,
     name: String,
+    filter: Option<String>,
     enabled: bool,
 }
 
@@ -373,6 +427,7 @@ fn parse_subscriptions_cfg(content: &str) -> Vec<ParsedSubscription> {
     let mut subscriptions = Vec::new();
     let mut current_topic = String::new();
     let mut current_name = String::new();
+    let mut current_filter: Option<String> = None;
     let mut current_enabled = true;
 
     for line in content.lines() {
@@ -388,17 +443,25 @@ fn parse_subscriptions_cfg(content: &str) -> Vec<ParsedSubscription> {
                 subscriptions.push(ParsedSubscription {
                     topic: current_topic.clone(),
                     name: current_name.clone(),
+                    filter: current_filter.clone(),
                     enabled: current_enabled,
                 });
             }
             // Reset for new section
             current_topic.clear();
             current_name.clear();
+            current_filter = None;
             current_enabled = true;
         } else if let Some((key, value)) = line.split_once('=') {
             match key.trim() {
                 "TOPIC" => current_topic = value.trim().to_string(),
                 "NAME" => current_name = value.trim().to_string(),
+                "FILTER" => {
+                    let filter_value = value.trim().to_string();
+                    if !filter_value.is_empty() {
+                        current_filter = Some(filter_value);
+                    }
+                }
                 "ENABLED" => current_enabled = value.trim() == "1",
                 _ => {}
             }
@@ -410,6 +473,7 @@ fn parse_subscriptions_cfg(content: &str) -> Vec<ParsedSubscription> {
         subscriptions.push(ParsedSubscription {
             topic: current_topic,
             name: current_name,
+            filter: current_filter,
             enabled: current_enabled,
         });
     }
