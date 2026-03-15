@@ -12,6 +12,7 @@ loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
 mqtt-gateway = { path = "../mqtt-gateway" }
 web-api = { path = "../web-api" }
+web-ui = { path = "../web-ui" }
 
 anyhow = { workspace = true }
 tracing = { workspace = true }

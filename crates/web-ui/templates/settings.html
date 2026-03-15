@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - LoxBerry</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">LoxBerry Rust</a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/settings" class="active">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>System Settings</h1>
+
+        <div class="card">
+            <form method="post" hx-post="/settings" hx-target="#result">
+                <div class="form-section">
+                    <h3>General Settings</h3>
+
+                    <div class="form-group">
+                        <label for="language">Language</label>
+                        <select id="language" name="language">
+                            <option value="en" {% if language == "en" %}selected{% endif %}>English</option>
+                            <option value="de" {% if language == "de" %}selected{% endif %}>Deutsch</option>
+                            <option value="fr" {% if language == "fr" %}selected{% endif %}>Français</option>
+                            <option value="es" {% if language == "es" %}selected{% endif %}>Español</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timezone">Timezone</label>
+                        <input type="text" id="timezone" name="timezone"
+                               value="{{ timezone }}"
+                               placeholder="Europe/Vienna">
+                        <small>System timezone (e.g., Europe/Vienna, America/New_York)</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>System Information</h3>
+                    <p><strong>Version:</strong> {{ version }}</p>
+                </div>
+
+                <div id="result"></div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                    <a href="/" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>LoxBerry Rust v{{ version }} | &copy; 2026</p>
+    </footer>
+</body>
+</html>

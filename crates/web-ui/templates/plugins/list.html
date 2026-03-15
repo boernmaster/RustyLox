@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plugin Management - LoxBerry</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">LoxBerry Rust</a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins" class="active">Plugins</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Plugin Management</h1>
+            <a href="/plugins/install" class="btn btn-primary">Install Plugin</a>
+        </div>
+
+        {% if plugins.is_empty() %}
+        <div class="card">
+            <p>No plugins installed yet.</p>
+            <a href="/plugins/install" class="btn btn-primary">Install Your First Plugin</a>
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Title</th>
+                        <th>Version</th>
+                        <th>Author</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plugin in plugins %}
+                    <tr>
+                        <td>{{ plugin.name }}</td>
+                        <td>{{ plugin.title }}</td>
+                        <td>{{ plugin.version }}</td>
+                        <td>{{ plugin.author }}</td>
+                        <td>
+                            <a href="/plugins/{{ plugin.md5 }}" class="btn btn-sm btn-secondary">Details</a>
+                            <button hx-post="/plugins/{{ plugin.md5 }}/uninstall"
+                                    hx-confirm="Are you sure you want to uninstall {{ plugin.name }}?"
+                                    hx-target="#result"
+                                    class="btn btn-sm btn-danger">Uninstall</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <div id="result"></div>
+    </main>
+
+    <footer class="footer">
+        <p>LoxBerry Rust v4.0.0 | &copy; 2026</p>
+    </footer>
+</body>
+</html>

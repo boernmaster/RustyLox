@@ -46,6 +46,9 @@ RUN mkdir -p \
 # Copy binary from builder
 COPY --from=builder /build/target/release/loxberry-daemon /usr/local/bin/
 
+# Copy static files (CSS, JS)
+COPY static /opt/loxberry/static
+
 # Set permissions
 RUN chown -R loxberry:loxberry /opt/loxberry
 

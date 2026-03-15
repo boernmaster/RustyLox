@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - LoxBerry</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">LoxBerry Rust</a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/" class="active">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Dashboard</h1>
+
+        <div class="grid">
+            <!-- System Status -->
+            <div class="card">
+                <h2>System Status</h2>
+                <div hx-get="/api/system/status" hx-trigger="every 5s" hx-swap="innerHTML">
+                    <p><strong>Status:</strong> {{ system_status.status }}</p>
+                    <p><strong>Version:</strong> {{ system_status.version }}</p>
+                    <p><strong>Uptime:</strong> {{ system_status.uptime }}</p>
+                </div>
+            </div>
+
+            <!-- Miniserver -->
+            <div class="card">
+                <h2>Miniserver</h2>
+                <p><strong>Configured:</strong> {{ miniserver_count }}</p>
+                <a href="/miniserver" class="btn btn-primary">Manage Miniservers</a>
+            </div>
+
+            <!-- MQTT Gateway -->
+            <div class="card">
+                <h2>MQTT Gateway</h2>
+                <div hx-get="/api/mqtt/status" hx-trigger="every 2s" hx-swap="innerHTML">
+                    {% if mqtt_connected %}
+                    <p class="status-connected">Connected</p>
+                    {% else %}
+                    <p class="status-disconnected">Disconnected</p>
+                    {% endif %}
+                </div>
+                <a href="/mqtt/monitor" class="btn btn-primary">MQTT Monitor</a>
+            </div>
+
+            <!-- Plugins -->
+            <div class="card">
+                <h2>Plugins</h2>
+                <p><strong>Installed:</strong> {{ plugin_count }}</p>
+                <a href="/plugins" class="btn btn-primary">Manage Plugins</a>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="section">
+            <h2>Quick Links</h2>
+            <div class="button-group">
+                <a href="/mqtt/monitor" class="btn btn-lg">MQTT Monitor</a>
+                <a href="/plugins/install" class="btn btn-lg">Install Plugin</a>
+                <a href="/settings" class="btn btn-lg">Settings</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>LoxBerry Rust v{{ system_status.version }} | &copy; 2026</p>
+    </footer>
+</body>
+</html>

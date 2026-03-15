@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Configuration - LoxBerry</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">LoxBerry Rust</a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config" class="active">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>MQTT Configuration</h1>
+
+        <div class="card">
+            <form method="post" hx-post="/mqtt/config" hx-target="#result">
+                <div class="form-section">
+                    <h3>Broker Settings</h3>
+
+                    <div class="form-group">
+                        <label for="brokerhost">Broker Host *</label>
+                        <input type="text" id="brokerhost" name="brokerhost"
+                               value="{{ config.brokerhost }}"
+                               required placeholder="mosquitto or localhost">
+                        <small>MQTT broker hostname or IP address</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brokerport">Broker Port *</label>
+                        <input type="text" id="brokerport" name="brokerport"
+                               value="{{ config.brokerport }}"
+                               required placeholder="1883">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Broker Authentication (Phase 4a)</h3>
+
+                    <div class="form-group">
+                        <label for="brokeruser">Username</label>
+                        <input type="text" id="brokeruser" name="brokeruser"
+                               value="{{ config.brokeruser }}"
+                               placeholder="Leave empty for anonymous">
+                        <small>MQTT broker username (optional)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brokerpass">Password</label>
+                        <input type="password" id="brokerpass" name="brokerpass"
+                               value="{{ config.brokerpass }}"
+                               placeholder="••••••••">
+                        <small>MQTT broker password (optional)</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Gateway Settings</h3>
+
+                    <div class="form-group">
+                        <label for="udpinport">UDP Input Port *</label>
+                        <input type="text" id="udpinport" name="udpinport"
+                               value="{{ config.udpinport }}"
+                               required placeholder="11884">
+                        <small>Port for receiving MQTT messages via UDP (0 to disable)</small>
+                    </div>
+                </div>
+
+                <div id="result"></div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    <a href="/mqtt/monitor" class="btn btn-secondary">MQTT Monitor</a>
+                    <button type="button" hx-post="/api/mqtt/subscriptions/reload" hx-target="#result" class="btn btn-secondary">
+                        Reload Subscriptions
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <h3>Current Status</h3>
+            <div hx-get="/api/mqtt/status" hx-trigger="load, every 5s" hx-swap="innerHTML">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>LoxBerry Rust v4.0.0 | &copy; 2026</p>
+    </footer>
+</body>
+</html>

@@ -6,6 +6,7 @@ members = [
     "crates/plugin-manager",
     "crates/mqtt-gateway",
     "crates/web-api",
+    "crates/web-ui",
     "crates/loxberry-daemon",
 ]
 resolver = "2"
