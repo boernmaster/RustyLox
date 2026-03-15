@@ -18,5 +18,3 @@ pub use installer::{PluginInstaller, InstallRequest, InstallAction};
 pub use lifecycle::{LifecycleManager, LifecycleHook};
 pub use config_parser::PluginConfig;
 pub use directory_manager::DirectoryManager;
-
-use loxberry_core::{Error, Result};

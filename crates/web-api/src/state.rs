@@ -3,12 +3,16 @@
 use dashmap::DashMap;
 use loxberry_config::{ConfigManager, GeneralConfig};
 use miniserver_client::MiniserverClient;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// Shared application state
 #[derive(Clone)]
 pub struct AppState {
+    /// LoxBerry home directory
+    pub lbhomedir: PathBuf,
+
     /// Configuration manager
     pub config_manager: Arc<ConfigManager>,
 
@@ -21,8 +25,9 @@ pub struct AppState {
 
 impl AppState {
     /// Create new application state
-    pub fn new(config_manager: ConfigManager, config: GeneralConfig) -> Self {
+    pub fn new(lbhomedir: PathBuf, config_manager: ConfigManager, config: GeneralConfig) -> Self {
         Self {
+            lbhomedir,
             config_manager: Arc::new(config_manager),
             config: Arc::new(RwLock::new(config)),
             miniserver_clients: Arc::new(DashMap::new()),
