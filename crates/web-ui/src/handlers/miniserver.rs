@@ -57,14 +57,57 @@ pub async fn add_submit(
     State(state): State<AppState>,
     Form(form): Form<MiniserverFormData>,
 ) -> Html<String> {
-    // TODO: Add miniserver to configuration
-    // TODO: Save configuration file
-    // TODO: Test connection
+    // Get mutable config
+    let mut config = state.config.write().await;
 
-    Html(format!(
-        "<div class='success'>Miniserver '{}' added successfully. <a href='/miniserver'>Back to list</a></div>",
-        form.name
-    ))
+    // Find next available ID
+    let next_id = (1..=99)
+        .find(|i| !config.miniserver.contains_key(&i.to_string()))
+        .unwrap_or(1)
+        .to_string();
+
+    // Build credentials
+    let credentials_raw = format!("{}:{}", form.admin, form.pass);
+    let transport = "http".to_string();
+    let port = form.port.clone();
+    let useclouddns = if form.useclouddns.is_some() { "1" } else { "0" }.to_string();
+
+    // Create new Miniserver config
+    let ms_config = loxberry_config::MiniserverConfig {
+        name: form.name.clone(),
+        ipaddress: form.ipaddress.clone(),
+        port: port.clone(),
+        admin: form.admin.clone(),
+        admin_raw: form.admin.clone(),
+        pass: form.pass.clone(),
+        pass_raw: form.pass.clone(),
+        credentials: credentials_raw.clone(),
+        credentials_raw: credentials_raw.clone(),
+        transport: transport.clone(),
+        useclouddns: useclouddns.clone(),
+        fulluri: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
+        fulluri_raw: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
+        ..Default::default()
+    };
+
+    // Add to config
+    config.miniserver.insert(next_id.clone(), ms_config);
+
+    // Save configuration
+    match state.config_manager.save_general(&config).await {
+        Ok(_) => {
+            drop(config); // Release lock before reloading
+            let _ = state.reload_config().await;
+            Html(format!(
+                "<div class='alert alert-success'>Miniserver '{}' added successfully. <a href='/miniserver'>Back to list</a></div>",
+                form.name
+            ))
+        }
+        Err(e) => Html(format!(
+            "<div class='alert alert-danger'>Error saving configuration: {}</div>",
+            e
+        )),
+    }
 }
 
 /// Show edit Miniserver form
@@ -98,13 +141,60 @@ pub async fn edit_submit(
     Path(id): Path<String>,
     Form(form): Form<MiniserverFormData>,
 ) -> Html<String> {
-    // TODO: Update miniserver in configuration
-    // TODO: Save configuration file
+    // Get mutable config
+    let mut config = state.config.write().await;
 
-    Html(format!(
-        "<div class='success'>Miniserver '{}' updated successfully. <a href='/miniserver'>Back to list</a></div>",
-        form.name
-    ))
+    // Check if Miniserver exists
+    if !config.miniserver.contains_key(&id) {
+        return Html(format!(
+            "<div class='alert alert-danger'>Miniserver not found. <a href='/miniserver'>Back to list</a></div>"
+        ));
+    }
+
+    // Build credentials
+    let credentials_raw = format!("{}:{}", form.admin, form.pass);
+    let transport = "http".to_string();
+    let port = form.port.clone();
+    let useclouddns = if form.useclouddns.is_some() { "1" } else { "0" }.to_string();
+
+    // Update Miniserver config
+    let ms_config = loxberry_config::MiniserverConfig {
+        name: form.name.clone(),
+        ipaddress: form.ipaddress.clone(),
+        port: port.clone(),
+        admin: form.admin.clone(),
+        admin_raw: form.admin.clone(),
+        pass: form.pass.clone(),
+        pass_raw: form.pass.clone(),
+        credentials: credentials_raw.clone(),
+        credentials_raw: credentials_raw.clone(),
+        transport: transport.clone(),
+        useclouddns: useclouddns.clone(),
+        fulluri: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
+        fulluri_raw: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
+        ..Default::default()
+    };
+
+    // Update in config
+    config.miniserver.insert(id.clone(), ms_config);
+
+    // Save configuration
+    match state.config_manager.save_general(&config).await {
+        Ok(_) => {
+            drop(config); // Release lock
+            let _ = state.reload_config().await;
+            // Clear cached client so it gets recreated with new credentials
+            state.miniserver_clients.remove(&id.parse::<u8>().unwrap_or(1));
+            Html(format!(
+                "<div class='alert alert-success'>Miniserver '{}' updated successfully. <a href='/miniserver'>Back to list</a></div>",
+                form.name
+            ))
+        }
+        Err(e) => Html(format!(
+            "<div class='alert alert-danger'>Error saving configuration: {}</div>",
+            e
+        )),
+    }
 }
 
 /// Delete Miniserver
@@ -112,12 +202,28 @@ pub async fn delete(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Html<String> {
-    // TODO: Remove miniserver from configuration
-    // TODO: Save configuration file
+    // Get mutable config
+    let mut config = state.config.write().await;
 
-    Html(format!(
-        "<div class='success'>Miniserver deleted. <a href='/miniserver'>Back to list</a></div>"
-    ))
+    // Remove from config
+    if config.miniserver.remove(&id).is_some() {
+        // Save configuration
+        match state.config_manager.save_general(&config).await {
+            Ok(_) => {
+                drop(config); // Release lock
+                let _ = state.reload_config().await;
+                // Remove cached client
+                state.miniserver_clients.remove(&id.parse::<u8>().unwrap_or(1));
+                Html("<div class='alert alert-success'>Miniserver deleted. <a href='/miniserver'>Back to list</a></div>".to_string())
+            }
+            Err(e) => Html(format!(
+                "<div class='alert alert-danger'>Error saving configuration: {}</div>",
+                e
+            )),
+        }
+    } else {
+        Html("<div class='alert alert-danger'>Miniserver not found.</div>".to_string())
+    }
 }
 
 /// Test Miniserver connection
@@ -125,8 +231,27 @@ pub async fn test_connection(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Html<String> {
-    // TODO: Test connection to Miniserver
-    // TODO: Return success or error message
+    // Parse ID
+    let ms_id = match id.parse::<u8>() {
+        Ok(id) => id,
+        Err(_) => return Html("<div class='alert alert-danger'>Invalid Miniserver ID</div>".to_string()),
+    };
 
-    Html("<div class='success'>Connection test successful!</div>".to_string())
+    // Get or create client
+    match state.get_miniserver_client(ms_id).await {
+        Ok(client) => {
+            // Try to send a simple command (get status)
+            match client.get(vec!["status".to_string()]).await {
+                Ok(_) => Html("<div class='alert alert-success'>✓ Connection test successful!</div>".to_string()),
+                Err(e) => Html(format!(
+                    "<div class='alert alert-danger'>✗ Connection test failed: {}</div>",
+                    e
+                )),
+            }
+        }
+        Err(e) => Html(format!(
+            "<div class='alert alert-danger'>✗ Failed to create client: {}</div>",
+            e
+        )),
+    }
 }

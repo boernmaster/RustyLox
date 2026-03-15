@@ -11,6 +11,12 @@ pub struct MqttConfig {
     #[serde(rename = "Brokerport")]
     pub brokerport: String,
 
+    #[serde(rename = "Brokeruser", default)]
+    pub brokeruser: String,
+
+    #[serde(rename = "Brokerpass", default)]
+    pub brokerpass: String,
+
     #[serde(rename = "Udpinport")]
     pub udpinport: String,
 
@@ -60,6 +66,8 @@ impl Default for MqttConfig {
         Self {
             brokerhost: "localhost".to_string(),
             brokerport: "1883".to_string(),
+            brokeruser: String::new(),
+            brokerpass: String::new(),
             udpinport: "11884".to_string(),
             uselocalbroker: "1".to_string(),
             websocketport: "9001".to_string(),
