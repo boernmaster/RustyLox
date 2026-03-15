@@ -1,0 +1,19 @@
+[package]
+name = "loxberry-daemon"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "loxberry-daemon"
+path = "src/main.rs"
+
+[dependencies]
+loxberry-core = { path = "../loxberry-core" }
+loxberry-config = { path = "../loxberry-config" }
+web-api = { path = "../web-api" }
+
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tokio = { workspace = true }
+axum = { workspace = true }

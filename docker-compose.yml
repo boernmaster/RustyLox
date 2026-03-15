@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  loxberry:
+    build: .
+    container_name: loxberry-rust
+    restart: unless-stopped
+    ports:
+      - "8080:8080"       # Web API
+    volumes:
+      - ./volumes/config:/opt/loxberry/config
+      - ./volumes/data:/opt/loxberry/data
+      - ./volumes/log:/opt/loxberry/log
+    environment:
+      - RUST_LOG=info
+      - LBHOMEDIR=/opt/loxberry
+      - BIND_ADDR=0.0.0.0:8080
+    networks:
+      - loxberry-net
+
+networks:
+  loxberry-net:
+    driver: bridge
+
+volumes:
+  config:
+  data:
+  log:

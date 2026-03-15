@@ -1,0 +1,29 @@
+[package]
+name = "plugin-manager"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loxberry-core = { path = "../loxberry-core" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true, features = ["fs", "process"] }
+
+# ZIP extraction
+zip = "2.1"
+
+# INI parsing for plugin.cfg
+serde_ini = "0.2"
+
+# MD5 checksum
+md5 = "0.7"
+
+# Directory traversal
+walkdir = "2.5"
+
+# File operations
+tempfile = "3.13"
