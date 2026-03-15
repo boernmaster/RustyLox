@@ -269,6 +269,12 @@ impl MqttGateway {
         info!("Reloading transformers");
         self.transformer_registry.load().await
     }
+
+    /// Subscribe to gateway messages for monitoring
+    /// Returns a receiver that gets all MQTT messages passing through the gateway
+    pub fn subscribe_messages(&self) -> broadcast::Receiver<GatewayMessage> {
+        self.message_tx.subscribe()
+    }
 }
 
 /// Gateway status information
