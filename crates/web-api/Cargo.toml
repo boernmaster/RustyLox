@@ -27,5 +27,8 @@ tokio = { workspace = true }
 # Shared state
 dashmap = { workspace = true }
 
+# Time handling for timestamps
+chrono = "0.4"
+
 # Temp files
 tempfile = { workspace = true }

@@ -5,6 +5,7 @@ use loxberry_core::{Error, Result};
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 use tracing::{debug, trace};
 use urlencoding::encode;
@@ -12,13 +13,40 @@ use urlencoding::encode;
 use crate::delta_cache::DeltaCache;
 use crate::reboot_detector::RebootDetector;
 
+/// Event callback for monitoring Miniserver communication
+pub type MonitorCallback = Arc<dyn Fn(MonitorEvent) + Send + Sync>;
+
+/// Miniserver communication event for monitoring
+#[derive(Debug, Clone)]
+pub struct MonitorEvent {
+    pub direction: String,  // "sent", "received", "error"
+    pub protocol: String,   // "http", "udp"
+    pub url: Option<String>,
+    pub params: Option<String>,
+    pub response: Option<String>,
+    pub code: Option<String>,
+    pub error: Option<String>,
+}
+
 /// HTTP/HTTPS client for Miniserver
-#[derive(Debug)]
 pub struct MiniserverHttpClient {
     config: MiniserverConfig,
     client: Client,
     delta_cache: DeltaCache,
     reboot_detector: RebootDetector,
+    monitor_callback: Option<MonitorCallback>,
+}
+
+impl std::fmt::Debug for MiniserverHttpClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MiniserverHttpClient")
+            .field("config", &self.config)
+            .field("client", &self.client)
+            .field("delta_cache", &self.delta_cache)
+            .field("reboot_detector", &self.reboot_detector)
+            .field("has_monitor", &self.monitor_callback.is_some())
+            .finish()
+    }
 }
 
 /// Miniserver XML response structure
@@ -50,7 +78,20 @@ impl MiniserverHttpClient {
             client,
             delta_cache,
             reboot_detector,
+            monitor_callback: None,
         })
+    }
+
+    /// Set monitor callback for tracking communication
+    pub fn set_monitor_callback(&mut self, callback: MonitorCallback) {
+        self.monitor_callback = Some(callback);
+    }
+
+    /// Emit a monitoring event
+    fn emit_event(&self, event: MonitorEvent) {
+        if let Some(callback) = &self.monitor_callback {
+            callback(event);
+        }
     }
 
     /// Send HTTP command to Miniserver (mshttp_send equivalent)
@@ -74,20 +115,61 @@ impl MiniserverHttpClient {
     /// Send single parameter/value pair
     async fn send_single(&self, param: &str, value: &str) -> Result<String> {
         let command = format!("/dev/sps/io/{}/{}", encode(param), encode(value));
-        let (response_value, code, _raw) = self.call(&command).await?;
+        let url = self.build_url(&command);
 
-        // Check response code
-        if let Some(code_str) = code {
-            if code_str == "200" {
-                Ok(response_value.unwrap_or_default())
-            } else {
-                Err(Error::miniserver(format!(
-                    "Miniserver returned error code: {}",
-                    code_str
-                )))
+        // Emit sent event
+        self.emit_event(MonitorEvent {
+            direction: "sent".to_string(),
+            protocol: "http".to_string(),
+            url: Some(url.clone()),
+            params: Some(format!("{}={}", param, value)),
+            response: None,
+            code: None,
+            error: None,
+        });
+
+        let result = self.call(&command).await;
+
+        match result {
+            Ok((response_value, code, _raw)) => {
+                // Emit received event
+                self.emit_event(MonitorEvent {
+                    direction: "received".to_string(),
+                    protocol: "http".to_string(),
+                    url: Some(url),
+                    params: None,
+                    response: response_value.clone(),
+                    code: code.clone(),
+                    error: None,
+                });
+
+                // Check response code
+                if let Some(code_str) = &code {
+                    if code_str == "200" {
+                        Ok(response_value.unwrap_or_default())
+                    } else {
+                        Err(Error::miniserver(format!(
+                            "Miniserver returned error code: {}",
+                            code_str
+                        )))
+                    }
+                } else {
+                    Ok(response_value.unwrap_or_default())
+                }
             }
-        } else {
-            Ok(response_value.unwrap_or_default())
+            Err(e) => {
+                // Emit error event
+                self.emit_event(MonitorEvent {
+                    direction: "error".to_string(),
+                    protocol: "http".to_string(),
+                    url: Some(url),
+                    params: Some(format!("{}={}", param, value)),
+                    response: None,
+                    code: None,
+                    error: Some(e.to_string()),
+                });
+                Err(e)
+            }
         }
     }
 

@@ -14,8 +14,6 @@ use axum::{
 use futures::stream::Stream;
 use serde::Deserialize;
 use std::convert::Infallible;
-use tokio::sync::broadcast;
-use tokio_stream::wrappers::BroadcastStream;
 use web_api::AppState;
 
 /// List all Miniservers
@@ -308,40 +306,48 @@ pub async fn monitor(State(_state): State<AppState>) -> Html<String> {
 pub async fn monitor_stream(
     State(state): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    // Create a channel for forwarding messages to UI
-    let (tx, rx) = broadcast::channel::<MiniserverMessage>(100);
+    // Subscribe to the miniserver monitor channel
+    let mut rx = state.miniserver_monitor.subscribe();
 
-    // For now, we'll send a placeholder message
-    // TODO: In Phase 5, integrate with actual miniserver-client to broadcast messages
-    tokio::spawn(async move {
-        // Send initial status message
-        let _ = tx.send(MiniserverMessage {
-            direction: "received".to_string(),
-            protocol: "http".to_string(),
-            miniserver_name: "Monitoring Active".to_string(),
-            url: None,
-            params: None,
-            response: Some("Miniserver monitor is running. Actual messages will appear here when Miniserver communication occurs.".to_string()),
-            code: Some("200".to_string()),
-            error: None,
-            timestamp: chrono::Utc::now()
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
-        });
-    });
+    // Send initial status message
+    let initial_msg = MiniserverMessage {
+        direction: "received".to_string(),
+        protocol: "http".to_string(),
+        miniserver_name: "Monitor Active".to_string(),
+        url: None,
+        params: None,
+        response: Some("Miniserver monitor is active. Communication will appear here in real-time.".to_string()),
+        code: Some("200".to_string()),
+        error: None,
+        timestamp: chrono::Utc::now()
+            .format("%Y-%m-%d %H:%M:%S")
+            .to_string(),
+    };
 
-    // Convert broadcast channel to SSE stream
-    let stream = BroadcastStream::new(rx).map(|result| match result {
-        Ok(msg) => {
-            // Serialize message to JSON for the client
+    // Create stream that converts MiniserverEvents to MiniserverMessages
+    let stream = async_stream::stream! {
+        // Send initial message
+        let json = serde_json::to_string(&initial_msg).unwrap_or_default();
+        yield Ok(Event::default().data(json));
+
+        // Stream real events
+        while let Ok(event) = rx.recv().await {
+            let msg = MiniserverMessage {
+                direction: event.direction,
+                protocol: event.protocol,
+                miniserver_name: event.miniserver_name,
+                url: event.url,
+                params: event.params,
+                response: event.response,
+                code: event.code,
+                error: event.error,
+                timestamp: event.timestamp,
+            };
+
             let json = serde_json::to_string(&msg).unwrap_or_default();
-            Ok(Event::default().data(json))
+            yield Ok(Event::default().data(json));
         }
-        Err(_) => {
-            // Channel closed
-            Ok(Event::default().data("Miniserver monitor not available"))
-        }
-    });
+    };
 
     Sse::new(stream).keep_alive(KeepAlive::default())
 }
