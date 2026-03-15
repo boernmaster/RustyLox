@@ -1,5 +1,9 @@
 # LoxBerry Rust
 
+[![CI](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml)
+[![Release](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml)
+[![Docker](https://ghcr-badge.egpl.dev/boernmaster/rustylox/latest_tag?trim=major&label=latest)](https://github.com/boernmaster/RustyLox/pkgs/container/rustylox)
+
 Modern Rust rewrite of LoxBerry with Docker containerization.
 
 ## About
