@@ -1,0 +1,26 @@
+version: 2
+updates:
+  # Cargo dependencies
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

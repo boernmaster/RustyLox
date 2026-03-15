@@ -1,9 +1,34 @@
-target/
-volumes/
-.git/
+# Git
+.git
 .gitignore
-README.md
+.github
+
+# Documentation
 *.md
-.env
-.vscode/
-.idea/
+LICENSE
+PLAN_UPDATE_PHASE4.md
+
+# Build artifacts
+target
+Cargo.lock
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Development
+volumes
+.vscode
+.idea
+
+# CI/CD
+.github
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
