@@ -6,7 +6,7 @@ use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 use urlencoding::encode;
 
 use crate::delta_cache::DeltaCache;
@@ -164,7 +164,7 @@ impl MiniserverHttpClient {
                 Ok(value)
             }
             Ok((None, _, _)) => Err(Error::miniserver("No value in response")),
-            Err(e) => {
+            Err(_e) => {
                 // Fallback to plain endpoint
                 let command_plain = format!("/dev/sps/io/{}", encode(param));
                 let (value, _, _) = self.call(&command_plain).await?;

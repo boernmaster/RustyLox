@@ -1,7 +1,7 @@
 //! Relay messages to Miniserver
 
-use loxberry_core::{Error, Result};
-use tracing::{debug, warn};
+use loxberry_core::Result;
+use tracing::debug;
 
 /// Message relay to Miniserver
 pub struct Relay {

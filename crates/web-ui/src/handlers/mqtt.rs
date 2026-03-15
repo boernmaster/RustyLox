@@ -9,10 +9,8 @@ use axum::{
     Form,
 };
 use futures::stream::{Stream, StreamExt};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::convert::Infallible;
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use web_api::AppState;
@@ -175,15 +173,15 @@ pub async fn config_submit(
 }
 
 /// MQTT Subscriptions page
-pub async fn subscriptions(State(state): State<AppState>) -> Html<String> {
+pub async fn subscriptions(State(_state): State<AppState>) -> Html<String> {
     // TODO: Load subscriptions from gateway
     Html("<div>Subscriptions management page</div>".to_string())
 }
 
 /// Add MQTT subscription
 pub async fn add_subscription(
-    State(state): State<AppState>,
-    Form(form): Form<SubscriptionForm>,
+    State(_state): State<AppState>,
+    Form(_form): Form<SubscriptionForm>,
 ) -> Html<String> {
     // TODO: Add subscription to gateway and save
     Html("<div class='success'>Subscription added</div>".to_string())
@@ -191,8 +189,8 @@ pub async fn add_subscription(
 
 /// Delete MQTT subscription
 pub async fn delete_subscription(
-    State(state): State<AppState>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    State(_state): State<AppState>,
+    axum::extract::Path(_id): axum::extract::Path<String>,
 ) -> Html<String> {
     // TODO: Delete subscription from gateway
     Html("<div class='success'>Subscription deleted</div>".to_string())

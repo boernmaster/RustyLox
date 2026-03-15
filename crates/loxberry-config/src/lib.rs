@@ -11,7 +11,7 @@ pub use miniserver::MiniserverConfig;
 pub use mqtt::MqttConfig;
 
 use loxberry_core::{Error, Result};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tokio::fs;
 
 /// Configuration manager for LoxBerry

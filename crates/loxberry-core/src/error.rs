@@ -40,6 +40,10 @@ pub enum Error {
     #[error("Gateway error: {0}")]
     Gateway(String),
 
+    /// Backup/Restore error
+    #[error("Backup error: {0}")]
+    Backup(String),
+
     /// Generic error
     #[error("{0}")]
     Other(String),
@@ -74,6 +78,11 @@ impl Error {
     /// Create a gateway error
     pub fn gateway(msg: impl Into<String>) -> Self {
         Error::Gateway(msg.into())
+    }
+
+    /// Create a backup error
+    pub fn backup(msg: impl Into<String>) -> Self {
+        Error::Backup(msg.into())
     }
 
     /// Create a generic error

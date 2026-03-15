@@ -8,7 +8,7 @@ use axum::{
     Json,
 };
 use plugin_manager::{InstallAction, InstallRequest, PluginEntry, PluginInstaller};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use tempfile::NamedTempFile;
 use tokio::io::AsyncWriteExt;
 use tracing::{error, info};
@@ -127,7 +127,7 @@ pub async fn install_plugin(
             };
 
             // Create temp file
-            let mut tf = match NamedTempFile::new() {
+            let tf = match NamedTempFile::new() {
                 Ok(tf) => tf,
                 Err(e) => {
                     error!("Failed to create temp file: {}", e);
@@ -292,7 +292,7 @@ pub async fn upgrade_plugin(
             };
 
             // Create temp file
-            let mut tf = match NamedTempFile::new() {
+            let tf = match NamedTempFile::new() {
                 Ok(tf) => tf,
                 Err(e) => {
                     error!("Failed to create temp file: {}", e);

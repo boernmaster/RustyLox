@@ -1,12 +1,10 @@
 //! Message transformer system
 
-use loxberry_core::{Error, Result};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use loxberry_core::Result;
+use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::RwLock;
-use tokio::process::Command;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 /// Transform result
 #[derive(Debug, Clone, Serialize)]

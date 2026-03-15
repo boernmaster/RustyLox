@@ -2,11 +2,10 @@
 
 use loxberry_core::{Error, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::RwLock;
 use tokio::fs;
-use tracing::{debug, info};
+use tracing::info;
 
 /// MQTT subscription
 #[derive(Debug, Clone, Serialize, Deserialize)]
