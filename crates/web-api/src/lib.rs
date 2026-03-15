@@ -6,7 +6,7 @@ pub mod state;
 pub use state::AppState;
 
 use axum::{
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Router,
 };
 use tower_http::{
@@ -29,6 +29,12 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/miniserver/:id/send", post(routes::miniserver::send_command))
         .route("/api/miniserver/:id/get", post(routes::miniserver::get_values))
         .route("/api/miniserver/:id/status", get(routes::miniserver::check_status))
+        // Plugin routes
+        .route("/api/plugins", get(routes::plugins::list_plugins))
+        .route("/api/plugins/:md5", get(routes::plugins::get_plugin))
+        .route("/api/plugins/install", post(routes::plugins::install_plugin))
+        .route("/api/plugins/:md5", delete(routes::plugins::uninstall_plugin))
+        .route("/api/plugins/:md5/upgrade", post(routes::plugins::upgrade_plugin))
         // System routes
         .route("/api/system/status", get(routes::system::system_status))
         .with_state(state)

@@ -7,6 +7,7 @@ edition = "2021"
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
 miniserver-client = { path = "../miniserver-client" }
+plugin-manager = { path = "../plugin-manager" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -24,3 +25,6 @@ tokio = { workspace = true }
 
 # Shared state
 dashmap = { workspace = true }
+
+# Temp files
+tempfile = { workspace = true }

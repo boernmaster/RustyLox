@@ -22,11 +22,14 @@ async fn main() -> Result<()> {
 
     info!("Starting LoxBerry Daemon v{}", env!("CARGO_PKG_VERSION"));
 
-    // Get configuration directory from environment or use default
-    let config_dir = std::env::var("LBHOMEDIR")
-        .map(|dir| PathBuf::from(dir).join("config/system"))
-        .unwrap_or_else(|_| PathBuf::from("/opt/loxberry/config/system"));
+    // Get LoxBerry home directory from environment or use default
+    let lbhomedir = std::env::var("LBHOMEDIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("/opt/loxberry"));
 
+    let config_dir = lbhomedir.join("config/system");
+
+    info!("Using LoxBerry directory: {}", lbhomedir.display());
     info!("Using configuration directory: {}", config_dir.display());
 
     // Create configuration manager
@@ -46,7 +49,7 @@ async fn main() -> Result<()> {
     };
 
     // Create application state
-    let state = AppState::new(config_manager, config);
+    let state = AppState::new(lbhomedir, config_manager, config);
 
     // Create router
     let app = create_router(state);

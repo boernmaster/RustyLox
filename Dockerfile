@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for LoxBerry Rust
 
 # Build stage
-FROM rust:1.83-slim AS builder
+FROM rust:latest AS builder
 
 WORKDIR /build
 
