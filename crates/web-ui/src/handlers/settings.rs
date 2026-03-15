@@ -2,11 +2,7 @@
 
 use crate::templates::SettingsTemplate;
 use askama::Template;
-use axum::{
-    extract::State,
-    response::Html,
-    Form,
-};
+use axum::{extract::State, response::Html, Form};
 use serde::Deserialize;
 use std::sync::Arc;
 use web_api::AppState;
@@ -21,7 +17,11 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         version: config.base.version.clone(),
     };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 #[derive(Debug, Deserialize)]

@@ -1,6 +1,8 @@
 //! Miniserver management handlers
 
-use crate::templates::{MiniserverDisplay, MiniserverEditTemplate, MiniserverForm, MiniserverListTemplate};
+use crate::templates::{
+    MiniserverDisplay, MiniserverEditTemplate, MiniserverForm, MiniserverListTemplate,
+};
 use askama::Template;
 use axum::{
     extract::{Path, State},
@@ -29,7 +31,11 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
 
     let template = MiniserverListTemplate { miniservers };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 /// Show add Miniserver form
@@ -39,7 +45,11 @@ pub async fn add_form(State(_state): State<AppState>) -> Html<String> {
         is_new: true,
     };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 #[derive(Debug, Deserialize)]
@@ -85,8 +95,14 @@ pub async fn add_submit(
         credentials_raw: credentials_raw.clone(),
         transport: transport.clone(),
         useclouddns: useclouddns.clone(),
-        fulluri: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
-        fulluri_raw: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
+        fulluri: format!(
+            "{}://{}@{}:{}",
+            transport, credentials_raw, form.ipaddress, port
+        ),
+        fulluri_raw: format!(
+            "{}://{}@{}:{}",
+            transport, credentials_raw, form.ipaddress, port
+        ),
         ..Default::default()
     };
 
@@ -111,10 +127,7 @@ pub async fn add_submit(
 }
 
 /// Show edit Miniserver form
-pub async fn edit_form(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Html<String> {
+pub async fn edit_form(State(state): State<AppState>, Path(id): Path<String>) -> Html<String> {
     let config = state.config.read().await;
 
     let miniserver = config.miniserver.get(&id).map(|ms| MiniserverForm {
@@ -132,7 +145,11 @@ pub async fn edit_form(
         is_new: false,
     };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 /// Submit edit Miniserver
@@ -170,8 +187,14 @@ pub async fn edit_submit(
         credentials_raw: credentials_raw.clone(),
         transport: transport.clone(),
         useclouddns: useclouddns.clone(),
-        fulluri: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
-        fulluri_raw: format!("{}://{}@{}:{}", transport, credentials_raw, form.ipaddress, port),
+        fulluri: format!(
+            "{}://{}@{}:{}",
+            transport, credentials_raw, form.ipaddress, port
+        ),
+        fulluri_raw: format!(
+            "{}://{}@{}:{}",
+            transport, credentials_raw, form.ipaddress, port
+        ),
         ..Default::default()
     };
 
@@ -184,7 +207,9 @@ pub async fn edit_submit(
             drop(config); // Release lock
             let _ = state.reload_config().await;
             // Clear cached client so it gets recreated with new credentials
-            state.miniserver_clients.remove(&id.parse::<u8>().unwrap_or(1));
+            state
+                .miniserver_clients
+                .remove(&id.parse::<u8>().unwrap_or(1));
             Html(format!(
                 "<div class='alert alert-success'>Miniserver '{}' updated successfully. <a href='/miniserver'>Back to list</a></div>",
                 form.name
@@ -198,10 +223,7 @@ pub async fn edit_submit(
 }
 
 /// Delete Miniserver
-pub async fn delete(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Html<String> {
+pub async fn delete(State(state): State<AppState>, Path(id): Path<String>) -> Html<String> {
     // Get mutable config
     let mut config = state.config.write().await;
 
@@ -213,7 +235,9 @@ pub async fn delete(
                 drop(config); // Release lock
                 let _ = state.reload_config().await;
                 // Remove cached client
-                state.miniserver_clients.remove(&id.parse::<u8>().unwrap_or(1));
+                state
+                    .miniserver_clients
+                    .remove(&id.parse::<u8>().unwrap_or(1));
                 Html("<div class='alert alert-success'>Miniserver deleted. <a href='/miniserver'>Back to list</a></div>".to_string())
             }
             Err(e) => Html(format!(
@@ -234,7 +258,9 @@ pub async fn test_connection(
     // Parse ID
     let ms_id = match id.parse::<u8>() {
         Ok(id) => id,
-        Err(_) => return Html("<div class='alert alert-danger'>Invalid Miniserver ID</div>".to_string()),
+        Err(_) => {
+            return Html("<div class='alert alert-danger'>Invalid Miniserver ID</div>".to_string())
+        }
     };
 
     // Get or create client
@@ -242,7 +268,10 @@ pub async fn test_connection(
         Ok(client) => {
             // Try to send a simple command (get status)
             match client.get(vec!["status".to_string()]).await {
-                Ok(_) => Html("<div class='alert alert-success'>✓ Connection test successful!</div>".to_string()),
+                Ok(_) => Html(
+                    "<div class='alert alert-success'>✓ Connection test successful!</div>"
+                        .to_string(),
+                ),
                 Err(e) => Html(format!(
                     "<div class='alert alert-danger'>✗ Connection test failed: {}</div>",
                     e

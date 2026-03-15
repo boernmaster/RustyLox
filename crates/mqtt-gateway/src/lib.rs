@@ -8,37 +8,31 @@
 //! - Relay to Miniserver via HTTP/UDP
 
 pub mod broker_client;
-pub mod udp_listener;
+pub mod relay;
 pub mod subscription;
 pub mod transformer;
-pub mod relay;
+pub mod udp_listener;
 
 pub use broker_client::BrokerClient;
-pub use udp_listener::UdpListener;
-pub use subscription::{SubscriptionManager, Subscription};
-pub use transformer::{TransformerRegistry, Transformer, TransformResult};
 pub use relay::Relay;
+pub use subscription::{Subscription, SubscriptionManager};
+pub use transformer::{TransformResult, Transformer, TransformerRegistry};
+pub use udp_listener::UdpListener;
 
 use loxberry_config::MqttConfig;
 use loxberry_core::Result;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tracing::{info, error};
+use tracing::{error, info};
 
 /// Gateway message types
 #[derive(Debug, Clone)]
 pub enum GatewayMessage {
     /// MQTT message received from broker
-    MqttReceived {
-        topic: String,
-        payload: Vec<u8>,
-    },
+    MqttReceived { topic: String, payload: Vec<u8> },
     /// UDP message received
-    UdpReceived {
-        topic: String,
-        value: String,
-    },
+    UdpReceived { topic: String, value: String },
     /// Message transformed and ready for relay
     ReadyForRelay {
         topic: String,
@@ -62,10 +56,7 @@ pub struct MqttGateway {
 
 impl MqttGateway {
     /// Create a new MQTT gateway
-    pub fn new(
-        config: MqttConfig,
-        lbhomedir: PathBuf,
-    ) -> Result<Self> {
+    pub fn new(config: MqttConfig, lbhomedir: PathBuf) -> Result<Self> {
         info!("Initializing MQTT Gateway");
 
         let (message_tx, _) = broadcast::channel(1000);
@@ -74,13 +65,12 @@ impl MqttGateway {
         let broker_client = Arc::new(BrokerClient::new(&config)?);
         let udp_listener = Arc::new(UdpListener::new(11884)?);
 
-        let subscription_manager = Arc::new(
-            SubscriptionManager::new(lbhomedir.join("config/system"))
-        );
+        let subscription_manager =
+            Arc::new(SubscriptionManager::new(lbhomedir.join("config/system")));
 
-        let transformer_registry = Arc::new(
-            TransformerRegistry::new(lbhomedir.join("bin/mqtt/transform"))
-        );
+        let transformer_registry = Arc::new(TransformerRegistry::new(
+            lbhomedir.join("bin/mqtt/transform"),
+        ));
 
         let relay = Arc::new(Relay::new());
 
@@ -150,9 +140,21 @@ impl MqttGateway {
 
         // Wait for all tasks (in production, these would run forever)
         tokio::try_join!(
-            async { broker_handle.await.map_err(|e| loxberry_core::Error::gateway(e.to_string())) },
-            async { udp_handle.await.map_err(|e| loxberry_core::Error::gateway(e.to_string())) },
-            async { processor_handle.await.map_err(|e| loxberry_core::Error::gateway(e.to_string())) },
+            async {
+                broker_handle
+                    .await
+                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+            },
+            async {
+                udp_handle
+                    .await
+                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+            },
+            async {
+                processor_handle
+                    .await
+                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+            },
         )?;
 
         Ok(())
@@ -189,32 +191,39 @@ impl MqttGateway {
                 let value = String::from_utf8_lossy(&payload).to_string();
 
                 // Apply transformers
-                let result = self.transformer_registry
-                    .transform(&topic, &value)
-                    .await?;
+                let result = self.transformer_registry.transform(&topic, &value).await?;
 
                 // Relay to Miniserver if configured
                 if result.relay_to_miniserver {
-                    self.relay.send_to_miniserver(&result.topic, &result.value).await?;
+                    self.relay
+                        .send_to_miniserver(&result.topic, &result.value)
+                        .await?;
                 }
             }
             GatewayMessage::UdpReceived { topic, value } => {
                 // Apply transformers
-                let result = self.transformer_registry
-                    .transform(&topic, &value)
-                    .await?;
+                let result = self.transformer_registry.transform(&topic, &value).await?;
 
                 // Publish to MQTT if configured
                 if result.relay_to_mqtt {
-                    self.broker_client.publish(&result.topic, &result.value).await?;
+                    self.broker_client
+                        .publish(&result.topic, &result.value)
+                        .await?;
                 }
 
                 // Relay to Miniserver if configured
                 if result.relay_to_miniserver {
-                    self.relay.send_to_miniserver(&result.topic, &result.value).await?;
+                    self.relay
+                        .send_to_miniserver(&result.topic, &result.value)
+                        .await?;
                 }
             }
-            GatewayMessage::ReadyForRelay { topic, value, relay_to_miniserver, relay_to_mqtt } => {
+            GatewayMessage::ReadyForRelay {
+                topic,
+                value,
+                relay_to_miniserver,
+                relay_to_mqtt,
+            } => {
                 if relay_to_mqtt {
                     self.broker_client.publish(&topic, &value).await?;
                 }

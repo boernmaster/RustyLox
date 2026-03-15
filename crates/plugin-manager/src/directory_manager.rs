@@ -2,7 +2,7 @@
 //!
 //! Creates and manages isolated directory structures for plugins
 
-use loxberry_core::{Error, Result, PluginPaths};
+use loxberry_core::{Error, PluginPaths, Result};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 use tracing::{debug, info};
@@ -39,9 +39,9 @@ impl DirectoryManager {
 
         for dir in dirs {
             debug!("Creating directory: {}", dir);
-            fs::create_dir_all(dir).await.map_err(|e| {
-                Error::plugin(format!("Failed to create directory {}: {}", dir, e))
-            })?;
+            fs::create_dir_all(dir)
+                .await
+                .map_err(|e| Error::plugin(format!("Failed to create directory {}: {}", dir, e)))?;
         }
 
         info!("Successfully created directory structure for: {}", folder);

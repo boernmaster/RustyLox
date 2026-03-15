@@ -2,12 +2,12 @@
 
 use crate::templates::{MqttConfigForm, MqttConfigTemplate, MqttMessage, MqttMonitorTemplate};
 use askama::Template;
+use axum::response::sse::{Event, KeepAlive};
 use axum::{
     extract::State,
     response::{Html, Sse},
     Form,
 };
-use axum::response::sse::{Event, KeepAlive};
 use futures::stream::{Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
@@ -23,7 +23,11 @@ pub async fn monitor(State(_state): State<AppState>) -> Html<String> {
         title: "MQTT Monitor - Real-time Message Viewer".to_string(),
     };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 /// MQTT Monitor real-time stream (Server-Sent Events)
@@ -52,7 +56,9 @@ pub async fn monitor_stream(
                                     payload: String::from_utf8_lossy(&payload).to_string(),
                                     qos: 0,
                                     retain: false,
-                                    timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                                    timestamp: chrono::Utc::now()
+                                        .format("%Y-%m-%d %H:%M:%S")
+                                        .to_string(),
                                 })
                             }
                             mqtt_gateway::GatewayMessage::UdpReceived { topic, value } => {
@@ -61,7 +67,9 @@ pub async fn monitor_stream(
                                     payload: value,
                                     qos: 0,
                                     retain: false,
-                                    timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                                    timestamp: chrono::Utc::now()
+                                        .format("%Y-%m-%d %H:%M:%S")
+                                        .to_string(),
                                 })
                             }
                             _ => None, // Ignore other message types
@@ -121,7 +129,11 @@ pub async fn config(State(state): State<AppState>) -> Html<String> {
         config: mqtt_config,
     };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 #[derive(Debug, Deserialize)]

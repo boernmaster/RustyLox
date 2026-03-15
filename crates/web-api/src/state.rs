@@ -52,7 +52,10 @@ impl AppState {
     }
 
     /// Get a Miniserver client (creates if not exists)
-    pub async fn get_miniserver_client(&self, id: u8) -> loxberry_core::Result<Arc<MiniserverClient>> {
+    pub async fn get_miniserver_client(
+        &self,
+        id: u8,
+    ) -> loxberry_core::Result<Arc<MiniserverClient>> {
         // Check if client exists
         if let Some(client) = self.miniserver_clients.get(&id) {
             return Ok(Arc::clone(client.value()));
@@ -63,9 +66,7 @@ impl AppState {
         let ms_config = config
             .miniserver
             .get(&id.to_string())
-            .ok_or_else(|| {
-                loxberry_core::Error::config(format!("Miniserver {} not found", id))
-            })?
+            .ok_or_else(|| loxberry_core::Error::config(format!("Miniserver {} not found", id)))?
             .clone();
 
         let client = Arc::new(MiniserverClient::new(ms_config)?);

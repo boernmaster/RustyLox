@@ -2,7 +2,7 @@
 //!
 //! Executes lifecycle hooks during plugin installation and removal
 
-use loxberry_core::{Error, Result, PluginPaths};
+use loxberry_core::{Error, PluginPaths, Result};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -81,7 +81,11 @@ impl LifecycleManager {
             return Ok(None);
         }
 
-        info!("Executing {} hook: {}", hook.script_name(), script_path.display());
+        info!(
+            "Executing {} hook: {}",
+            hook.script_name(),
+            script_path.display()
+        );
 
         // Make script executable
         #[cfg(unix)]
@@ -111,11 +115,18 @@ impl LifecycleManager {
         // Note: For root hooks (PreRoot, PostRoot), we would need to use sudo
         // This is simplified for the Docker environment where we run as loxberry user
         if hook.requires_root() {
-            warn!("Root hook requested but running as loxberry user: {}", hook.script_name());
+            warn!(
+                "Root hook requested but running as loxberry user: {}",
+                hook.script_name()
+            );
         }
 
         let output = cmd.output().await.map_err(|e| {
-            Error::plugin(format!("Failed to execute hook {}: {}", hook.script_name(), e))
+            Error::plugin(format!(
+                "Failed to execute hook {}: {}",
+                hook.script_name(),
+                e
+            ))
         })?;
 
         let result = HookResult {

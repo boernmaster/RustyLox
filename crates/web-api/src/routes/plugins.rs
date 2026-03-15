@@ -193,7 +193,10 @@ pub async fn install_plugin(
 
     match installer.install(request).await {
         Ok(plugin) => {
-            info!("Successfully installed plugin: {} v{}", plugin.name, plugin.version);
+            info!(
+                "Successfully installed plugin: {} v{}",
+                plugin.name, plugin.version
+            );
             (
                 StatusCode::OK,
                 Json(PluginInstallResponse {
@@ -355,7 +358,10 @@ pub async fn upgrade_plugin(
 
     match installer.install(request).await {
         Ok(plugin) => {
-            info!("Successfully upgraded plugin: {} v{}", plugin.name, plugin.version);
+            info!(
+                "Successfully upgraded plugin: {} v{}",
+                plugin.name, plugin.version
+            );
             (
                 StatusCode::OK,
                 Json(PluginInstallResponse {

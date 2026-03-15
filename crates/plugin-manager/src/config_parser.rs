@@ -92,9 +92,8 @@ impl PluginConfig {
     /// Parse plugin.cfg from INI file
     pub fn parse(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
-        let content = std::fs::read_to_string(path).map_err(|e| {
-            Error::plugin(format!("Failed to read plugin.cfg: {}", e))
-        })?;
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| Error::plugin(format!("Failed to read plugin.cfg: {}", e)))?;
 
         Self::parse_from_str(&content)
     }
@@ -105,31 +104,38 @@ impl PluginConfig {
         let ini = parse_ini(content)?;
 
         // Extract author info
-        let author_section = ini.get("AUTHOR")
+        let author_section = ini
+            .get("AUTHOR")
             .ok_or_else(|| Error::plugin("Missing [AUTHOR] section in plugin.cfg"))?;
 
         let author = AuthorInfo {
-            name: author_section.get("NAME")
+            name: author_section
+                .get("NAME")
                 .ok_or_else(|| Error::plugin("Missing AUTHOR.NAME in plugin.cfg"))?
                 .clone(),
-            email: author_section.get("EMAIL")
+            email: author_section
+                .get("EMAIL")
                 .ok_or_else(|| Error::plugin("Missing AUTHOR.EMAIL in plugin.cfg"))?
                 .clone(),
         };
 
         // Extract plugin info
-        let plugin_section = ini.get("PLUGIN")
+        let plugin_section = ini
+            .get("PLUGIN")
             .ok_or_else(|| Error::plugin("Missing [PLUGIN] section in plugin.cfg"))?;
 
-        let name = plugin_section.get("NAME")
+        let name = plugin_section
+            .get("NAME")
             .ok_or_else(|| Error::plugin("Missing PLUGIN.NAME in plugin.cfg"))?
             .clone();
 
-        let folder = plugin_section.get("FOLDER")
+        let folder = plugin_section
+            .get("FOLDER")
             .ok_or_else(|| Error::plugin("Missing PLUGIN.FOLDER in plugin.cfg"))?
             .clone();
 
-        let version = plugin_section.get("VERSION")
+        let version = plugin_section
+            .get("VERSION")
             .ok_or_else(|| Error::plugin("Missing PLUGIN.VERSION in plugin.cfg"))?
             .clone();
 
@@ -177,7 +183,8 @@ impl PluginConfig {
 
         // Extract sudoers config (optional)
         let sudoers = ini.get("SUDOERS").map(|s| {
-            let commands: Vec<String> = s.iter()
+            let commands: Vec<String> = s
+                .iter()
                 .filter(|(k, _)| k.starts_with("COMMAND"))
                 .map(|(_, v)| v.clone())
                 .collect();
@@ -186,7 +193,8 @@ impl PluginConfig {
 
         // Extract APT packages (optional)
         let apt = ini.get("APT").map(|a| {
-            let packages: Vec<String> = a.iter()
+            let packages: Vec<String> = a
+                .iter()
                 .filter(|(k, _)| k.starts_with("PACKAGE"))
                 .map(|(_, v)| v.clone())
                 .collect();
@@ -279,7 +287,10 @@ ENABLED=1
         assert_eq!(config.plugin.name, "TestPlugin");
         assert_eq!(config.plugin.folder, "testplugin");
         assert_eq!(config.plugin.version, "1.0.0");
-        assert_eq!(config.plugin.title.get("en"), Some(&"Test Plugin".to_string()));
+        assert_eq!(
+            config.plugin.title.get("en"),
+            Some(&"Test Plugin".to_string())
+        );
         assert!(config.system.is_some());
         assert!(config.daemon.is_some());
     }

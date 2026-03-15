@@ -28,7 +28,11 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
 
     let template = PluginListTemplate { plugins };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 /// Show plugin install form
@@ -47,19 +51,13 @@ pub async fn install_form(State(_state): State<AppState>) -> Html<String> {
 }
 
 /// Submit plugin installation
-pub async fn install_submit(
-    State(_state): State<AppState>,
-    _multipart: Multipart,
-) -> Html<String> {
+pub async fn install_submit(State(_state): State<AppState>, _multipart: Multipart) -> Html<String> {
     // TODO: Handle file upload and install plugin
     Html(String::from("<div class='success'>Plugin installed successfully. <a href='/plugins'>Back to list</a></div>"))
 }
 
 /// Show plugin details
-pub async fn details(
-    State(state): State<AppState>,
-    Path(md5): Path<String>,
-) -> Html<String> {
+pub async fn details(State(state): State<AppState>, Path(md5): Path<String>) -> Html<String> {
     let plugin_manager = plugin_manager::PluginInstaller::new(&state.lbhomedir);
 
     match plugin_manager.get(&md5).await {
@@ -82,14 +80,13 @@ pub async fn details(
 }
 
 /// Uninstall plugin
-pub async fn uninstall(
-    State(state): State<AppState>,
-    Path(md5): Path<String>,
-) -> Html<String> {
+pub async fn uninstall(State(state): State<AppState>, Path(md5): Path<String>) -> Html<String> {
     let plugin_manager = plugin_manager::PluginInstaller::new(&state.lbhomedir);
 
     match plugin_manager.uninstall(&md5).await {
-        Ok(_) => Html(String::from("<div class='success'>Plugin uninstalled. <a href='/plugins'>Back to list</a></div>")),
+        Ok(_) => Html(String::from(
+            "<div class='success'>Plugin uninstalled. <a href='/plugins'>Back to list</a></div>",
+        )),
         Err(e) => Html(format!("<div class='error'>Error: {}</div>", e)),
     }
 }
