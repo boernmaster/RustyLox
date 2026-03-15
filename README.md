@@ -145,10 +145,67 @@ loxberry-rust/
 - Docker and Docker Compose
 - (Optional) Rust 1.80+ for local development
 
-### 1. Clone and Setup
+### Option 1: Docker Hub (Recommended)
+
+Pull and run the latest release:
+
 ```bash
-git clone <this-repo-url>
-cd loxberry-rust
+# Pull the image
+docker pull ghcr.io/boernmaster/rustylox:1.0.0
+
+# Create docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+services:
+  loxberry:
+    image: ghcr.io/boernmaster/rustylox:1.0.0
+    container_name: loxberry
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "11884:11884/udp"
+    volumes:
+      - ./config:/opt/loxberry/config
+      - ./data:/opt/loxberry/data
+      - ./log:/opt/loxberry/log
+    environment:
+      - RUST_LOG=info
+      - MQTT_BROKER=mosquitto
+    depends_on:
+      - mosquitto
+    networks:
+      - loxberry-net
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+    networks:
+      - loxberry-net
+
+networks:
+  loxberry-net:
+    driver: bridge
+EOF
+
+# Create config directory and start
+mkdir -p config/system
+docker compose up -d
+```
+
+### Option 2: Build from Source
+
+Clone and build locally:
+
+```bash
+git clone https://github.com/boernmaster/RustyLox.git
+cd RustyLox
 
 # Create volume directories
 mkdir -p volumes/config/system volumes/data/system volumes/log/system
