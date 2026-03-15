@@ -11,7 +11,7 @@ pub mod reboot_detector;
 pub mod udp;
 
 pub use delta_cache::DeltaCache;
-pub use http::MiniserverHttpClient;
+pub use http::{MiniserverHttpClient, MonitorCallback, MonitorEvent};
 pub use reboot_detector::RebootDetector;
 pub use udp::MiniserverUdpClient;
 

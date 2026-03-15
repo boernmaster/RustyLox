@@ -29,9 +29,10 @@ askama_axum = "0.4"
 # Static files
 tower-http = { workspace = true, features = ["fs"] }
 
-# Server-Sent Events for real-time MQTT monitor
+# Server-Sent Events for real-time monitors
 tokio-stream = { version = "0.1", features = ["sync"] }
 futures = "0.3"
+async-stream = "0.3"
 
 # Time handling for timestamps
 chrono = "0.4"
