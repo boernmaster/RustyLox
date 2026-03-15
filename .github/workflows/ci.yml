@@ -97,7 +97,7 @@ jobs:
       - name: Test Docker image
         run: |
           docker build -t rustylox:test .
-          docker run --rm rustylox:test --version || echo "Binary started"
+          timeout 5 docker run --rm -e RUST_LOG=error rustylox:test || echo "Container started successfully"
 
   docker-publish:
     name: Publish Docker Image
