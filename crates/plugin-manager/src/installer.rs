@@ -69,13 +69,13 @@ impl PluginInstaller {
 
         // Extract ZIP to temp directory
         let temp_dir = self.extract_zip(&request.zip_path).await?;
-        let plugin_dir = temp_dir.path();
+        let extracted_path = temp_dir.path();
 
-        // Parse plugin.cfg
-        let plugin_cfg_path = plugin_dir.join("plugin.cfg");
-        if !plugin_cfg_path.exists() {
-            return Err(Error::plugin("plugin.cfg not found in archive"));
-        }
+        // Find plugin.cfg (may be in root or subdirectory)
+        let plugin_cfg_path = self.find_plugin_cfg(extracted_path)?;
+        let plugin_dir = plugin_cfg_path
+            .parent()
+            .ok_or_else(|| Error::plugin("Invalid plugin.cfg path"))?;
 
         let config = PluginConfig::parse(&plugin_cfg_path)?;
         info!(
@@ -384,6 +384,30 @@ impl PluginInstaller {
 
         info!("Extracted {} files to temp directory", archive.len());
         Ok(temp_dir)
+    }
+
+    /// Find plugin.cfg in extracted directory (may be in root or subdirectory)
+    fn find_plugin_cfg(&self, base_dir: &Path) -> Result<PathBuf> {
+        // First check root
+        let root_cfg = base_dir.join("plugin.cfg");
+        if root_cfg.exists() {
+            return Ok(root_cfg);
+        }
+
+        // Search in subdirectories (max depth 2)
+        for entry in WalkDir::new(base_dir)
+            .max_depth(2)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
+            if entry.file_name() == "plugin.cfg" && entry.file_type().is_file() {
+                return Ok(entry.path().to_path_buf());
+            }
+        }
+
+        Err(Error::plugin(
+            "plugin.cfg not found in archive (searched root and subdirectories)",
+        ))
     }
 
     /// Copy plugin files to their destinations
