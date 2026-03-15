@@ -18,8 +18,8 @@ use tower_http::{
 pub fn create_router(state: AppState) -> Router {
     Router::new()
         // Health check
-        .route("/", get(routes::health::health_check))
         .route("/health", get(routes::health::health_check))
+        .route("/api/health", get(routes::health::health_check))
         // Configuration routes
         .route("/api/config/general", get(routes::config::get_general))
         .route("/api/config/general", put(routes::config::update_general))

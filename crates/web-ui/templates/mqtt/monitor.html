@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Monitor - LoxBerry</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .mqtt-monitor {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+        }
+
+        .monitor-controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .monitor-messages {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+        }
+
+        .message {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .message:hover {
+            background: #f9f9f9;
+        }
+
+        .message-topic {
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 5px;
+        }
+
+        .message-payload {
+            color: #333;
+            word-break: break-all;
+        }
+
+        .message-meta {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .status-connected {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-disconnected {
+            color: red;
+            font-weight: bold;
+        }
+
+        #messageCount {
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">LoxBerry Rust</a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor" class="active">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>{{ title }}</h1>
+
+        <div class="mqtt-monitor">
+            <!-- Controls -->
+            <div class="monitor-controls">
+                <button id="pauseBtn" class="btn btn-primary" onclick="togglePause()">Pause</button>
+                <button id="clearBtn" class="btn btn-secondary" onclick="clearMessages()">Clear</button>
+                <input type="text" id="filterInput" placeholder="Filter by topic (e.g., home/#)" onkeyup="filterMessages()">
+                <button class="btn btn-secondary" onclick="exportMessages()">Export</button>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                    <span>Messages: <span id="messageCount">0</span></span>
+                    <span id="connectionStatus" class="status-disconnected">Connecting...</span>
+                </div>
+            </div>
+
+            <!-- Message Display -->
+            <div id="messages" class="monitor-messages">
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    Waiting for MQTT messages...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>LoxBerry Rust v4.0.0 | &copy; 2026</p>
+    </footer>
+
+    <script>
+        let messages = [];
+        let paused = false;
+        let filter = '';
+        let eventSource = null;
+
+        // Connect to SSE stream
+        function connectStream() {
+            eventSource = new EventSource('/mqtt/monitor/stream');
+
+            eventSource.onopen = function() {
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                document.getElementById('connectionStatus').className = 'status-connected';
+            };
+
+            eventSource.onmessage = function(event) {
+                if (!paused) {
+                    try {
+                        const message = JSON.parse(event.data);
+                        addMessage(message);
+                    } catch (e) {
+                        console.error('Failed to parse message:', e);
+                    }
+                }
+            };
+
+            eventSource.onerror = function() {
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+                document.getElementById('connectionStatus').className = 'status-disconnected';
+
+                // Reconnect after 5 seconds
+                setTimeout(connectStream, 5000);
+            };
+        }
+
+        function addMessage(msg) {
+            messages.unshift(msg); // Add to beginning
+
+            // Limit to 1000 messages
+            if (messages.length > 1000) {
+                messages = messages.slice(0, 1000);
+            }
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const messagesDiv = document.getElementById('messages');
+            const filteredMessages = filter
+                ? messages.filter(m => matchTopic(m.topic, filter))
+                : messages;
+
+            document.getElementById('messageCount').textContent = filteredMessages.length;
+
+            if (filteredMessages.length === 0) {
+                messagesDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No messages</div>';
+                return;
+            }
+
+            messagesDiv.innerHTML = filteredMessages.map(msg => `
+                <div class="message">
+                    <div class="message-topic">${escapeHtml(msg.topic)}</div>
+                    <div class="message-payload">${formatPayload(msg.payload)}</div>
+                    <div class="message-meta">
+                        ${msg.timestamp} | QoS: ${msg.qos} | Retain: ${msg.retain ? 'Yes' : 'No'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function togglePause() {
+            paused = !paused;
+            document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
+            document.getElementById('pauseBtn').className = paused ? 'btn btn-danger' : 'btn btn-primary';
+        }
+
+        function clearMessages() {
+            messages = [];
+            updateDisplay();
+        }
+
+        function filterMessages() {
+            filter = document.getElementById('filterInput').value.trim();
+            updateDisplay();
+        }
+
+        function matchTopic(topic, pattern) {
+            if (!pattern) return true;
+
+            // Simple wildcard matching
+            const topicParts = topic.split('/');
+            const patternParts = pattern.split('/');
+
+            for (let i = 0; i < patternParts.length; i++) {
+                if (patternParts[i] === '#') return true;
+                if (patternParts[i] === '+') continue;
+                if (topicParts[i] !== patternParts[i]) return false;
+            }
+
+            return topicParts.length === patternParts.length;
+        }
+
+        function formatPayload(payload) {
+            // Try to pretty-print JSON
+            try {
+                const json = JSON.parse(payload);
+                return '<pre>' + escapeHtml(JSON.stringify(json, null, 2)) + '</pre>';
+            } catch (e) {
+                return escapeHtml(payload);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function exportMessages() {
+            const dataStr = JSON.stringify(messages, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'mqtt-messages-' + new Date().toISOString() + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Start streaming on page load
+        connectStream();
+    </script>
+</body>
+</html>

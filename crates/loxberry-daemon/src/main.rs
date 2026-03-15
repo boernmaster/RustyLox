@@ -80,8 +80,14 @@ async fn main() -> Result<()> {
     // Create application state
     let state = AppState::new(lbhomedir, config_manager, config, mqtt_gateway);
 
-    // Create router
-    let app = create_router(state);
+    // Create API router
+    let api_router = create_router(state.clone());
+
+    // Create UI router
+    let ui_router = web_ui::create_ui_router(state.clone());
+
+    // Merge routers - UI router serves the root, API router handles /api/*
+    let app = ui_router.merge(api_router);
 
     // Get bind address from environment or use default
     let bind_addr = std::env::var("BIND_ADDR")

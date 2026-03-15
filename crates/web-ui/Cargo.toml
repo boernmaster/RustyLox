@@ -1,0 +1,37 @@
+[package]
+name = "web-ui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loxberry-core = { path = "../loxberry-core" }
+loxberry-config = { path = "../loxberry-config" }
+miniserver-client = { path = "../miniserver-client" }
+plugin-manager = { path = "../plugin-manager" }
+mqtt-gateway = { path = "../mqtt-gateway" }
+web-api = { path = "../web-api" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Web framework
+axum = { workspace = true }
+
+# Templates
+askama = { version = "0.12", features = ["with-axum"] }
+askama_axum = "0.4"
+
+# Static files
+tower-http = { workspace = true, features = ["fs"] }
+
+# Server-Sent Events for real-time MQTT monitor
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures = "0.3"
+
+# Time handling for timestamps
+chrono = "0.4"
