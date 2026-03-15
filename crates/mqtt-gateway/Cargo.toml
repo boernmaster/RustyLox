@@ -1,5 +1,5 @@
 [package]
-name = "web-api"
+name = "mqtt-gateway"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,8 +7,6 @@ edition = "2021"
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
 miniserver-client = { path = "../miniserver-client" }
-plugin-manager = { path = "../plugin-manager" }
-mqtt-gateway = { path = "../mqtt-gateway" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -16,16 +14,18 @@ anyhow = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
-# Web framework
-axum = { workspace = true }
-tower = { workspace = true }
-tower-http = { workspace = true }
-
 # Async runtime
 tokio = { workspace = true }
 
-# Shared state
-dashmap = { workspace = true }
+# MQTT client
+rumqttc = "0.24"
 
-# Temp files
-tempfile = { workspace = true }
+# Subscription parsing
+serde_ini = "0.2"
+regex = "1.10"
+
+# File watching for hot-reload
+notify = "6.1"
+
+# Process execution for transformers
+glob = "0.3"

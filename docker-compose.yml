@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"       # Web API
+      - "11884:11884/udp" # MQTT UDP input
     volumes:
       - ./volumes/config:/opt/loxberry/config
       - ./volumes/data:/opt/loxberry/data
@@ -15,6 +16,24 @@ services:
       - RUST_LOG=info
       - LBHOMEDIR=/opt/loxberry
       - BIND_ADDR=0.0.0.0:8080
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+    depends_on:
+      - mosquitto
+    networks:
+      - loxberry-net
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./volumes/mosquitto/config:/mosquitto/config
+      - ./volumes/mosquitto/data:/mosquitto/data
+      - ./volumes/mosquitto/log:/mosquitto/log
     networks:
       - loxberry-net
 

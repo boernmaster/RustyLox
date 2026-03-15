@@ -35,6 +35,10 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/plugins/install", post(routes::plugins::install_plugin))
         .route("/api/plugins/:md5", delete(routes::plugins::uninstall_plugin))
         .route("/api/plugins/:md5/upgrade", post(routes::plugins::upgrade_plugin))
+        // MQTT Gateway routes
+        .route("/api/mqtt/status", get(routes::mqtt::get_status))
+        .route("/api/mqtt/subscriptions/reload", post(routes::mqtt::reload_subscriptions))
+        .route("/api/mqtt/transformers/reload", post(routes::mqtt::reload_transformers))
         // System routes
         .route("/api/system/status", get(routes::system::system_status))
         .with_state(state)

@@ -10,6 +10,7 @@ path = "src/main.rs"
 [dependencies]
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
+mqtt-gateway = { path = "../mqtt-gateway" }
 web-api = { path = "../web-api" }
 
 anyhow = { workspace = true }

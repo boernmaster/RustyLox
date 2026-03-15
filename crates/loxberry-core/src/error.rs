@@ -36,6 +36,10 @@ pub enum Error {
     #[error("MQTT error: {0}")]
     Mqtt(String),
 
+    /// MQTT Gateway error
+    #[error("Gateway error: {0}")]
+    Gateway(String),
+
     /// Generic error
     #[error("{0}")]
     Other(String),
@@ -65,6 +69,11 @@ impl Error {
     /// Create an MQTT error
     pub fn mqtt(msg: impl Into<String>) -> Self {
         Error::Mqtt(msg.into())
+    }
+
+    /// Create a gateway error
+    pub fn gateway(msg: impl Into<String>) -> Self {
+        Error::Gateway(msg.into())
     }
 
     /// Create a generic error
