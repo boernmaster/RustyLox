@@ -154,6 +154,36 @@
             background: #2196F3;
             color: white;
         }
+        details {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        details[open] {
+            background: #fafafa;
+        }
+        details summary {
+            padding: 5px;
+            margin: -8px;
+            margin-bottom: 8px;
+        }
+        details[open] summary {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 12px;
+        }
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 0.85em;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sm:hover {
+            background: #f0f0f0;
+            border-color: #4CAF50;
+        }
     </style>
 </head>
 <body>
@@ -276,8 +306,37 @@
                         <div class="form-group">
                             <label for="sub-filter">Filter Expression (RegEx)</label>
                             <input type="text" id="sub-filter" name="filter"
-                                   placeholder="^sensor_(temp|humidity)$">
-                            <small>Regular expression to filter messages. Matching messages are NOT forwarded to Miniserver. Topic slashes (/) are replaced with underscores (_) before filtering.</small>
+                                   placeholder="Example: _healthcheck_|_info_|_announce_">
+                            <small style="display: block; margin-top: 5px;">
+                                Regular expression to filter messages. Matching messages are NOT forwarded to Miniserver.<br>
+                                Topic slashes (/) are replaced with underscores (_) before filtering.
+                            </small>
+                            <details style="margin-top: 8px;">
+                                <summary style="cursor: pointer; color: #1976D2; font-weight: bold;">📝 Common Filter Examples</summary>
+                                <div style="background: white; padding: 12px; margin-top: 8px; border-left: 3px solid #1976D2; font-family: monospace; font-size: 0.9em;">
+                                    <p style="margin: 5px 0;"><strong>Exclude system topics:</strong></p>
+                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">_healthcheck_|_info_|_announce_</code>
+
+                                    <p style="margin: 10px 0 5px 0;"><strong>Exclude gateway/schedule:</strong></p>
+                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">_mqttgateway_|_schedule_</code>
+
+                                    <p style="margin: 10px 0 5px 0;"><strong>Exclude specific prefix:</strong></p>
+                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">^solcast_</code>
+
+                                    <p style="margin: 10px 0 5px 0;"><strong>Combine multiple patterns:</strong></p>
+                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">_healthcheck_|_info_|_announce_|_mqttgateway_|_schedule_|^solcast_</code>
+
+                                    <p style="margin: 10px 0 5px 0;"><strong>Quick add buttons:</strong></p>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px;">
+                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_healthcheck_')">+ healthcheck</button>
+                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_info_')">+ info</button>
+                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_announce_')">+ announce</button>
+                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_mqttgateway_')">+ mqttgateway</button>
+                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_schedule_')">+ schedule</button>
+                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('^solcast_')">+ solcast</button>
+                                    </div>
+                                </div>
+                            </details>
                         </div>
                         <div class="form-group">
                             <label>
@@ -400,6 +459,27 @@
         }
         function hideAddSubscription() {
             document.getElementById('add-subscription').style.display = 'none';
+        }
+
+        // Add filter pattern to input field
+        function addToFilter(pattern) {
+            const filterInput = document.getElementById('sub-filter');
+            const currentValue = filterInput.value.trim();
+
+            if (currentValue === '') {
+                filterInput.value = pattern;
+            } else {
+                // Check if pattern already exists
+                if (!currentValue.includes(pattern)) {
+                    filterInput.value = currentValue + '|' + pattern;
+                }
+            }
+
+            // Highlight the input field briefly
+            filterInput.style.background = '#e8f5e9';
+            setTimeout(() => {
+                filterInput.style.background = '';
+            }, 300);
         }
 
         // Conversion management
