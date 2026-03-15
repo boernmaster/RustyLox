@@ -1,0 +1,22 @@
+# Mosquitto configuration for LoxBerry
+# Copy this file to volumes/mosquitto/config/mosquitto.conf
+
+# Listen on all interfaces
+listener 1883
+allow_anonymous true
+
+# Persistence
+persistence true
+persistence_location /mosquitto/data/
+
+# Logging
+log_dest file /mosquitto/log/mosquitto.log
+log_dest stdout
+log_type error
+log_type warning
+log_type notice
+log_type information
+
+# WebSocket support (optional)
+listener 9001
+protocol websockets

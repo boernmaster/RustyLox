@@ -4,8 +4,10 @@
 
 use anyhow::Result;
 use loxberry_config::{ConfigManager, GeneralConfig};
+use mqtt_gateway::MqttGateway;
 use std::path::PathBuf;
-use tracing::{info, warn};
+use std::sync::Arc;
+use tracing::{info, warn, error};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use web_api::{create_router, AppState};
 
@@ -48,8 +50,35 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Initialize MQTT Gateway if enabled
+    let mqtt_gateway = if config.mqtt.udp_port() > 0 {
+        info!("Initializing MQTT Gateway");
+        match MqttGateway::new(config.mqtt.clone(), lbhomedir.clone()) {
+            Ok(gateway) => {
+                let gateway = Arc::new(gateway);
+
+                // Start gateway in background
+                let gateway_clone = Arc::clone(&gateway);
+                tokio::spawn(async move {
+                    if let Err(e) = gateway_clone.start().await {
+                        error!("MQTT Gateway error: {}", e);
+                    }
+                });
+
+                Some(gateway)
+            }
+            Err(e) => {
+                warn!("Failed to initialize MQTT Gateway: {}", e);
+                None
+            }
+        }
+    } else {
+        info!("MQTT Gateway disabled (udpinport = 0)");
+        None
+    };
+
     // Create application state
-    let state = AppState::new(lbhomedir, config_manager, config);
+    let state = AppState::new(lbhomedir, config_manager, config, mqtt_gateway);
 
     // Create router
     let app = create_router(state);

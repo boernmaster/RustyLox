@@ -4,6 +4,7 @@ members = [
     "crates/loxberry-config",
     "crates/miniserver-client",
     "crates/plugin-manager",
+    "crates/mqtt-gateway",
     "crates/web-api",
     "crates/loxberry-daemon",
 ]

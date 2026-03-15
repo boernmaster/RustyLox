@@ -21,16 +21,25 @@ pub struct AppState {
 
     /// Miniserver clients (by ID) - wrapped in Arc for sharing
     pub miniserver_clients: Arc<DashMap<u8, Arc<MiniserverClient>>>,
+
+    /// MQTT Gateway (optional - only if enabled)
+    pub mqtt_gateway: Option<Arc<mqtt_gateway::MqttGateway>>,
 }
 
 impl AppState {
     /// Create new application state
-    pub fn new(lbhomedir: PathBuf, config_manager: ConfigManager, config: GeneralConfig) -> Self {
+    pub fn new(
+        lbhomedir: PathBuf,
+        config_manager: ConfigManager,
+        config: GeneralConfig,
+        mqtt_gateway: Option<Arc<mqtt_gateway::MqttGateway>>,
+    ) -> Self {
         Self {
             lbhomedir,
             config_manager: Arc::new(config_manager),
             config: Arc::new(RwLock::new(config)),
             miniserver_clients: Arc::new(DashMap::new()),
+            mqtt_gateway,
         }
     }
 
