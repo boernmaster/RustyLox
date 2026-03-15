@@ -1,5 +1,14 @@
 # LoxBerry Rust - Test Results
 
+<div align="center">
+
+![Test Status](https://img.shields.io/badge/Test%20Status-Passing-success)
+![Test Date](https://img.shields.io/badge/Test%20Date-2026--03--15-blue)
+![Docker](https://img.shields.io/badge/Docker%20Build-Success-success)
+![Services](https://img.shields.io/badge/Services-Running-success)
+
+</div>
+
 **Test Date**: 2026-03-15
 **Docker Build**: ✅ Success
 **Services**: ✅ Running

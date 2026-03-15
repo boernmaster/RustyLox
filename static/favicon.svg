@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#1a1a1a" stroke="#ff6b35" stroke-width="2"/>
+
+  <!-- Rust-inspired gear/cog with smart home theme -->
+  <g transform="translate(50, 50)">
+    <!-- Center hexagon (Loxone-inspired) -->
+    <path d="M 0,-15 L 13,-7.5 L 13,7.5 L 0,15 L -13,7.5 L -13,-7.5 Z"
+          fill="#ff6b35" opacity="0.9"/>
+
+    <!-- Gear teeth -->
+    <g stroke="#ff6b35" stroke-width="3" fill="none" stroke-linecap="round">
+      <!-- Top -->
+      <line x1="0" y1="-35" x2="0" y2="-25"/>
+      <!-- Top-right -->
+      <line x1="30" y1="-17.5" x2="22" y2="-12"/>
+      <!-- Bottom-right -->
+      <line x1="30" y1="17.5" x2="22" y2="12"/>
+      <!-- Bottom -->
+      <line x1="0" y1="35" x2="0" y2="25"/>
+      <!-- Bottom-left -->
+      <line x1="-30" y1="17.5" x2="-22" y2="12"/>
+      <!-- Top-left -->
+      <line x1="-30" y1="-17.5" x2="-22" y2="-12"/>
+    </g>
+
+    <!-- Connection nodes (IoT/network theme) -->
+    <circle cx="0" cy="-28" r="3" fill="#4ecdc4"/>
+    <circle cx="24" cy="-14" r="3" fill="#4ecdc4"/>
+    <circle cx="24" cy="14" r="3" fill="#4ecdc4"/>
+    <circle cx="0" cy="28" r="3" fill="#4ecdc4"/>
+    <circle cx="-24" cy="14" r="3" fill="#4ecdc4"/>
+    <circle cx="-24" cy="-14" r="3" fill="#4ecdc4"/>
+
+    <!-- Circuit lines connecting nodes to center -->
+    <g stroke="#4ecdc4" stroke-width="1.5" fill="none" opacity="0.6">
+      <line x1="0" y1="-28" x2="0" y2="-18"/>
+      <line x1="24" y1="-14" x2="15" y2="-9"/>
+      <line x1="24" y1="14" x2="15" y2="9"/>
+      <line x1="0" y1="28" x2="0" y2="18"/>
+      <line x1="-24" y1="14" x2="-15" y2="9"/>
+      <line x1="-24" y1="-14" x2="-15" y2="-9"/>
+    </g>
+  </g>
+</svg>

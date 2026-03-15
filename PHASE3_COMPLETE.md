@@ -1,4 +1,13 @@
-# Phase 3 Complete: MQTT Gateway
+# Phase 3 Complete: MQTT Gateway ✅
+
+<div align="center">
+
+![Status](https://img.shields.io/badge/Status-Complete-success)
+![Phase](https://img.shields.io/badge/Phase-3-blue)
+![Features](https://img.shields.io/badge/Features-MQTT%20Gateway-green)
+![MQTT](https://img.shields.io/badge/MQTT-3.1.1%2F5.0-orange)
+
+</div>
 
 ## Overview
 
