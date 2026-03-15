@@ -1,4 +1,4 @@
-# LoxBerry Rust
+# RustyLox
 
 [![CI](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml)
 [![Release](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml)

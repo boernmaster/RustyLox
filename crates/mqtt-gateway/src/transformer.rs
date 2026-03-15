@@ -99,7 +99,12 @@ impl Transformer for ScriptTransformer {
 
     fn transform(&self, topic: &str, value: &str) -> Result<Option<TransformResult>> {
         // This would execute the script - simplified for now
-        debug!("Would execute transformer: {} {} {}", self.path.display(), topic, value);
+        debug!(
+            "Would execute transformer: {} {} {}",
+            self.path.display(),
+            topic,
+            value
+        );
         Ok(None)
     }
 }
@@ -137,10 +142,8 @@ impl TransformerRegistry {
                     if path.is_file() {
                         if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                             info!("Found transformer: {}", name);
-                            transformers.push(Box::new(ScriptTransformer::new(
-                                name.to_string(),
-                                path,
-                            )));
+                            transformers
+                                .push(Box::new(ScriptTransformer::new(name.to_string(), path)));
                         }
                     }
                 }

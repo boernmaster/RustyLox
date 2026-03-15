@@ -36,13 +36,12 @@ impl ConfigManager {
     /// Load general configuration
     pub async fn load_general(&self) -> Result<GeneralConfig> {
         let path = self.general_json_path();
-        let content = fs::read_to_string(&path).await.map_err(|e| {
-            Error::config(format!("Failed to read {}: {}", path.display(), e))
-        })?;
+        let content = fs::read_to_string(&path)
+            .await
+            .map_err(|e| Error::config(format!("Failed to read {}: {}", path.display(), e)))?;
 
-        serde_json::from_str(&content).map_err(|e| {
-            Error::config(format!("Failed to parse {}: {}", path.display(), e))
-        })
+        serde_json::from_str(&content)
+            .map_err(|e| Error::config(format!("Failed to parse {}: {}", path.display(), e)))
     }
 
     /// Save general configuration
@@ -50,8 +49,8 @@ impl ConfigManager {
         let path = self.general_json_path();
         let content = serde_json::to_string_pretty(config)?;
 
-        fs::write(&path, content).await.map_err(|e| {
-            Error::config(format!("Failed to write {}: {}", path.display(), e))
-        })
+        fs::write(&path, content)
+            .await
+            .map_err(|e| Error::config(format!("Failed to write {}: {}", path.display(), e)))
     }
 }

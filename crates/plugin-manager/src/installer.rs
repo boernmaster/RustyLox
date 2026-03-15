@@ -60,7 +60,10 @@ impl PluginInstaller {
 
     /// Install a plugin from a ZIP file
     pub async fn install(&self, request: InstallRequest) -> Result<PluginEntry> {
-        info!("Starting plugin installation from: {}", request.zip_path.display());
+        info!(
+            "Starting plugin installation from: {}",
+            request.zip_path.display()
+        );
 
         // Load plugin database
         let mut db = PluginDatabase::load(&self.db_path).await?;
@@ -100,7 +103,10 @@ impl PluginInstaller {
                         existing.version
                     )));
                 }
-                info!("Force installing over existing version {}", existing.version);
+                info!(
+                    "Force installing over existing version {}",
+                    existing.version
+                );
             }
             (None, InstallAction::Upgrade | InstallAction::Reinstall) => {
                 return Err(Error::plugin(
@@ -108,7 +114,10 @@ impl PluginInstaller {
                 ));
             }
             (Some(existing), InstallAction::Upgrade) => {
-                info!("Upgrading from version {} to {}", existing.version, config.plugin.version);
+                info!(
+                    "Upgrading from version {} to {}",
+                    existing.version, config.plugin.version
+                );
             }
             (Some(existing), InstallAction::Reinstall) => {
                 info!("Reinstalling version {}", existing.version);
@@ -157,7 +166,10 @@ impl PluginInstaller {
             .await?;
 
         // Execute postinstall hook
-        let final_plugin_dir = self.lbhomedir.join("bin/plugins").join(&config.plugin.folder);
+        let final_plugin_dir = self
+            .lbhomedir
+            .join("bin/plugins")
+            .join(&config.plugin.folder);
         if let Some(result) = self
             .lifecycle_manager
             .execute_hook(
@@ -187,10 +199,7 @@ impl PluginInstaller {
             .await?
         {
             if !result.success {
-                warn!(
-                    "PostRoot hook failed with exit code {:?}",
-                    result.exit_code
-                );
+                warn!("PostRoot hook failed with exit code {:?}", result.exit_code);
                 // Don't fail installation on postroot failure, just warn
             }
         }
@@ -216,7 +225,11 @@ impl PluginInstaller {
             autoupdate,
             releasecfg: config.plugin.releasecfg.clone(),
             prereleasecfg: config.plugin.prereleasecfg.clone(),
-            loglevel: config.plugin.loglevel.clone().unwrap_or_else(|| "6".to_string()),
+            loglevel: config
+                .plugin
+                .loglevel
+                .clone()
+                .unwrap_or_else(|| "6".to_string()),
             directories: PluginDirectories {
                 htmlauth: paths.lbphtmlauthdir.clone(),
                 html: paths.lbphtmldir.clone(),
@@ -249,7 +262,10 @@ impl PluginInstaller {
         db.upsert(plugin_entry.clone());
         db.save(&self.db_path).await?;
 
-        info!("Successfully installed plugin: {} v{}", config.plugin.name, config.plugin.version);
+        info!(
+            "Successfully installed plugin: {} v{}",
+            config.plugin.name, config.plugin.version
+        );
 
         Ok(plugin_entry)
     }
@@ -361,8 +377,8 @@ impl PluginInstaller {
             {
                 use std::os::unix::fs::PermissionsExt;
                 if let Some(mode) = file.unix_mode() {
-                    std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode))
-                        .ok(); // Ignore errors
+                    std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode)).ok();
+                    // Ignore errors
                 }
             }
         }
@@ -377,8 +393,14 @@ impl PluginInstaller {
 
         // Map of source directories to destination directories
         let mappings = vec![
-            ("webfrontend/htmlauth", format!("webfrontend/htmlauth/plugins/{}", folder)),
-            ("webfrontend/html", format!("webfrontend/html/plugins/{}", folder)),
+            (
+                "webfrontend/htmlauth",
+                format!("webfrontend/htmlauth/plugins/{}", folder),
+            ),
+            (
+                "webfrontend/html",
+                format!("webfrontend/html/plugins/{}", folder),
+            ),
             ("templates", format!("templates/plugins/{}", folder)),
             ("data", format!("data/plugins/{}", folder)),
             ("config", format!("config/plugins/{}", folder)),
@@ -393,9 +415,9 @@ impl PluginInstaller {
             }
 
             let dst = self.lbhomedir.join(&dst_rel);
-            fs::create_dir_all(&dst)
-                .await
-                .map_err(|e| Error::plugin(format!("Failed to create directory {}: {}", dst_rel, e)))?;
+            fs::create_dir_all(&dst).await.map_err(|e| {
+                Error::plugin(format!("Failed to create directory {}: {}", dst_rel, e))
+            })?;
 
             self.copy_dir_recursive(&src, &dst).await?;
             info!("Copied {} -> {}", src_rel, dst_rel);
@@ -407,8 +429,8 @@ impl PluginInstaller {
     /// Recursively copy directory contents
     async fn copy_dir_recursive(&self, src: &Path, dst: &Path) -> Result<()> {
         for entry in WalkDir::new(src).min_depth(1) {
-            let entry = entry
-                .map_err(|e| Error::plugin(format!("Failed to walk directory: {}", e)))?;
+            let entry =
+                entry.map_err(|e| Error::plugin(format!("Failed to walk directory: {}", e)))?;
 
             let path = entry.path();
             let relative = path

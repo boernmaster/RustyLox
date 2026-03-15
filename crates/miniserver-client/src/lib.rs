@@ -5,15 +5,15 @@
 //! - UDP (lightweight updates)
 //! - MQTT (pub/sub messaging)
 
-pub mod http;
-pub mod udp;
 pub mod delta_cache;
+pub mod http;
 pub mod reboot_detector;
+pub mod udp;
 
-pub use http::MiniserverHttpClient;
-pub use udp::MiniserverUdpClient;
 pub use delta_cache::DeltaCache;
+pub use http::MiniserverHttpClient;
 pub use reboot_detector::RebootDetector;
+pub use udp::MiniserverUdpClient;
 
 use loxberry_config::MiniserverConfig;
 use loxberry_core::{Error, Result};

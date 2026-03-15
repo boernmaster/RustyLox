@@ -1,8 +1,8 @@
 //! Dashboard handler
 
 use crate::templates::{DashboardTemplate, SystemStatus};
-use axum::{extract::State, response::Html};
 use askama::Template;
+use axum::{extract::State, response::Html};
 use std::sync::Arc;
 use web_api::AppState;
 
@@ -41,5 +41,9 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         mqtt_connected,
     };
 
-    Html(template.render().unwrap_or_else(|_| "Error rendering template".to_string()))
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }

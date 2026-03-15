@@ -104,8 +104,7 @@ impl RebootDetector {
             .map_err(|e| Error::network(format!("Failed to read TXP response: {}", e)))?;
 
         // Extract value from XML
-        extract_xml_value(&body)
-            .ok_or_else(|| Error::miniserver("Failed to parse TXP response"))
+        extract_xml_value(&body).ok_or_else(|| Error::miniserver("Failed to parse TXP response"))
     }
 
     /// Reset reboot detection state

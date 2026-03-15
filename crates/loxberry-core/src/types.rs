@@ -98,7 +98,10 @@ impl PluginPaths {
         let plugin_folder = plugin_folder.into();
         Self {
             plugin_folder: plugin_folder.clone(),
-            lbphtmlauthdir: format!("{}/webfrontend/htmlauth/plugins/{}", lbhomedir, plugin_folder),
+            lbphtmlauthdir: format!(
+                "{}/webfrontend/htmlauth/plugins/{}",
+                lbhomedir, plugin_folder
+            ),
             lbphtmldir: format!("{}/webfrontend/html/plugins/{}", lbhomedir, plugin_folder),
             lbptemplatedir: format!("{}/templates/plugins/{}", lbhomedir, plugin_folder),
             lbpdatadir: format!("{}/data/plugins/{}", lbhomedir, plugin_folder),

@@ -20,7 +20,8 @@ impl UdpListener {
         let socket = std::net::UdpSocket::bind(&addr)
             .map_err(|e| Error::gateway(format!("Failed to bind UDP socket to {}: {}", addr, e)))?;
 
-        socket.set_nonblocking(true)
+        socket
+            .set_nonblocking(true)
             .map_err(|e| Error::gateway(format!("Failed to set socket non-blocking: {}", e)))?;
 
         let socket = UdpSocket::from_std(socket)
@@ -31,7 +32,10 @@ impl UdpListener {
 
     /// Run the UDP listener
     pub async fn run(&self, tx: broadcast::Sender<GatewayMessage>) -> Result<()> {
-        info!("UDP listener started on port {}", self.socket.local_addr().unwrap());
+        info!(
+            "UDP listener started on port {}",
+            self.socket.local_addr().unwrap()
+        );
 
         let mut buf = vec![0u8; 65535]; // Max UDP packet size
 
@@ -64,13 +68,12 @@ impl UdpListener {
 
         // Parse JSON format: {"topic": "home/sensor", "value": "123"}
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(content) {
-            let topic = json.get("topic")
+            let topic = json
+                .get("topic")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| Error::gateway("Missing 'topic' in UDP JSON message"))?;
 
-            let value = json.get("value")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let value = json.get("value").and_then(|v| v.as_str()).unwrap_or("");
 
             debug!("UDP message: {} = {}", topic, value);
 

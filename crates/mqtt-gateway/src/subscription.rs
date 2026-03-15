@@ -48,7 +48,8 @@ impl SubscriptionManager {
             return Ok(());
         }
 
-        let content = fs::read_to_string(&subscriptions_file).await
+        let content = fs::read_to_string(&subscriptions_file)
+            .await
             .map_err(|e| Error::gateway(format!("Failed to read subscriptions: {}", e)))?;
 
         let subscriptions = self.parse_subscriptions_ini(&content)?;
@@ -56,7 +57,11 @@ impl SubscriptionManager {
         let mut subs = self.subscriptions.write().unwrap();
         *subs = subscriptions;
 
-        info!("Loaded {} subscriptions from {}", subs.len(), subscriptions_file.display());
+        info!(
+            "Loaded {} subscriptions from {}",
+            subs.len(),
+            subscriptions_file.display()
+        );
 
         Ok(())
     }
@@ -126,10 +131,7 @@ impl SubscriptionManager {
     /// Get all enabled subscriptions
     pub fn get_all(&self) -> Vec<Subscription> {
         let subs = self.subscriptions.read().unwrap();
-        subs.iter()
-            .filter(|s| s.enabled)
-            .cloned()
-            .collect()
+        subs.iter().filter(|s| s.enabled).cloned().collect()
     }
 
     /// Count total subscriptions
@@ -198,7 +200,10 @@ mod tests {
     #[test]
     fn test_topic_matching() {
         assert!(topic_matches("home/sensor", "home/sensor"));
-        assert!(topic_matches("home/+/temperature", "home/bedroom/temperature"));
+        assert!(topic_matches(
+            "home/+/temperature",
+            "home/bedroom/temperature"
+        ));
         assert!(topic_matches("home/#", "home/bedroom/temperature"));
         assert!(topic_matches("home/#", "home/kitchen/humidity/value"));
 

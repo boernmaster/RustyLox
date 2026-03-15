@@ -7,7 +7,7 @@ use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, Packet, QoS};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 
 /// MQTT broker client
 pub struct BrokerClient {
@@ -30,7 +30,10 @@ impl BrokerClient {
 
         // Set credentials if provided
         if !config.brokeruser.is_empty() {
-            info!("Using MQTT broker authentication (user: {})", config.brokeruser);
+            info!(
+                "Using MQTT broker authentication (user: {})",
+                config.brokeruser
+            );
             mqttoptions.set_credentials(&config.brokeruser, &config.brokerpass);
         } else {
             info!("Using anonymous MQTT broker connection");

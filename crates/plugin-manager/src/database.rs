@@ -94,17 +94,19 @@ impl PluginDatabase {
         let path = path.as_ref();
 
         if !path.exists() {
-            info!("Plugin database not found, creating new one: {}", path.display());
+            info!(
+                "Plugin database not found, creating new one: {}",
+                path.display()
+            );
             return Ok(Self::new());
         }
 
-        let content = fs::read_to_string(path).await.map_err(|e| {
-            Error::plugin(format!("Failed to read plugin database: {}", e))
-        })?;
+        let content = fs::read_to_string(path)
+            .await
+            .map_err(|e| Error::plugin(format!("Failed to read plugin database: {}", e)))?;
 
-        let db: PluginDatabase = serde_json::from_str(&content).map_err(|e| {
-            Error::plugin(format!("Failed to parse plugin database: {}", e))
-        })?;
+        let db: PluginDatabase = serde_json::from_str(&content)
+            .map_err(|e| Error::plugin(format!("Failed to parse plugin database: {}", e)))?;
 
         debug!("Loaded {} plugins from database", db.plugins.len());
         Ok(db)
@@ -121,13 +123,12 @@ impl PluginDatabase {
             })?;
         }
 
-        let content = serde_json::to_string_pretty(self).map_err(|e| {
-            Error::plugin(format!("Failed to serialize plugin database: {}", e))
-        })?;
+        let content = serde_json::to_string_pretty(self)
+            .map_err(|e| Error::plugin(format!("Failed to serialize plugin database: {}", e)))?;
 
-        fs::write(path, content).await.map_err(|e| {
-            Error::plugin(format!("Failed to write plugin database: {}", e))
-        })?;
+        fs::write(path, content)
+            .await
+            .map_err(|e| Error::plugin(format!("Failed to write plugin database: {}", e)))?;
 
         debug!("Saved {} plugins to database", self.plugins.len());
         Ok(())
@@ -147,16 +148,12 @@ impl PluginDatabase {
 
     /// Find plugin by folder name
     pub fn find_by_folder(&self, folder: &str) -> Option<&PluginEntry> {
-        self.plugins
-            .values()
-            .find(|p| p.folder == folder)
+        self.plugins.values().find(|p| p.folder == folder)
     }
 
     /// Find plugin by name
     pub fn find_by_name(&self, name: &str) -> Option<&PluginEntry> {
-        self.plugins
-            .values()
-            .find(|p| p.name == name)
+        self.plugins.values().find(|p| p.name == name)
     }
 
     /// Add or update plugin
@@ -207,23 +204,14 @@ mod tests {
 
     #[test]
     fn test_calculate_md5() {
-        let md5 = calculate_plugin_md5(
-            "John Doe",
-            "john@example.com",
-            "TestPlugin",
-            "testplugin",
-        );
+        let md5 = calculate_plugin_md5("John Doe", "john@example.com", "TestPlugin", "testplugin");
 
         // MD5 should be 32 hex characters
         assert_eq!(md5.len(), 32);
 
         // Same input should produce same output
-        let md5_2 = calculate_plugin_md5(
-            "John Doe",
-            "john@example.com",
-            "TestPlugin",
-            "testplugin",
-        );
+        let md5_2 =
+            calculate_plugin_md5("John Doe", "john@example.com", "TestPlugin", "testplugin");
         assert_eq!(md5, md5_2);
     }
 
