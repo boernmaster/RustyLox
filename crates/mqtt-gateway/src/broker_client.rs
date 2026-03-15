@@ -81,7 +81,7 @@ impl BrokerClient {
                     // Ignore other events
                 }
                 Err(e) => {
-                    error!("MQTT connection error: {}", e);
+                    warn!("MQTT broker unavailable, retrying in 5s: {}", e);
                     self.connected.store(false, Ordering::Relaxed);
                     tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
                 }
