@@ -35,8 +35,23 @@ pub async fn submit(
     State(state): State<AppState>,
     Form(form): Form<SettingsFormData>,
 ) -> Html<String> {
-    // TODO: Update configuration
-    // TODO: Save to file
+    // Get mutable config
+    let mut config = state.config.write().await;
 
-    Html("<div class='success'>Settings saved successfully</div>".to_string())
+    // Update settings
+    config.base.lang = form.language;
+    config.timeserver.timezone = form.timezone;
+
+    // Save configuration
+    match state.config_manager.save_general(&config).await {
+        Ok(_) => {
+            drop(config); // Release lock
+            let _ = state.reload_config().await;
+            Html("<div class='alert alert-success'>Settings saved successfully</div>".to_string())
+        }
+        Err(e) => Html(format!(
+            "<div class='alert alert-danger'>Error saving settings: {}</div>",
+            e
+        )),
+    }
 }

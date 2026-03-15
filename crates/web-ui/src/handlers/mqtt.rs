@@ -90,8 +90,8 @@ pub async fn config(State(state): State<AppState>) -> Html<String> {
     let mqtt_config = MqttConfigForm {
         brokerhost: config.mqtt.brokerhost.clone(),
         brokerport: config.mqtt.brokerport.clone(),
-        brokeruser: String::new(), // TODO: Add to MqttConfig
-        brokerpass: String::new(), // TODO: Add to MqttConfig
+        brokeruser: config.mqtt.brokeruser.clone(),
+        brokerpass: config.mqtt.brokerpass.clone(),
         udpinport: config.mqtt.udpinport.clone(),
     };
 
@@ -116,10 +116,28 @@ pub async fn config_submit(
     State(state): State<AppState>,
     Form(form): Form<MqttConfigFormData>,
 ) -> Html<String> {
-    // TODO: Update configuration and save to file
-    // TODO: Restart MQTT gateway with new config
+    // Get mutable config
+    let mut config = state.config.write().await;
 
-    Html("<div class='success'>MQTT configuration updated successfully</div>".to_string())
+    // Update MQTT configuration
+    config.mqtt.brokerhost = form.brokerhost;
+    config.mqtt.brokerport = form.brokerport;
+    config.mqtt.brokeruser = form.brokeruser;
+    config.mqtt.brokerpass = form.brokerpass;
+    config.mqtt.udpinport = form.udpinport;
+
+    // Save configuration
+    match state.config_manager.save_general(&config).await {
+        Ok(_) => {
+            drop(config); // Release lock
+            let _ = state.reload_config().await;
+            Html("<div class='alert alert-success'>MQTT configuration updated successfully. Restart required for changes to take effect.</div>".to_string())
+        }
+        Err(e) => Html(format!(
+            "<div class='alert alert-danger'>Error saving configuration: {}</div>",
+            e
+        )),
+    }
 }
 
 /// MQTT Subscriptions page
