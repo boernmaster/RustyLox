@@ -13,7 +13,7 @@ services:
       - ./volumes/data:/opt/loxberry/data
       - ./volumes/log:/opt/loxberry/log
     environment:
-      - RUST_LOG=info
+      - RUST_LOG=debug
       - LBHOMEDIR=/opt/loxberry
       - BIND_ADDR=0.0.0.0:8080
       - MQTT_BROKER=mosquitto
