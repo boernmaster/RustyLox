@@ -38,14 +38,31 @@ pub fn create_ui_router(state: AppState) -> Router {
         // MQTT Configuration
         .route("/mqtt/config", get(handlers::mqtt::config))
         .route("/mqtt/config", post(handlers::mqtt::config_submit))
-        .route("/mqtt/subscriptions", get(handlers::mqtt::subscriptions))
+        // MQTT Subscriptions Management
         .route(
-            "/mqtt/subscription/add",
-            post(handlers::mqtt::add_subscription),
+            "/mqtt/subscriptions/list",
+            get(handlers::mqtt_management::list_subscriptions),
         )
         .route(
-            "/mqtt/subscription/:id/delete",
-            post(handlers::mqtt::delete_subscription),
+            "/mqtt/subscriptions/add",
+            post(handlers::mqtt_management::add_subscription),
+        )
+        .route(
+            "/mqtt/subscriptions/:id",
+            axum::routing::delete(handlers::mqtt_management::delete_subscription),
+        )
+        // MQTT Conversions Management
+        .route(
+            "/mqtt/conversions/list",
+            get(handlers::mqtt_management::list_conversions),
+        )
+        .route(
+            "/mqtt/conversions/add",
+            post(handlers::mqtt_management::add_conversion),
+        )
+        .route(
+            "/mqtt/conversions/:id",
+            axum::routing::delete(handlers::mqtt_management::delete_conversion),
         )
         // Plugin management
         .route("/plugins", get(handlers::plugins::list))

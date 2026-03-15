@@ -3,9 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MQTT Configuration - LoxBerry</title>
+    <title>MQTT Configuration - RustyLox</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background: #f5f5f5;
+            border: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: #e0e0e0;
+        }
+        .tab.active {
+            background: white;
+            border-bottom-color: #4CAF50;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .subscription-item, .conversion-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+        }
+        .subscription-item.disabled {
+            border-left-color: #ccc;
+            opacity: 0.6;
+        }
+        .message-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .message-topic {
+            color: #1976D2;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .message-payload {
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 3px;
+            margin-top: 5px;
+        }
+        .json-tree {
+            margin-left: 20px;
+        }
+        .json-key {
+            color: #881391;
+            font-weight: bold;
+        }
+        .json-string {
+            color: #1A1AA6;
+        }
+        .json-number {
+            color: #164;
+        }
+        .json-boolean {
+            color: #0E6;
+        }
+        .json-null {
+            color: #999;
+        }
+        .expandable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .expandable::before {
+            content: "▶ ";
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .expandable.expanded::before {
+            transform: rotate(90deg);
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #4CAF50;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .badge-success {
+            background: #4CAF50;
+            color: white;
+        }
+        .badge-warning {
+            background: #FF9800;
+            color: white;
+        }
+        .badge-info {
+            background: #2196F3;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -23,83 +172,370 @@
     </nav>
 
     <main class="container">
-        <h1>MQTT Configuration</h1>
+        <h1>MQTT Gateway Configuration</h1>
 
-        <div class="card">
-            <form method="post" hx-post="/mqtt/config" hx-target="#result">
-                <div class="form-section">
-                    <h3>Broker Settings</h3>
-
-                    <div class="form-group">
-                        <label for="brokerhost">Broker Host *</label>
-                        <input type="text" id="brokerhost" name="brokerhost"
-                               value="{{ config.brokerhost }}"
-                               required placeholder="mosquitto or localhost">
-                        <small>MQTT broker hostname or IP address</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="brokerport">Broker Port *</label>
-                        <input type="text" id="brokerport" name="brokerport"
-                               value="{{ config.brokerport }}"
-                               required placeholder="1883">
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Broker Authentication (Phase 4a)</h3>
-
-                    <div class="form-group">
-                        <label for="brokeruser">Username</label>
-                        <input type="text" id="brokeruser" name="brokeruser"
-                               value="{{ config.brokeruser }}"
-                               placeholder="Leave empty for anonymous">
-                        <small>MQTT broker username (optional)</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="brokerpass">Password</label>
-                        <input type="password" id="brokerpass" name="brokerpass"
-                               value="{{ config.brokerpass }}"
-                               placeholder="••••••••">
-                        <small>MQTT broker password (optional)</small>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Gateway Settings</h3>
-
-                    <div class="form-group">
-                        <label for="udpinport">UDP Input Port *</label>
-                        <input type="text" id="udpinport" name="udpinport"
-                               value="{{ config.udpinport }}"
-                               required placeholder="11884">
-                        <small>Port for receiving MQTT messages via UDP (0 to disable)</small>
-                    </div>
-                </div>
-
-                <div id="result"></div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Configuration</button>
-                    <a href="/mqtt/monitor" class="btn btn-secondary">MQTT Monitor</a>
-                    <button type="button" hx-post="/api/mqtt/subscriptions/reload" hx-target="#result" class="btn btn-secondary">
-                        Reload Subscriptions
-                    </button>
-                </div>
-            </form>
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('broker')">Broker Settings</button>
+            <button class="tab" onclick="showTab('subscriptions')">Subscriptions</button>
+            <button class="tab" onclick="showTab('conversions')">Conversions</button>
+            <button class="tab" onclick="showTab('incoming')">Incoming Messages</button>
         </div>
 
-        <div class="card" style="margin-top: 20px;">
-            <h3>Current Status</h3>
-            <div hx-get="/api/mqtt/status" hx-trigger="load, every 5s" hx-swap="innerHTML">
-                <p>Loading...</p>
+        <!-- Tab 1: Broker Settings -->
+        <div id="broker-tab" class="tab-content active">
+            <div class="card">
+                <form method="post" hx-post="/mqtt/config" hx-target="#broker-result">
+                    <div class="form-section">
+                        <h3>Broker Connection</h3>
+
+                        <div class="form-group">
+                            <label for="brokerhost">Broker Host *</label>
+                            <input type="text" id="brokerhost" name="brokerhost"
+                                   value="{{ config.brokerhost }}"
+                                   required placeholder="mosquitto or 10.0.0.32">
+                            <small>MQTT broker hostname or IP address</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="brokerport">Broker Port *</label>
+                            <input type="number" id="brokerport" name="brokerport"
+                                   value="{{ config.brokerport }}"
+                                   required placeholder="1883">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="brokeruser">Username</label>
+                            <input type="text" id="brokeruser" name="brokeruser"
+                                   value="{{ config.brokeruser }}"
+                                   placeholder="Leave empty for anonymous">
+                            <small>MQTT broker username (optional)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="brokerpass">Password</label>
+                            <input type="password" id="brokerpass" name="brokerpass"
+                                   value="{{ config.brokerpass }}"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Gateway Settings</h3>
+
+                        <div class="form-group">
+                            <label for="udpinport">UDP Input Port *</label>
+                            <input type="number" id="udpinport" name="udpinport"
+                                   value="{{ config.udpinport }}"
+                                   required placeholder="11884">
+                            <small>Port for receiving messages via UDP (0 to disable)</small>
+                        </div>
+                    </div>
+
+                    <div id="broker-result"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                        <button type="button" hx-post="/api/mqtt/subscriptions/reload"
+                                hx-target="#broker-result" class="btn btn-secondary">
+                            Reload Gateway
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3>Connection Status</h3>
+                <div hx-get="/api/mqtt/status" hx-trigger="load, every 5s" hx-swap="innerHTML">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Subscriptions -->
+        <div id="subscriptions-tab" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>MQTT Topic Subscriptions</h3>
+                    <button class="btn btn-primary" onclick="showAddSubscription()">+ Add Subscription</button>
+                </div>
+
+                <div id="add-subscription" style="display: none; margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 4px;">
+                    <h4>Add New Subscription</h4>
+                    <form hx-post="/mqtt/subscriptions/add" hx-target="#subscriptions-list" hx-swap="beforeend">
+                        <div class="form-group">
+                            <label for="sub-topic">Topic Pattern *</label>
+                            <input type="text" id="sub-topic" name="topic"
+                                   required placeholder="home/# or sensors/+/temperature">
+                            <small>Use # for multi-level wildcard, + for single-level wildcard</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="sub-name">Name *</label>
+                            <input type="text" id="sub-name" name="name"
+                                   required placeholder="Home Automation">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" name="enabled" checked> Enabled
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideAddSubscription()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="subscriptions-list" hx-get="/mqtt/subscriptions/list" hx-trigger="load" hx-swap="innerHTML">
+                    <p>Loading subscriptions...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Conversions -->
+        <div id="conversions-tab" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Message Conversions</h3>
+                    <button class="btn btn-primary" onclick="showAddConversion()">+ Add Conversion</button>
+                </div>
+
+                <div id="add-conversion" style="display: none; margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 4px;">
+                    <h4>Add New Conversion</h4>
+                    <form hx-post="/mqtt/conversions/add" hx-target="#conversions-list" hx-swap="beforeend">
+                        <div class="form-group">
+                            <label for="conv-topic">Topic Pattern *</label>
+                            <input type="text" id="conv-topic" name="topic_pattern"
+                                   required placeholder="home/sensor/+">
+                        </div>
+                        <div class="form-group">
+                            <label for="conv-type">Conversion Type *</label>
+                            <select id="conv-type" name="conversion_type" required>
+                                <option value="bool_to_int">Boolean to 0/1</option>
+                                <option value="json_expand">Expand JSON</option>
+                                <option value="json_extract">Extract JSON field</option>
+                                <option value="regex">Regex Replace</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="conv-options">
+                            <label for="conv-config">Configuration</label>
+                            <textarea id="conv-config" name="config" rows="3"
+                                      placeholder='{"field": "temperature"}'></textarea>
+                            <small>JSON configuration for the conversion</small>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" name="enabled" checked> Enabled
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideAddConversion()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="conversions-list" hx-get="/mqtt/conversions/list" hx-trigger="load" hx-swap="innerHTML">
+                    <p>Loading conversions...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Incoming Messages -->
+        <div id="incoming-tab" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Incoming MQTT Messages</h3>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="auto-scroll" checked> Auto-scroll
+                        </label>
+                        <label style="margin-left: 15px;">
+                            <input type="checkbox" id="expand-json" checked> Auto-expand JSON
+                        </label>
+                        <button class="btn btn-secondary" onclick="clearMessages()">Clear</button>
+                    </div>
+                </div>
+
+                <div id="message-feed" style="max-height: 600px; overflow-y: auto;">
+                    <p style="text-align: center; color: #999; padding: 40px;">
+                        Waiting for messages...
+                    </p>
+                </div>
             </div>
         </div>
     </main>
 
     <footer class="footer">
-        <p>RustyLox v4.0.0 | &copy; 2026</p>
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
     </footer>
+
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Subscription management
+        function showAddSubscription() {
+            document.getElementById('add-subscription').style.display = 'block';
+        }
+        function hideAddSubscription() {
+            document.getElementById('add-subscription').style.display = 'none';
+        }
+
+        // Conversion management
+        function showAddConversion() {
+            document.getElementById('add-conversion').style.display = 'block';
+        }
+        function hideAddConversion() {
+            document.getElementById('add-conversion').style.display = 'none';
+        }
+
+        // Message feed
+        let messageCount = 0;
+        const maxMessages = 100;
+
+        function clearMessages() {
+            document.getElementById('message-feed').innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Waiting for messages...</p>';
+            messageCount = 0;
+        }
+
+        function addMessage(topic, payload, timestamp) {
+            const feed = document.getElementById('message-feed');
+            const autoScroll = document.getElementById('auto-scroll').checked;
+            const expandJson = document.getElementById('expand-json').checked;
+
+            // Remove placeholder if it exists
+            if (messageCount === 0) {
+                feed.innerHTML = '';
+            }
+
+            // Create message element
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message-item';
+
+            const topicDiv = document.createElement('div');
+            topicDiv.className = 'message-topic';
+            topicDiv.textContent = topic;
+
+            const timeDiv = document.createElement('div');
+            timeDiv.style.fontSize = '0.85em';
+            timeDiv.style.color = '#666';
+            timeDiv.textContent = timestamp || new Date().toLocaleTimeString();
+
+            const payloadDiv = document.createElement('div');
+            payloadDiv.className = 'message-payload';
+
+            // Try to parse as JSON
+            try {
+                const json = JSON.parse(payload);
+                if (expandJson) {
+                    payloadDiv.innerHTML = formatJSON(json, 0);
+                } else {
+                    payloadDiv.innerHTML = `<span class="expandable" onclick="toggleExpand(this)">${escapeHtml(payload)}</span>`;
+                }
+            } catch (e) {
+                payloadDiv.textContent = payload;
+            }
+
+            msgDiv.appendChild(topicDiv);
+            msgDiv.appendChild(timeDiv);
+            msgDiv.appendChild(payloadDiv);
+
+            // Add to top of feed
+            feed.insertBefore(msgDiv, feed.firstChild);
+
+            messageCount++;
+
+            // Remove old messages if too many
+            while (feed.children.length > maxMessages) {
+                feed.removeChild(feed.lastChild);
+            }
+
+            // Auto-scroll
+            if (autoScroll && messageCount > 1) {
+                feed.scrollTop = 0;
+            }
+        }
+
+        function formatJSON(obj, indent) {
+            const spaces = '  '.repeat(indent);
+            let html = '';
+
+            if (obj === null) {
+                return '<span class="json-null">null</span>';
+            }
+
+            if (typeof obj === 'boolean') {
+                const converted = obj ? '1' : '0';
+                return `<span class="json-boolean">${obj}</span> <span class="badge badge-info" title="Converted value">${converted}</span>`;
+            }
+
+            if (typeof obj === 'number') {
+                return `<span class="json-number">${obj}</span>`;
+            }
+
+            if (typeof obj === 'string') {
+                return `<span class="json-string">"${escapeHtml(obj)}"</span>`;
+            }
+
+            if (Array.isArray(obj)) {
+                if (obj.length === 0) return '[]';
+                html = '[\n';
+                obj.forEach((item, i) => {
+                    html += spaces + '  ' + formatJSON(item, indent + 1);
+                    if (i < obj.length - 1) html += ',';
+                    html += '\n';
+                });
+                html += spaces + ']';
+                return html;
+            }
+
+            if (typeof obj === 'object') {
+                const keys = Object.keys(obj);
+                if (keys.length === 0) return '{}';
+                html = '{\n';
+                keys.forEach((key, i) => {
+                    html += spaces + '  <span class="json-key">"' + escapeHtml(key) + '"</span>: ';
+                    html += formatJSON(obj[key], indent + 1);
+                    if (i < keys.length - 1) html += ',';
+                    html += '\n';
+                });
+                html += spaces + '}';
+                return html;
+            }
+
+            return String(obj);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Subscribe to SSE for incoming messages
+        if (typeof(EventSource) !== "undefined") {
+            const eventSource = new EventSource('/mqtt/monitor/stream');
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    addMessage(data.topic, data.payload, data.timestamp);
+                } catch (e) {
+                    console.error('Failed to parse SSE message:', e);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('SSE error:', error);
+                // Will auto-reconnect
+            };
+        }
+    </script>
 </body>
 </html>

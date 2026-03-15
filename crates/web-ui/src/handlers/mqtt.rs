@@ -125,6 +125,7 @@ pub async fn config(State(state): State<AppState>) -> Html<String> {
 
     let template = MqttConfigTemplate {
         config: mqtt_config,
+        version: config.base.version.clone(),
     };
 
     Html(

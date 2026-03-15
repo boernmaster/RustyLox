@@ -101,6 +101,7 @@ pub struct PluginDisplay {
 #[template(path = "mqtt/config.html")]
 pub struct MqttConfigTemplate {
     pub config: MqttConfigForm,
+    pub version: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
