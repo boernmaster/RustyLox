@@ -450,17 +450,77 @@ Each crate is independent with its own Cargo.toml:
 
 ## Roadmap
 
-### Phase 5 (Future)
-- [ ] Full SDK compatibility layer (Perl/PHP/Bash)
-- [ ] Plugin migration tools
-- [ ] Legacy CGI plugin support
-- [ ] Plugin marketplace integration
+### ✅ Phase 1 - Foundation (Complete)
+- Core types and error handling
+- Configuration management (JSON)
+- Miniserver HTTP/UDP client
+- REST API foundation
+- Docker containerization
 
-### Phase 6 (Future)
-- [ ] System update mechanism
-- [ ] Backup/restore functionality
-- [ ] Email notifications
-- [ ] Logging framework with rotation
+**[📄 View Details](PHASE1_COMPLETE.md)**
+
+### ✅ Phase 2 - Plugin System (Complete)
+- Plugin manager (install/uninstall/upgrade)
+- Plugin database (JSON)
+- Lifecycle hooks (preroot, preinstall, postinstall, postroot, uninstall)
+- Plugin API endpoints
+- Real plugin testing (Vitoconnect)
+
+**[📄 View Details](PHASE2_COMPLETE.md)**
+
+### ✅ Phase 3 - MQTT Gateway (Complete)
+- MQTT broker integration (rumqttc)
+- UDP input listener (port 11884)
+- Message transformers (built-in + external scripts)
+- Bidirectional relay (MQTT ↔ Miniserver)
+- Hot-reload for subscriptions and transformers
+
+**[📄 View Details](PHASE3_COMPLETE.md)**
+
+### ✅ Phase 4 - Web UI (Complete)
+- Server-rendered templates (Askama)
+- HTMX for dynamic interactions
+- Real-time MQTT monitor (Server-Sent Events)
+- Complete CRUD interfaces
+- MQTT configuration with subscriptions/conversions
+- RegEx filter expressions
+- Professional branding (favicon, logo)
+
+**[📄 View Details](PHASE4_COMPLETE.md)**
+
+### 🚧 Phase 5 - SDK Compatibility & Logging (In Planning)
+- Full SDK compatibility layer (Perl/PHP/Bash)
+- Environment variable injection
+- Plugin execution wrapper
+- Structured logging with rotation
+- Log management UI
+- Backup & restore functionality
+
+**[📋 View Plan](PHASE5_PLAN.md)**
+
+### 📅 Phase 6 - System Updates & Monitoring (Future)
+- System update mechanism (GitHub releases)
+- Advanced monitoring and observability
+- Prometheus metrics export
+- Email notifications system
+- Scheduled tasks (cron jobs)
+- Network diagnostics
+- Health checks and alerting
+
+**[📋 View Plan](PHASE6_PLAN.md)**
+
+### 📅 Phase 7 - Production Hardening (Future)
+- Authentication & authorization (RBAC)
+- TLS/SSL with Let's Encrypt
+- Multi-factor authentication (MFA)
+- High availability & load balancing
+- Database layer abstraction
+- Redis caching
+- Kubernetes deployment
+- Cloud provider support (AWS, Azure, GCP)
+- Distributed tracing
+
+**[📋 View Plan](PHASE7_PLAN.md)**
 
 ## Contributing
 
