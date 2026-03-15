@@ -10,7 +10,6 @@ use axum::{
     Form,
 };
 use serde::Deserialize;
-use std::sync::Arc;
 use web_api::AppState;
 
 /// List all Miniservers

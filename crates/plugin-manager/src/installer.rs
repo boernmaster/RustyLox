@@ -7,7 +7,6 @@ use crate::database::{calculate_plugin_md5, PluginDatabase, PluginDirectories, P
 use crate::directory_manager::DirectoryManager;
 use crate::lifecycle::{LifecycleHook, LifecycleManager};
 use loxberry_core::{Error, Result};
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 use tokio::fs;

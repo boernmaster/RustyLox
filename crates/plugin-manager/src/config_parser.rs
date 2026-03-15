@@ -6,7 +6,6 @@ use loxberry_core::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use tracing::debug;
 
 /// Plugin configuration from plugin.cfg
 #[derive(Debug, Clone, Serialize, Deserialize)]

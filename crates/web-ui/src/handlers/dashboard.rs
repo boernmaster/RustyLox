@@ -3,7 +3,6 @@
 use crate::templates::{DashboardTemplate, SystemStatus};
 use askama::Template;
 use axum::{extract::State, response::Html};
-use std::sync::Arc;
 use web_api::AppState;
 
 /// Dashboard index page

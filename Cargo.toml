@@ -2,6 +2,8 @@
 members = [
     "crates/loxberry-core",
     "crates/loxberry-config",
+    "crates/loxberry-logging",
+    "crates/backup-manager",
     "crates/miniserver-client",
     "crates/plugin-manager",
     "crates/mqtt-gateway",

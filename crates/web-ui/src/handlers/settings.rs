@@ -4,7 +4,6 @@ use crate::templates::SettingsTemplate;
 use askama::Template;
 use axum::{extract::State, response::Html, Form};
 use serde::Deserialize;
-use std::sync::Arc;
 use web_api::AppState;
 
 /// Settings page
