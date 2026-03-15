@@ -1,7 +1,7 @@
 //! Plugin-specific logging
 
-use std::path::PathBuf;
 use loxberry_core::Result;
+use std::path::PathBuf;
 
 /// Create a logger for a specific plugin
 pub struct PluginLogger {

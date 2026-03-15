@@ -1,8 +1,8 @@
 //! Log rotation and cleanup
 
-use std::path::PathBuf;
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use loxberry_core::Result;
+use std::path::PathBuf;
 
 /// Rotation policy for log files
 #[derive(Debug, Clone)]

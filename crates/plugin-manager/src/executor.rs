@@ -1,11 +1,11 @@
 //! Script executor for plugin lifecycle hooks
 
+use crate::database::PluginEntry;
+use crate::environment::build_plugin_env;
 use loxberry_core::Result;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 use tokio::process::Command;
-use crate::database::PluginEntry;
-use crate::environment::build_plugin_env;
 
 pub struct PluginExecutor {
     lbhomedir: PathBuf,
@@ -17,11 +17,7 @@ impl PluginExecutor {
     }
 
     /// Execute a Perl script
-    pub async fn execute_perl(
-        &self,
-        script: &Path,
-        plugin: &PluginEntry,
-    ) -> Result<Output> {
+    pub async fn execute_perl(&self, script: &Path, plugin: &PluginEntry) -> Result<Output> {
         let env = build_plugin_env(plugin, &self.lbhomedir);
 
         tracing::info!("Executing Perl script: {}", script.display());
@@ -50,11 +46,7 @@ impl PluginExecutor {
     }
 
     /// Execute a PHP script
-    pub async fn execute_php(
-        &self,
-        script: &Path,
-        plugin: &PluginEntry,
-    ) -> Result<Output> {
+    pub async fn execute_php(&self, script: &Path, plugin: &PluginEntry) -> Result<Output> {
         let env = build_plugin_env(plugin, &self.lbhomedir);
 
         tracing::info!("Executing PHP script: {}", script.display());
@@ -83,11 +75,7 @@ impl PluginExecutor {
     }
 
     /// Execute a Bash script
-    pub async fn execute_bash(
-        &self,
-        script: &Path,
-        plugin: &PluginEntry,
-    ) -> Result<Output> {
+    pub async fn execute_bash(&self, script: &Path, plugin: &PluginEntry) -> Result<Output> {
         let env = build_plugin_env(plugin, &self.lbhomedir);
 
         tracing::info!("Executing Bash script: {}", script.display());
@@ -116,11 +104,7 @@ impl PluginExecutor {
     }
 
     /// Execute a script based on its extension
-    pub async fn execute_script(
-        &self,
-        script: &Path,
-        plugin: &PluginEntry,
-    ) -> Result<Output> {
+    pub async fn execute_script(&self, script: &Path, plugin: &PluginEntry) -> Result<Output> {
         match script.extension().and_then(|e| e.to_str()) {
             Some("pl") => self.execute_perl(script, plugin).await,
             Some("php") => self.execute_php(script, plugin).await,

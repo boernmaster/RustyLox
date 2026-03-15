@@ -1,8 +1,8 @@
 //! Environment variable setup for plugin SDK compatibility
 
+use crate::database::PluginEntry;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::database::PluginEntry;
 
 /// Build environment variables for plugin execution
 /// These match the original LoxBerry SDK environment
@@ -18,17 +18,29 @@ pub fn build_plugin_env(plugin: &PluginEntry, lbhomedir: &PathBuf) -> HashMap<St
 
     env.insert(
         "LBPHTMLDIR".to_string(),
-        format!("{}/webfrontend/html/plugins/{}", lbhomedir.display(), plugin_folder),
+        format!(
+            "{}/webfrontend/html/plugins/{}",
+            lbhomedir.display(),
+            plugin_folder
+        ),
     );
 
     env.insert(
         "LBPHTMLAUTHDIR".to_string(),
-        format!("{}/webfrontend/htmlauth/plugins/{}", lbhomedir.display(), plugin_folder),
+        format!(
+            "{}/webfrontend/htmlauth/plugins/{}",
+            lbhomedir.display(),
+            plugin_folder
+        ),
     );
 
     env.insert(
         "LBPTEMPLATEDIR".to_string(),
-        format!("{}/templates/plugins/{}", lbhomedir.display(), plugin_folder),
+        format!(
+            "{}/templates/plugins/{}",
+            lbhomedir.display(),
+            plugin_folder
+        ),
     );
 
     env.insert(
