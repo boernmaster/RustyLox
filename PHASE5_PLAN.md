@@ -1,5 +1,13 @@
 # Phase 5+ Implementation Plan
 
+<div align="center">
+
+![Status](https://img.shields.io/badge/Status-Planning-yellow)
+![Phase](https://img.shields.io/badge/Phase-5%2B-blue)
+![Priority](https://img.shields.io/badge/Priority-SDK%20%26%20Logging-red)
+
+</div>
+
 ## Overview
 Implement SDK compatibility, logging, backup/restore, and polish existing features.
 

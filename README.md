@@ -1,17 +1,63 @@
 # RustyLox
 
+<div align="center">
+
+![RustyLox Logo](static/logo.svg)
+
+**Modern Rust rewrite of LoxBerry with Docker containerization**
+
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Rust](https://img.shields.io/badge/Rust-1.80+-orange.svg)](https://www.rust-lang.org)
+[![Rust Edition](https://img.shields.io/badge/Edition-2021-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2021/index.html)
+[![Language](https://img.shields.io/github/languages/top/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox)
+
 [![CI](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml)
 [![Release](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml)
 [![Docker](https://ghcr-badge.egpl.dev/boernmaster/rustylox/latest_tag?trim=major&label=latest)](https://github.com/boernmaster/RustyLox/pkgs/container/rustylox)
 
-Modern Rust rewrite of LoxBerry with Docker containerization.
+[![GitHub Stars](https://img.shields.io/github/stars/boernmaster/RustyLox?style=social)](https://github.com/boernmaster/RustyLox/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/boernmaster/RustyLox?style=social)](https://github.com/boernmaster/RustyLox/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/pulls)
+
+[![Last Commit](https://img.shields.io/github/last-commit/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/commits/main)
+[![Contributors](https://img.shields.io/github/contributors/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/graphs/contributors)
+[![Docker Image Size](https://img.shields.io/docker/image-size/boernmaster/rustylox/latest)](https://ghcr.io/boernmaster/rustylox)
+[![Docker Pulls](https://img.shields.io/docker/pulls/boernmaster/rustylox)](https://ghcr.io/boernmaster/rustylox)
+
+</div>
+
+---
+
+## 📑 Table of Contents
+
+- [About](#about)
+- [Project Status](#project-status)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Docker Services](#docker-services)
+- [Development](#development)
+- [Differences from Original LoxBerry](#differences-from-original-loxberry)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Support](#support)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
 
 ## About
 
 This project is a complete rewrite of [LoxBerry](https://github.com/mschlenstedt/Loxberry) in Rust. LoxBerry is an open-source toolbox for Raspberry Pi that extends the Loxone Smart Home System with additional features like MQTT integration, weather services, and a plugin ecosystem.
 
-**Original Repository:** https://github.com/mschlenstedt/Loxberry
-**License:** Same as original LoxBerry project
+- 🏠 **Original Repository:** [LoxBerry](https://github.com/mschlenstedt/Loxberry)
+- 📜 **License:** Apache License 2.0 (same as original LoxBerry)
+- 🦀 **Language:** Rust 1.80+ (Edition 2021)
+- 🐳 **Platform:** Docker + Docker Compose
+- 🌐 **Web Framework:** Axum 0.7 + Askama Templates + HTMX
+- 📡 **MQTT:** rumqttc 0.24 + Eclipse Mosquitto
+- ⚡ **Runtime:** Tokio async runtime
 
 ## Project Status
 
@@ -418,13 +464,25 @@ Each crate is independent with its own Cargo.toml:
 
 ## Contributing
 
-This is a rewrite based on the original LoxBerry project. Contributions are welcome!
+We welcome contributions from the community! Whether it's bug reports, feature requests, or code contributions, your input is valuable.
 
+Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+- How to report bugs
+- How to suggest features
+- Development setup
+- Code style guidelines
+- Pull request process
+
+Quick start for contributors:
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes and add tests
+4. Run `cargo fmt` and `cargo clippy`
 5. Submit a pull request
+
+See also:
+- [CHANGELOG.md](CHANGELOG.md) - Version history and changes
+- [Phase Documentation](PHASE1_COMPLETE.md) - Detailed phase implementation notes
 
 ## Support
 
@@ -438,4 +496,20 @@ Based on the original **LoxBerry** project by Christian Fenzl and the LoxBerry c
 
 ## License
 
-Same license as the original LoxBerry project.
+```
+Copyright 2024-2026 RustyLox Contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+This project maintains the same license as the original [LoxBerry](https://github.com/mschlenstedt/Loxberry) project (Apache License 2.0).

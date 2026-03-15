@@ -1,5 +1,12 @@
 # Sample Plugin
 
+<div align="center">
+
+![Status](https://img.shields.io/badge/Status-Test%20Plugin-informational)
+![Type](https://img.shields.io/badge/Type-Example-yellow)
+
+</div>
+
 This is a sample plugin for testing the LoxBerry Rust plugin manager.
 
 ## Structure
