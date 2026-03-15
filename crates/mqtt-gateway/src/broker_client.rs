@@ -28,6 +28,14 @@ impl BrokerClient {
         let mut mqttoptions = MqttOptions::new(&client_id, broker_host, broker_port);
         mqttoptions.set_keep_alive(std::time::Duration::from_secs(30));
 
+        // Set credentials if provided
+        if !config.brokeruser.is_empty() {
+            info!("Using MQTT broker authentication (user: {})", config.brokeruser);
+            mqttoptions.set_credentials(&config.brokeruser, &config.brokerpass);
+        } else {
+            info!("Using anonymous MQTT broker connection");
+        }
+
         let (client, eventloop) = AsyncClient::new(mqttoptions, 100);
 
         Ok(Self {
