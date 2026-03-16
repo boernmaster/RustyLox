@@ -15,6 +15,11 @@ RUN cargo chef prepare --recipe-path recipe.json
 # Builder stage - caches dependencies separately from source
 FROM chef AS builder
 
+# Accept build arguments for version info
+ARG GIT_HASH=unknown
+ARG GIT_TAG=
+ARG GIT_DIRTY=false
+
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     pkg-config \
@@ -28,6 +33,12 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # Build the actual application
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
+
+# Set git info as environment variables for build.rs
+ENV GIT_HASH=${GIT_HASH}
+ENV GIT_TAG=${GIT_TAG}
+ENV GIT_DIRTY=${GIT_DIRTY}
+
 RUN cargo build --release --bin loxberry-daemon
 
 # Runtime stage

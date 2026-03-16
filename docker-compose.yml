@@ -2,7 +2,12 @@ version: '3.8'
 
 services:
   loxberry:
-    build: .
+    build:
+      context: .
+      args:
+        - GIT_HASH=${GIT_HASH:-unknown}
+        - GIT_TAG=${GIT_TAG:-}
+        - GIT_DIRTY=${GIT_DIRTY:-false}
     container_name: loxberry-rust
     restart: unless-stopped
     ports:
