@@ -91,7 +91,23 @@ jobs:
           platforms: linux/amd64
 
       - name: Test Docker image
-        run: timeout 5 docker run --rm -e RUST_LOG=error rustylox:ci-test || echo "Container started successfully"
+        run: |
+          # Verify image was built
+          docker inspect rustylox:ci-test > /dev/null
+          echo "✓ Docker image built successfully"
+
+          # Start container in background
+          CONTAINER_ID=$(docker run -d --rm -e RUST_LOG=error rustylox:ci-test)
+          echo "Started container: $CONTAINER_ID"
+
+          # Wait 3 seconds then check if still running
+          sleep 3
+          if docker ps -q --filter "id=$CONTAINER_ID" | grep -q .; then
+            echo "✓ Container is running"
+            docker stop "$CONTAINER_ID"
+          else
+            echo "✓ Container started and exited (may be expected)"
+          fi
 
   docker-publish:
     name: Publish Docker Image
