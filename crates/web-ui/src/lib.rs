@@ -81,6 +81,8 @@ pub fn create_ui_router(state: AppState) -> Router {
         // Settings
         .route("/settings", get(handlers::settings::index))
         .route("/settings", post(handlers::settings::submit))
+        // API docs
+        .route("/api-docs", get(handlers::api_docs::index))
         // Log viewer
         .route("/logs", get(handlers::logs::index))
         .route("/logs/view", get(handlers::logs::view))

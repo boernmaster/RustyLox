@@ -20,6 +20,8 @@
             <li><a href="/miniserver">Miniserver</a></li>
             <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
             <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
             <li><a href="/plugins">Plugins</a></li>
             <li><a href="/settings" class="active">Settings</a></li>
         </ul>
@@ -65,7 +67,67 @@
                 </div>
             </form>
         </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2 style="margin-bottom: 16px;">Log Level</h2>
+            <p style="margin-bottom: 12px; color: #666;">
+                Set the active log level. Use a simple level (<code>debug</code>) or
+                per-component directives (<code>web_api=debug,mqtt_gateway=trace</code>).
+            </p>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <select id="log-level-quick" style="padding: 6px 10px;">
+                    <option value="error">error</option>
+                    <option value="warn">warn</option>
+                    <option value="info" selected>info</option>
+                    <option value="debug">debug</option>
+                    <option value="trace">trace</option>
+                </select>
+                <input type="text" id="log-level-custom"
+                       placeholder="or custom: web_api=debug,mqtt_gateway=trace"
+                       style="flex: 1; min-width: 240px; padding: 6px 10px;">
+                <button class="btn btn-secondary" onclick="applyLogLevel()">Apply</button>
+            </div>
+            <div id="log-level-result" style="margin-top: 10px;"></div>
+        </div>
     </main>
+
+    <script>
+    function applyLogLevel() {
+        const custom = document.getElementById('log-level-custom').value.trim();
+        const quick  = document.getElementById('log-level-quick').value;
+        const level  = custom || quick;
+        fetch('/api/system/log-level', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({log_level: level})
+        })
+        .then(r => r.json())
+        .then(d => {
+            const el = document.getElementById('log-level-result');
+            if (d.success) {
+                el.innerHTML = "<div class='alert alert-success'>Log level set to: <strong>" + d.log_level + "</strong></div>";
+            } else {
+                el.innerHTML = "<div class='alert alert-danger'>" + (d.error || 'Unknown error') + "</div>";
+            }
+        })
+        .catch(e => {
+            document.getElementById('log-level-result').innerHTML =
+                "<div class='alert alert-danger'>Request failed: " + e + "</div>";
+        });
+    }
+    // Load current level on page load
+    fetch('/api/system/log-level').then(r => r.json()).then(d => {
+        if (d.log_level) {
+            const s = document.getElementById('log-level-quick');
+            const opts = Array.from(s.options).map(o => o.value);
+            if (opts.includes(d.log_level)) {
+                s.value = d.log_level;
+            } else {
+                document.getElementById('log-level-custom').value = d.log_level;
+            }
+        }
+    });
+    </script>
 
     <footer class="footer">
         <p>RustyLox v{{ version }} | &copy; 2026</p>

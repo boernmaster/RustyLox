@@ -13,6 +13,62 @@ use tokio_util::io::ReaderStream;
 
 use crate::AppState;
 
+/// Get backup schedule configuration
+pub async fn get_schedule(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let config = state.config.read().await;
+    let s = &config.backup.schedule;
+    Json(serde_json::json!({
+        "enabled": s.active == "true",
+        "interval_hours": s.interval_hours,
+        "keep_backups": s.keep_backups,
+        "include_plugins": s.include_plugins,
+    }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ScheduleRequest {
+    pub enabled: bool,
+    pub interval_hours: u64,
+    pub keep_backups: usize,
+    pub include_plugins: bool,
+}
+
+/// Update backup schedule configuration
+pub async fn update_schedule(
+    State(state): State<AppState>,
+    Json(body): Json<ScheduleRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    if body.interval_hours == 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "interval_hours must be >= 1"})),
+        ));
+    }
+    if body.keep_backups == 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "keep_backups must be >= 1"})),
+        ));
+    }
+
+    let mut config = state.config.write().await;
+    config.backup.schedule.active = if body.enabled { "true" } else { "false" }.to_string();
+    config.backup.schedule.interval_hours = body.interval_hours;
+    config.backup.schedule.keep_backups = body.keep_backups;
+    config.backup.schedule.include_plugins = body.include_plugins;
+
+    match state.config_manager.save_general(&config).await {
+        Ok(_) => Ok(Json(serde_json::json!({
+            "success": true,
+            "message": "Backup schedule updated"
+        }))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": e.to_string()})),
+        )),
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct BackupResponse {
     pub name: String,

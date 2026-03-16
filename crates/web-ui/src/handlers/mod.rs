@@ -1,5 +1,6 @@
 //! Web UI handlers
 
+pub mod api_docs;
 pub mod backup;
 pub mod dashboard;
 pub mod logs;

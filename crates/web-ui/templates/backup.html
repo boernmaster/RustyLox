@@ -94,10 +94,71 @@
             </div>
         </div>
         {% endif %}
+
+        <div class="card" style="margin-top: 24px;">
+            <h2 style="margin-bottom: 16px;">Scheduled Backups</h2>
+            <div id="schedule-result" style="margin-bottom: 10px;"></div>
+            <div style="display: flex; flex-direction: column; gap: 12px; max-width: 480px;">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="sched-enabled">
+                    <strong>Enable automatic backups</strong>
+                </label>
+                <div class="form-group">
+                    <label for="sched-interval">Interval (hours)</label>
+                    <input type="number" id="sched-interval" value="24" min="1" max="720"
+                           style="width: 100px; padding: 6px 10px;">
+                </div>
+                <div class="form-group">
+                    <label for="sched-keep">Keep last N backups</label>
+                    <input type="number" id="sched-keep" value="7" min="1" max="99"
+                           style="width: 100px; padding: 6px 10px;">
+                </div>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="sched-plugins" checked>
+                    Include plugin data
+                </label>
+                <div>
+                    <button class="btn btn-primary" onclick="saveSchedule()">Save Schedule</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer class="footer">
         <p>RustyLox v4.0.0 | &copy; 2026</p>
     </footer>
+
+    <script>
+    // Load current schedule on page load
+    fetch('/api/backup/schedule').then(r => r.json()).then(d => {
+        document.getElementById('sched-enabled').checked  = !!d.enabled;
+        document.getElementById('sched-interval').value   = d.interval_hours  || 24;
+        document.getElementById('sched-keep').value       = d.keep_backups    || 7;
+        document.getElementById('sched-plugins').checked  = d.include_plugins !== false;
+    });
+
+    function saveSchedule() {
+        const body = {
+            enabled:         document.getElementById('sched-enabled').checked,
+            interval_hours:  parseInt(document.getElementById('sched-interval').value) || 24,
+            keep_backups:    parseInt(document.getElementById('sched-keep').value)     || 7,
+            include_plugins: document.getElementById('sched-plugins').checked,
+        };
+        fetch('/api/backup/schedule', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        })
+        .then(r => r.json())
+        .then(d => {
+            const el = document.getElementById('schedule-result');
+            if (d.success) {
+                el.innerHTML = "<div class='alert alert-success'>Schedule saved.</div>";
+            } else {
+                el.innerHTML = "<div class='alert alert-danger'>" + (d.error || 'Error') + "</div>";
+            }
+        });
+    }
+    </script>
 </body>
 </html>

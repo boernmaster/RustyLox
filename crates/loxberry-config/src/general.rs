@@ -92,6 +92,35 @@ pub struct BackupConfig {
 pub struct BackupSchedule {
     #[serde(rename = "Active")]
     pub active: String,
+
+    /// Interval in hours between automatic backups
+    #[serde(rename = "IntervalHours", default = "BackupSchedule::default_interval")]
+    pub interval_hours: u64,
+
+    /// Maximum number of automatic backups to keep
+    #[serde(rename = "KeepBackups", default = "BackupSchedule::default_keep")]
+    pub keep_backups: usize,
+
+    /// Whether to include plugin data in scheduled backups
+    #[serde(rename = "IncludePlugins", default = "BackupSchedule::default_include_plugins")]
+    pub include_plugins: bool,
+}
+
+impl BackupSchedule {
+    fn default_interval() -> u64 { 24 }
+    fn default_keep() -> usize { 7 }
+    fn default_include_plugins() -> bool { true }
+}
+
+impl Default for BackupSchedule {
+    fn default() -> Self {
+        Self {
+            active: "false".to_string(),
+            interval_hours: 24,
+            keep_backups: 7,
+            include_plugins: true,
+        }
+    }
 }
 
 /// Network configuration
@@ -270,9 +299,7 @@ impl Default for BackupConfig {
             keep_archives: "1".to_string(),
             storagepath: String::new(),
             compression: "7z".to_string(),
-            schedule: BackupSchedule {
-                active: "false".to_string(),
-            },
+            schedule: BackupSchedule::default(),
         }
     }
 }
