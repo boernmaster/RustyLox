@@ -7,7 +7,7 @@ use crate::miniserver::MiniserverConfig;
 use crate::mqtt::MqttConfig;
 
 /// Top-level general configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GeneralConfig {
     #[serde(rename = "Base")]
     pub base: BaseConfig,
@@ -136,7 +136,7 @@ pub struct Ipv4Config {
 }
 
 /// IPv6 configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Ipv6Config {
     #[serde(rename = "Dns")]
     pub dns: Option<String>,
@@ -168,7 +168,7 @@ pub struct RemoteConfig {
 }
 
 /// SSDP configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SsdpConfig {
     #[serde(rename = "Disabled")]
     pub disabled: Option<String>,
@@ -245,30 +245,10 @@ pub struct WebserverConfig {
 }
 
 /// APT configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AptConfig {
     #[serde(rename = "Servers")]
     pub servers: HashMap<String, String>,
-}
-
-impl Default for GeneralConfig {
-    fn default() -> Self {
-        Self {
-            base: BaseConfig::default(),
-            healthcheck: None,
-            miniserver: HashMap::new(),
-            backup: BackupConfig::default(),
-            mqtt: MqttConfig::default(),
-            network: NetworkConfig::default(),
-            remote: RemoteConfig::default(),
-            ssdp: SsdpConfig::default(),
-            timeserver: TimeserverConfig::default(),
-            update: UpdateConfig::default(),
-            watchdog: WatchdogConfig::default(),
-            webserver: WebserverConfig::default(),
-            apt: AptConfig::default(),
-        }
-    }
 }
 
 impl Default for BaseConfig {
@@ -322,33 +302,12 @@ impl Default for Ipv4Config {
     }
 }
 
-impl Default for Ipv6Config {
-    fn default() -> Self {
-        Self {
-            dns: None,
-            ipaddress: None,
-            mask: None,
-            privacyext: None,
-            type_: None,
-        }
-    }
-}
-
 impl Default for RemoteConfig {
     fn default() -> Self {
         Self {
             autoconnect: "true".to_string(),
             httpport: String::new(),
             httpproxy: String::new(),
-        }
-    }
-}
-
-impl Default for SsdpConfig {
-    fn default() -> Self {
-        Self {
-            disabled: None,
-            uuid: None,
         }
     }
 }
@@ -394,14 +353,6 @@ impl Default for WebserverConfig {
             port: "80".to_string(),
             sslport: "443".to_string(),
             sslenabled: "false".to_string(),
-        }
-    }
-}
-
-impl Default for AptConfig {
-    fn default() -> Self {
-        Self {
-            servers: HashMap::new(),
         }
     }
 }

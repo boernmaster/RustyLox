@@ -55,8 +55,8 @@ pub struct MiniserverMonitorTemplate {
 /// Miniserver communication message for display
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MiniserverMessage {
-    pub direction: String,      // "sent", "received", "error"
-    pub protocol: String,        // "http", "udp"
+    pub direction: String, // "sent", "received", "error"
+    pub protocol: String,  // "http", "udp"
     pub miniserver_name: String,
     pub url: Option<String>,
     pub params: Option<String>,
