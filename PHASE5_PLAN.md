@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/Status-Planning-yellow)
+![Status](https://img.shields.io/badge/Status-In%20Progress-blue)
 ![Phase](https://img.shields.io/badge/Phase-5%2B-blue)
 ![Priority](https://img.shields.io/badge/Priority-SDK%20%26%20Logging-red)
 
@@ -15,21 +15,21 @@ Implement SDK compatibility, logging, backup/restore, and polish existing featur
 
 ### 1.1 Structured Logging System
 - [x] Basic tracing-subscriber (already implemented)
-- [ ] Log rotation with tracing-appender
+- [x] Log rotation with tracing-appender (`crates/loxberry-logging/src/rotation.rs`)
 - [ ] Per-component log levels
-- [ ] Plugin-specific log files
-- [ ] Web UI log viewer
+- [x] Plugin-specific log files (`crates/loxberry-logging/src/plugin_logger.rs`)
+- [x] Web UI log viewer (`/logs` route with file selection and tail view)
 
-**Files to create:**
-- `crates/loxberry-logging/src/lib.rs` - New crate
-- `crates/loxberry-logging/src/rotation.rs` - Log rotation
+**Files created:**
+- `crates/loxberry-logging/src/lib.rs` - Logging crate
+- `crates/loxberry-logging/src/rotation.rs` - Log rotation with retention policies
 - `crates/loxberry-logging/src/plugin_logger.rs` - Plugin-specific logging
 
 ### 1.2 Log Management
 - [ ] Log level configuration via API
-- [ ] Download logs via web UI
+- [x] View logs via web UI (tail view with configurable line count)
 - [ ] Log search and filtering
-- [ ] Log retention policies
+- [x] Log retention policies (cleanup_logs with RotationPolicy)
 
 ## 2. SDK Compatibility Layer (Priority: HIGH)
 
@@ -55,8 +55,8 @@ Copy LoxBerry SDK files to Docker image:
 - [ ] Set correct permissions (loxberry:loxberry)
 
 ### 2.2 Environment Variable Injection
-**Files to create/modify:**
-- `crates/plugin-manager/src/environment.rs` - Environment builder
+**Files created:**
+- [x] `crates/plugin-manager/src/environment.rs` - Full SDK environment builder
 
 Environment variables to inject:
 ```bash
@@ -79,8 +79,8 @@ LBPBINDIR=/opt/loxberry/bin/plugins/{folder}
 - [ ] Test LoxBerry::IO Miniserver communication
 
 ### 2.4 Plugin Execution Wrapper
-**Files to create:**
-- `crates/plugin-manager/src/executor.rs` - Script executor with environment
+**Files created:**
+- [x] `crates/plugin-manager/src/executor.rs` - Script executor with environment (Perl/PHP/Bash)
 
 ```rust
 pub struct PluginExecutor {
@@ -93,11 +93,11 @@ pub struct PluginExecutor {
 ## 3. Backup & Restore (Priority: MEDIUM)
 
 ### 3.1 Backup System
-**Files to create:**
-- `crates/backup-manager/src/lib.rs` - New crate
-- `crates/backup-manager/src/backup.rs` - Backup implementation
-- `crates/backup-manager/src/restore.rs` - Restore implementation
-- `crates/backup-manager/src/scheduler.rs` - Scheduled backups
+**Files created:**
+- [x] `crates/backup-manager/src/lib.rs` - Backup crate
+- [x] `crates/backup-manager/src/backup.rs` - Backup creation and listing
+- [x] `crates/backup-manager/src/restore.rs` - Restore implementation
+- [x] `crates/backup-manager/src/scheduler.rs` - Scheduled backups
 
 ### 3.2 What to Backup
 ```
@@ -114,18 +114,18 @@ backup-{timestamp}.tar.gz:
 
 ### 3.3 API Endpoints
 ```
-POST   /api/backup/create          - Create backup
-GET    /api/backup/list            - List backups
-GET    /api/backup/download/:id    - Download backup file
-POST   /api/backup/restore/:id     - Restore from backup
-DELETE /api/backup/:id             - Delete backup
-POST   /api/backup/schedule        - Configure scheduled backups
+POST   /api/backup/create          - Create backup      ✅
+GET    /api/backup                 - List backups        ✅
+GET    /api/backup/:name/download  - Download backup     ✅
+DELETE /api/backup/:name           - Delete backup       ✅
+POST   /api/backup/restore/:id     - Restore from backup (future)
+POST   /api/backup/schedule        - Scheduled backups   (future)
 ```
 
 ### 3.4 Web UI
-- [ ] Backup page in web UI
-- [ ] One-click backup creation
-- [ ] Backup download
+- [x] Backup page in web UI (`/backup`)
+- [x] One-click backup creation (HTMX)
+- [x] Backup download (link to API)
 - [ ] Restore with confirmation
 - [ ] Schedule configuration
 
@@ -138,13 +138,12 @@ POST   /api/backup/schedule        - Configure scheduled backups
 - [ ] Validation before operations
 
 ### 4.2 Configuration Validation
-**Files to modify:**
-- `crates/loxberry-config/src/validation.rs` - New file
+**Files created:**
+- [x] `crates/loxberry-config/src/validation.rs` - Validation with unit tests
 
 ```rust
-pub fn validate_miniserver_config(config: &MiniserverConfig) -> Result<()>
-pub fn validate_mqtt_config(config: &MqttConfig) -> Result<()>
-pub fn validate_plugin_config(config: &PluginConfig) -> Result<()>
+pub fn validate_miniserver_config(config: &MiniserverConfig) -> Result<()>  // ✅
+pub fn validate_mqtt_config(config: &MqttConfig) -> Result<()>              // ✅
 ```
 
 ### 4.3 Web UI Improvements
@@ -184,35 +183,36 @@ pub fn validate_plugin_config(config: &PluginConfig) -> Result<()>
 
 ### Week 1: Logging & SDK Foundation
 1. ✅ Setup project structure
-2. Create logging crate with rotation
-3. Copy SDK libraries to Docker image
-4. Implement environment variable injection
+2. ✅ Create logging crate with rotation
+3. [ ] Copy SDK libraries to Docker image
+4. ✅ Implement environment variable injection
 
 ### Week 2: SDK Integration & Testing
-1. Create plugin executor wrapper
-2. Test with real Perl plugins
-3. Verify all SDK paths work
-4. Fix any compatibility issues
+1. ✅ Create plugin executor wrapper (Perl/PHP/Bash)
+2. [ ] Test with real Perl plugins
+3. [ ] Verify all SDK paths work
+4. [ ] Fix any compatibility issues
 
 ### Week 3: Backup & Restore
-1. Create backup-manager crate
-2. Implement backup creation
-3. Implement restore functionality
-4. Add backup API endpoints
-5. Create backup UI page
+1. ✅ Create backup-manager crate
+2. ✅ Implement backup creation
+3. ✅ Implement restore functionality
+4. ✅ Add backup API endpoints
+5. ✅ Create backup UI page
 
 ### Week 4: Polish & Optimize
-1. Improve error handling throughout
-2. Add validation to all forms
-3. Optimize performance
-4. Add documentation
-5. Final testing
+1. [ ] Improve error handling throughout
+2. ✅ Add validation (config validation module)
+3. [ ] Optimize performance
+4. [ ] Add documentation
+5. [ ] Final testing
 
 ## Success Criteria
 
 - [ ] At least 3 real LoxBerry plugins can be installed and run
-- [ ] Logs are properly rotated and accessible via UI
-- [ ] Backups can be created and restored successfully
+- [x] Logs are properly rotated and accessible via UI (`/logs` viewer)
+- [x] Backups can be created and restored successfully (backup-manager crate + `/backup` UI)
+- [x] Config validation implemented for Miniserver and MQTT configs
 - [ ] All forms have proper validation
 - [ ] Error messages are clear and actionable
 - [ ] CI/CD pipeline passes

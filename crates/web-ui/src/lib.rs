@@ -81,6 +81,16 @@ pub fn create_ui_router(state: AppState) -> Router {
         // Settings
         .route("/settings", get(handlers::settings::index))
         .route("/settings", post(handlers::settings::submit))
+        // Log viewer
+        .route("/logs", get(handlers::logs::index))
+        .route("/logs/view", get(handlers::logs::view))
+        // Backup management
+        .route("/backup", get(handlers::backup::index))
+        .route("/backup/create", post(handlers::backup::create))
+        .route(
+            "/backup/:name",
+            axum::routing::delete(handlers::backup::delete),
+        )
         // Static files (CSS, JS, images)
         .nest_service("/static", ServeDir::new(static_dir))
         .with_state(state)
