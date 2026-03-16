@@ -18,14 +18,14 @@ tracing = { workspace = true }
 tokio = { workspace = true }
 
 # MQTT client
-rumqttc = "0.24"
+rumqttc = "0.25"
 
 # Subscription parsing
 serde_ini = "0.2"
 regex = "1.10"
 
 # File watching for hot-reload
-notify = "6.1"
+notify = "8.2"
 
 # Process execution for transformers
 glob = "0.3"
