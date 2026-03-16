@@ -7,6 +7,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
 
+/// Current active log level (stored as string for runtime mutation)
+pub type LogLevelHandle = Arc<RwLock<String>>;
+
 /// Miniserver communication event for monitoring
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct MiniserverEvent {
@@ -45,6 +48,9 @@ pub struct AppState {
 
     /// Broadcast channel for Miniserver monitoring events
     pub miniserver_monitor: broadcast::Sender<MiniserverEvent>,
+
+    /// Current log level (runtime-adjustable)
+    pub log_level: LogLevelHandle,
 }
 
 impl AppState {
@@ -59,6 +65,9 @@ impl AppState {
         // Create broadcast channel for monitoring (buffer 1000 events)
         let (monitor_tx, _) = broadcast::channel(1000);
 
+        // Read initial log level from RUST_LOG env var
+        let initial_level = std::env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
+
         Self {
             lbhomedir,
             version,
@@ -67,6 +76,7 @@ impl AppState {
             miniserver_clients: Arc::new(DashMap::new()),
             mqtt_gateway,
             miniserver_monitor: monitor_tx,
+            log_level: Arc::new(RwLock::new(initial_level)),
         }
     }
 

@@ -142,3 +142,23 @@ pub struct SettingsTemplate {
     pub timezone: String,
     pub version: String,
 }
+
+/// API documentation template
+#[derive(Template)]
+#[template(path = "api_docs.html")]
+pub struct ApiDocsTemplate {
+    pub groups: Vec<ApiGroup>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ApiGroup {
+    pub name: String,
+    pub endpoints: Vec<ApiEndpoint>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ApiEndpoint {
+    pub method: String,
+    pub path: String,
+    pub description: String,
+}

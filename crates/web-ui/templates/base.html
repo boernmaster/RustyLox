@@ -34,5 +34,28 @@
     <footer class="footer">
         <p>RustyLox v4.0.0 | &copy; 2026</p>
     </footer>
+
+    <div id="toast-container"></div>
+
+    <script>
+    // Auto-dismiss toasts after 4s
+    function showToast(msg, type) {
+        const c = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = 'toast toast-' + (type || 'info');
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 4000);
+    }
+    // Convert alert divs injected by HTMX into toasts
+    document.body.addEventListener('htmx:afterSwap', function(e) {
+        e.target.querySelectorAll('.alert-success, .alert-danger, .alert-warning').forEach(function(el) {
+            const type = el.classList.contains('alert-success') ? 'success'
+                       : el.classList.contains('alert-danger')  ? 'error' : 'info';
+            showToast(el.textContent.trim(), type);
+            el.remove();
+        });
+    });
+    </script>
 </body>
 </html>

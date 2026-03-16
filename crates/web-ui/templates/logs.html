@@ -33,12 +33,12 @@
         <div class="card" style="margin-bottom: 20px;">
             <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
                 <div>
-                    <label for="log-select"><strong>Select Log File:</strong></label>
+                    <label for="log-select"><strong>Log File:</strong></label>
                     <select id="log-select"
                             hx-get="/logs/view"
                             hx-target="#log-content"
                             hx-trigger="change"
-                            hx-include="[name='lines']"
+                            hx-include="[name='lines'],[name='search']"
                             name="file"
                             style="margin-left: 8px; padding: 6px 10px;">
                         <option value="">-- Select a log file --</option>
@@ -54,12 +54,24 @@
                             hx-get="/logs/view"
                             hx-target="#log-content"
                             hx-trigger="change"
-                            hx-include="[name='file']"
+                            hx-include="[name='file'],[name='search']"
                             style="margin-left: 8px; padding: 6px 10px;">
                         <option value="100">Last 100</option>
                         <option value="500">Last 500</option>
                         <option value="1000">Last 1000</option>
                     </select>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label for="search-input"><strong>Filter:</strong></label>
+                    <input id="search-input"
+                           type="text"
+                           name="search"
+                           placeholder="Search log lines..."
+                           hx-get="/logs/view"
+                           hx-target="#log-content"
+                           hx-trigger="input changed delay:400ms"
+                           hx-include="[name='file'],[name='lines']"
+                           style="margin-left: 8px; padding: 6px 10px; width: calc(100% - 80px);">
                 </div>
             </div>
         </div>
