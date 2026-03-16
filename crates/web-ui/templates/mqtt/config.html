@@ -199,6 +199,8 @@
             <li><a href="/miniserver">Miniserver</a></li>
             <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
             <li><a href="/mqtt/config" class="active">MQTT Config</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
             <li><a href="/plugins">Plugins</a></li>
             <li><a href="/settings">Settings</a></li>
         </ul>
@@ -233,7 +235,7 @@
                             <label for="brokerport">Broker Port *</label>
                             <input type="number" id="brokerport" name="brokerport"
                                    value="{{ config.brokerport }}"
-                                   required placeholder="1883">
+                                   required min="1" max="65535" placeholder="1883">
                         </div>
 
                         <div class="form-group">
@@ -259,7 +261,7 @@
                             <label for="udpinport">UDP Input Port *</label>
                             <input type="number" id="udpinport" name="udpinport"
                                    value="{{ config.udpinport }}"
-                                   required placeholder="11884">
+                                   required min="0" max="65535" placeholder="11884">
                             <small>Port for receiving messages via UDP (0 to disable)</small>
                         </div>
                     </div>

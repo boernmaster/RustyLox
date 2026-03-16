@@ -64,6 +64,7 @@ pub struct ViewLogQuery {
     pub file: Option<String>,
     #[serde(default = "default_lines")]
     pub lines: usize,
+    pub search: Option<String>,
 }
 
 fn default_lines() -> usize {
@@ -71,10 +72,7 @@ fn default_lines() -> usize {
 }
 
 /// View log file contents (HTMX endpoint)
-pub async fn view(
-    State(state): State<AppState>,
-    Query(query): Query<ViewLogQuery>,
-) -> Html<String> {
+pub async fn view(State(state): State<AppState>, Query(query): Query<ViewLogQuery>) -> Html<String> {
     let file_name = match query.file {
         Some(ref f) if !f.is_empty() => f,
         _ => return Html("<p style='color: #888;'>No file selected.</p>".to_string()),
@@ -98,28 +96,69 @@ pub async fn view(
             let start = all_lines.len().saturating_sub(query.lines);
             let tail_lines = &all_lines[start..];
 
-            let escaped: Vec<String> = tail_lines
+            // Apply search filter if provided
+            let search_term = query.search.as_deref().unwrap_or("").to_lowercase();
+            let filtered: Vec<&str> = if search_term.is_empty() {
+                tail_lines.to_vec()
+            } else {
+                tail_lines
+                    .iter()
+                    .filter(|l| l.to_lowercase().contains(&search_term))
+                    .copied()
+                    .collect()
+            };
+
+            let escaped: String = filtered
                 .iter()
                 .map(|l| {
-                    l.replace('&', "&amp;")
+                    let escaped = l
+                        .replace('&', "&amp;")
                         .replace('<', "&lt;")
-                        .replace('>', "&gt;")
+                        .replace('>', "&gt;");
+                    // Highlight search term if present
+                    if search_term.is_empty() {
+                        escaped
+                    } else {
+                        // Case-insensitive highlight
+                        let lower = escaped.to_lowercase();
+                        if let Some(pos) = lower.find(&search_term) {
+                            let end = pos + search_term.len();
+                            format!(
+                                "{}<mark style='background:#ff0;color:#000'>{}</mark>{}",
+                                &escaped[..pos],
+                                &escaped[pos..end],
+                                &escaped[end..]
+                            )
+                        } else {
+                            escaped
+                        }
+                    }
                 })
-                .collect();
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            let filter_info = if !search_term.is_empty() {
+                format!(
+                    " &mdash; <span style='color:#aaa;'>{} matching \"{}\"</span>",
+                    filtered.len(),
+                    search_term
+                )
+            } else {
+                String::new()
+            };
 
             Html(format!(
                 "<div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>\
-                 <strong>{}</strong><span style='color: #888;'>{} lines shown</span></div>\
+                 <strong>{}</strong>\
+                 <span style='color: #888;'>{} lines{}</span></div>\
                  <pre style='background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 4px; \
                  overflow-x: auto; font-size: 12px; max-height: 600px; overflow-y: auto;'>{}</pre>",
                 file_name,
-                tail_lines.len(),
-                escaped.join("\n")
+                filtered.len(),
+                filter_info,
+                escaped
             ))
         }
-        Err(e) => Html(format!(
-            "<div class='error'>Failed to read log: {}</div>",
-            e
-        )),
+        Err(e) => Html(format!("<div class='error'>Failed to read log: {}</div>", e)),
     }
 }

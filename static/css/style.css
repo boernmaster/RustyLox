@@ -384,4 +384,103 @@ body {
     .table td {
         padding: 0.5rem;
     }
+
+    .nav-menu {
+        gap: 0.25rem;
+    }
+
+    .nav-menu a {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* ── Toast notifications ───────────────────────────────────────────── */
+#toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.toast {
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    pointer-events: auto;
+    animation: toast-in 0.25s ease;
+    max-width: 360px;
+}
+
+.toast-success { background: #155724; color: #fff; border-left: 4px solid #28a745; }
+.toast-error   { background: #721c24; color: #fff; border-left: 4px solid #dc3545; }
+.toast-info    { background: #0c5460; color: #fff; border-left: 4px solid #17a2b8; }
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── HTMX loading indicator ────────────────────────────────────────── */
+.htmx-indicator {
+    display: none;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    display: inline-block;
+}
+
+/* Spinner used inside buttons */
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Form validation helpers ───────────────────────────────────────── */
+input:invalid:not(:placeholder-shown),
+select:invalid:not(:placeholder-shown) {
+    border-color: var(--danger-color);
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+input:valid:not(:placeholder-shown) {
+    border-color: var(--success-color);
+}
+
+.field-error {
+    color: var(--danger-color);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* ── btn-warning ────────────────────────────────────────────────────── */
+.btn-warning {
+    background-color: var(--warning-color);
+    color: #212529;
+    border: 1px solid #e0a800;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
 }

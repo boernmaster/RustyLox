@@ -1,11 +1,11 @@
 //! Backup and restore UI handlers
 
 use askama::Template;
-use axum::extract::State;
 use axum::{
     extract::{Path, Query},
     response::Html,
 };
+use axum::extract::State;
 use backup_manager::BackupManager;
 use serde::Deserialize;
 use web_api::AppState;
@@ -92,6 +92,29 @@ pub async fn create(
         }
         Err(e) => Html(format!(
             "<div class='error'>Failed to create backup: {}</div>",
+            e
+        )),
+    }
+}
+
+/// Restore from a backup (HTMX endpoint)
+pub async fn restore(State(state): State<AppState>, Path(name): Path<String>) -> Html<String> {
+    // Prevent path traversal
+    if name.contains('/') || name.contains("..") {
+        return Html("<div class='error'>Invalid backup name</div>".to_string());
+    }
+
+    let backup_dir = backup_manager::backup_dir(&state.lbhomedir);
+    let backup_path = backup_dir.join(&name);
+
+    match backup_manager::restore_backup(state.lbhomedir.clone(), backup_path).await {
+        Ok(()) => Html(format!(
+            "<div class='success'>Restored from <strong>{}</strong> successfully. \
+             Configuration has been updated. A restart may be required to apply all changes.</div>",
+            name
+        )),
+        Err(e) => Html(format!(
+            "<div class='error'>Failed to restore backup: {}</div>",
             e
         )),
     }
