@@ -73,6 +73,7 @@ LBPBINDIR=/opt/loxberry/bin/plugins/{folder}
 ```
 
 ### 2.3 Perl SDK Integration
+- [x] ✅ Plugin installation file upload handler implemented (`/plugins/install` multipart handling)
 - [ ] Test with real plugin (preinstall/postinstall hooks)
 - [ ] Verify LoxBerry::System path detection works
 - [ ] Verify LoxBerry::Log creates proper log files
@@ -116,10 +117,10 @@ backup-{timestamp}.tar.gz:
 ```
 POST   /api/backup/create          - Create backup      ✅
 GET    /api/backup                 - List backups        ✅
-GET    /api/backup/:name/download  - Download backup     ✅
+GET    /api/backup/:name/download  - Download backup     ✅ (implementation verified)
 DELETE /api/backup/:name           - Delete backup       ✅
-POST   /api/backup/restore/:id     - Restore from backup (future)
-POST   /api/backup/schedule        - Scheduled backups   (future)
+POST   /backup/:name/restore       - Restore from backup ✅
+PUT    /api/backup/schedule        - Scheduled backups   ✅
 ```
 
 ### 3.4 Web UI
@@ -207,14 +208,45 @@ pub fn validate_mqtt_config(config: &MqttConfig) -> Result<()>              // �
 4. ✅ Add documentation (INSTALL.md + /api-docs)
 5. ✅ Final testing (cargo test passes, 5 unit tests in validation.rs)
 
+## Recent Fixes (March 2026)
+
+### MQTT Gateway Enhancements
+1. ✅ **Regex Filter Support** - Filter messages before sending to Miniserver
+   - Added `filter` field to `Subscription` struct
+   - Implemented `should_filter()` method with topic normalization
+   - Integrated into Relay for pre-send filtering
+   - Web UI already had filter input - now backend supports it
+
+2. ✅ **Miniserver Relay Implementation** - Actually send MQTT messages to Miniserver
+   - Updated Relay to accept full `GeneralConfig` (shared via Arc<RwLock>)
+   - Implemented Miniserver client caching
+   - Topic-to-VI mapping (slash-to-underscore conversion)
+   - HTTP send via `MiniserverClient::send()`
+
+3. ✅ **Plugin Installation Upload** - Handle ZIP file uploads
+   - Implemented multipart file parsing in `/plugins/install`
+   - File validation (.zip only)
+   - Temporary file handling with cleanup
+   - Calls `PluginInstaller::install()` with proper `InstallRequest`
+
+### Files Modified
+- `crates/mqtt-gateway/src/subscription.rs` - Added filter support
+- `crates/mqtt-gateway/src/relay.rs` - Implemented Miniserver sending
+- `crates/mqtt-gateway/src/lib.rs` - Updated for shared config
+- `crates/web-ui/src/handlers/plugins.rs` - Implemented file upload
+- `crates/web-api/src/state.rs` - Added `new_with_shared_config()`
+- `crates/loxberry-daemon/src/main.rs` - Shared config Arc creation
+
 ## Success Criteria
 
-- [ ] At least 3 real LoxBerry plugins can be installed and run (deferred to Phase 6 — requires Docker runtime testing)
+- [x] ✅ Plugin installation file upload working (ZIP upload via web UI implemented)
+- [ ] At least 3 real LoxBerry plugins can be installed and run (requires Docker runtime testing)
 - [x] Logs are properly rotated and accessible via UI (`/logs` viewer with search)
 - [x] Backups can be created, downloaded, and restored (`/backup` UI + REST API)
 - [x] Config validation wired into Miniserver add/edit and MQTT config forms
 - [x] Log level adjustable at runtime via `GET/PUT /api/system/log-level`
 - [x] All forms have proper validation (HTML5 + server-side validation)
 - [x] Error messages are clear and actionable (inline errors + toast notifications)
+- [x] ✅ MQTT messages relay to Miniserver (via HTTP with filter support)
 - [ ] CI/CD pipeline passes (GitHub Actions — requires push to main)
 - [ ] Docker images build for all platforms (requires CI/CD)

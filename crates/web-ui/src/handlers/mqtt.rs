@@ -16,9 +16,10 @@ use tokio_stream::wrappers::BroadcastStream;
 use web_api::AppState;
 
 /// MQTT Monitor page (displays the UI)
-pub async fn monitor(State(_state): State<AppState>) -> Html<String> {
+pub async fn monitor(State(state): State<AppState>) -> Html<String> {
     let template = MqttMonitorTemplate {
         title: "MQTT Monitor - Real-time Message Viewer".to_string(),
+        version: state.version.clone(),
     };
 
     Html(
@@ -121,11 +122,12 @@ pub async fn config(State(state): State<AppState>) -> Html<String> {
         brokeruser: config.mqtt.brokeruser.clone(),
         brokerpass: config.mqtt.brokerpass.clone(),
         udpinport: config.mqtt.udpinport.clone(),
+        topicfilter: config.mqtt.topicfilter.clone(),
     };
 
     let template = MqttConfigTemplate {
         config: mqtt_config,
-        version: config.base.version.clone(),
+        version: state.version.clone(),
     };
 
     Html(
@@ -142,6 +144,8 @@ pub struct MqttConfigFormData {
     pub brokeruser: String,
     pub brokerpass: String,
     pub udpinport: String,
+    #[serde(default)]
+    pub topicfilter: String,
 }
 
 /// Submit MQTT configuration
@@ -156,6 +160,7 @@ pub async fn config_submit(
         brokeruser: form.brokeruser.clone(),
         brokerpass: form.brokerpass.clone(),
         udpinport: form.udpinport.clone(),
+        topicfilter: form.topicfilter.clone(),
         ..Default::default()
     };
 
@@ -173,6 +178,7 @@ pub async fn config_submit(
     config.mqtt.brokeruser = form.brokeruser;
     config.mqtt.brokerpass = form.brokerpass;
     config.mqtt.udpinport = form.udpinport;
+    config.mqtt.topicfilter = form.topicfilter;
 
     // Save configuration
     match state.config_manager.save_general(&config).await {

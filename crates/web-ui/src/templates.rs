@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct BaseTemplate<'a> {
     pub title: &'a str,
     pub content: String,
+    pub version: String,
 }
 
 /// Dashboard template
@@ -33,6 +34,7 @@ pub struct SystemStatus {
 #[template(path = "mqtt/monitor.html")]
 pub struct MqttMonitorTemplate {
     pub title: String,
+    pub version: String,
 }
 
 /// MQTT Message for display
@@ -50,6 +52,7 @@ pub struct MqttMessage {
 #[template(path = "miniserver/monitor.html")]
 pub struct MiniserverMonitorTemplate {
     pub title: String,
+    pub version: String,
 }
 
 /// Miniserver communication message for display
@@ -71,6 +74,7 @@ pub struct MiniserverMessage {
 #[template(path = "miniserver/list.html")]
 pub struct MiniserverListTemplate {
     pub miniservers: Vec<MiniserverDisplay>,
+    pub version: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,6 +92,7 @@ pub struct MiniserverDisplay {
 pub struct MiniserverEditTemplate {
     pub miniserver: Option<MiniserverForm>,
     pub is_new: bool,
+    pub version: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,6 +111,7 @@ pub struct MiniserverForm {
 #[template(path = "plugins/list.html")]
 pub struct PluginListTemplate {
     pub plugins: Vec<PluginDisplay>,
+    pub version: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,6 +138,7 @@ pub struct MqttConfigForm {
     pub brokeruser: String,
     pub brokerpass: String,
     pub udpinport: String,
+    pub topicfilter: String,
 }
 
 /// Settings template
@@ -148,6 +155,7 @@ pub struct SettingsTemplate {
 #[template(path = "api_docs.html")]
 pub struct ApiDocsTemplate {
     pub groups: Vec<ApiGroup>,
+    pub version: String,
 }
 
 #[derive(Debug, Clone)]

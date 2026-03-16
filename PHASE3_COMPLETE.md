@@ -106,9 +106,15 @@ Phase 3 implements a complete bidirectional MQTT gateway that relays messages be
   3. Return original if no transformation
 
 **relay.rs** - Message Relay
-- Relay to Miniserver (placeholder - integrates with MiniserverClient)
+- **Relay to Miniserver** via HTTP using MiniserverClient
+  - Auto-creates and caches Miniserver clients
+  - Maps MQTT topics to virtual input parameters (e.g., `home/temp` → `home_temp`)
+  - **Applies global regex filter** before sending (configured in general.json)
+  - Topic slashes replaced with underscores for matching
+  - Supports multiple Miniservers (sends to first configured by default)
 - Relay to MQTT broker (publish)
 - Configurable per-message relay targets
+- Error handling with logging (non-blocking failures)
 
 ### 2. Configuration
 
@@ -119,12 +125,19 @@ Phase 3 implements a complete bidirectional MQTT gateway that relays messages be
     "Brokerhost": "mosquitto",
     "Brokerport": "1883",
     "Udpinport": "11884",
+    "Topicfilter": "_healthcheck_|_info_|_announce_",
     "Uselocalbroker": "1",
     "Websocketport": "9001",
     "Finderdisabled": false
   }
 }
 ```
+
+**Topicfilter**: Global regex pattern to exclude topics from being sent to Miniserver
+- Topic slashes (`/`) are replaced with underscores (`_`) before matching
+- Matching topics are NOT forwarded to Miniserver
+- Example: `_healthcheck_|_info_|_announce_` excludes system messages
+- Configured in UI under "Broker Settings" tab
 
 #### Subscription Configuration (mqtt_subscriptions.cfg)
 ```ini
@@ -138,6 +151,9 @@ PLUGIN=weatherplugin
 TOPIC=home/lights/#
 NAME=All Lights
 ENABLED=1
+
+# Global topic filter is configured in general.json under Mqtt.Topicfilter
+# Applies to all subscriptions
 ```
 
 ### 3. Web API Endpoints
@@ -199,7 +215,28 @@ Updated `loxberry-daemon/src/main.rs`:
 
 ## Message Flow Examples
 
-### MQTT → Miniserver
+### MQTT → Miniserver (with Filter)
+1. External device publishes: `mosquitto_pub -t "home/temp" -m "23.5"`
+2. Gateway subscribes to `home/#`
+3. Message received via broker client
+4. Boolean transformer checks (no match)
+5. **Regex filter checks** (if configured):
+   - Topic normalized: `home/temp` → `home_temp`
+   - Filter pattern: `_healthcheck_|_info_`
+   - No match → continue
+6. Relay sends to Miniserver virtual input `home_temp` with value `23.5`
+
+### Filtered Message (Excluded)
+1. External device publishes: `mosquitto_pub -t "home/_healthcheck_" -m "OK"`
+2. Gateway subscribes to `home/#`
+3. Message received via broker client
+4. **Regex filter checks**:
+   - Topic normalized: `home/_healthcheck_` → `home__healthcheck_`
+   - Filter pattern: `_healthcheck_|_info_`
+   - Match found → **message excluded**
+5. Message logged as filtered, NOT sent to Miniserver
+
+### MQTT → Miniserver (No Filter)
 1. External device publishes: `mosquitto_pub -t "home/temp" -m "23.5"`
 2. Gateway subscribes to `home/#`
 3. Message received via broker client
@@ -223,6 +260,110 @@ home/switch/kitchen = "1"
 
 # Relay to Miniserver with value "1"
 ```
+
+## Global Topic Filter Feature
+
+### Overview
+The MQTT gateway supports **global** regex-based filtering to exclude unwanted messages from being forwarded to the Miniserver. This is useful for:
+- Filtering out system/health check messages
+- Excluding debug/info topics
+- Preventing specific prefixes from reaching the Miniserver
+- Reducing unnecessary virtual input updates
+
+**Global filter** applies to **ALL subscriptions** - define once, filter everywhere.
+
+### Configuration
+The filter is configured globally in `general.json` under `Mqtt.Topicfilter`:
+
+```json
+{
+  "Mqtt": {
+    "Brokerhost": "mosquitto",
+    "Brokerport": "1883",
+    "Topicfilter": "_healthcheck_|_info_|_announce_|^solcast_"
+  }
+}
+```
+
+Or via the Web UI: `/mqtt/config` → **Broker Settings** tab → **Global Topic Filter** field
+
+### How It Works
+1. **Topic Normalization**: MQTT topic slashes (`/`) are replaced with underscores (`_`)
+   - Example: `home/sensor/temp` → `home_sensor_temp`
+
+2. **Regex Matching**: The normalized topic is matched against the global filter pattern
+   - Uses Rust's `regex` crate
+   - Standard regex syntax supported
+   - Empty filter = no filtering (all messages forwarded)
+
+3. **Filter Action**: If the pattern matches, the message is **excluded** (not sent to Miniserver)
+   - Non-matching messages are forwarded normally
+   - Filter is applied BEFORE sending to Miniserver
+   - Applies to ALL subscriptions automatically
+
+4. **Logging**: Filtered messages are logged at DEBUG level
+   - `Message filtered: topic 'X' matches global filter pattern 'Y'`
+   - `Message FILTERED (not sent to Miniserver): topic = value`
+
+### Common Filter Patterns
+
+| Pattern | Description | Matches |
+|---------|-------------|---------|
+| `_healthcheck_` | Exclude health checks | `system/_healthcheck_`, `home/sensor/_healthcheck_` |
+| `_info_\|_announce_` | Exclude info and announcements | `device/_info_`, `gateway/_announce_` |
+| `^solcast_` | Exclude topics starting with "solcast" | `solcast_forecast`, `solcast_data` |
+| `_debug_\|_trace_` | Exclude debug messages | `app/_debug_`, `sensor/_trace_` |
+| `.*test.*` | Exclude anything with "test" | `home/test/sensor`, `testdevice` |
+
+### Example Configuration
+
+```json
+// general.json - Global filter applies to all subscriptions
+{
+  "Mqtt": {
+    "Brokerhost": "mosquitto",
+    "Brokerport": "1883",
+    "Topicfilter": "_healthcheck_|_info_|_announce_|_mqttgateway_|_schedule_|^solcast_"
+  }
+}
+```
+
+```ini
+// mqtt_subscriptions.cfg - No filter field needed
+[AllSensors]
+TOPIC=home/sensors/#
+NAME=All Home Sensors
+ENABLED=1
+
+[LightControls]
+TOPIC=home/lights/#
+NAME=Light Controls
+ENABLED=1
+```
+
+Both subscriptions automatically use the global filter.
+
+### Testing Filters
+
+```bash
+# Publish a message that should be filtered
+mosquitto_pub -t "home/sensors/_healthcheck_" -m "OK"
+
+# Publish a message that should pass through
+mosquitto_pub -t "home/sensors/temperature" -m "22.5"
+
+# Check logs to see which messages were filtered
+docker logs rustylox 2>&1 | grep FILTERED
+```
+
+### Web UI Support
+The Web UI (`/mqtt/config`) provides global filter configuration in the **Broker Settings** tab:
+- **Global Topic Filter** input field
+- Examples and quick-add buttons for common patterns (_healthcheck_, _info_, _announce_, etc.)
+- Help text explaining how the global filter works
+- Expandable details with pattern examples
+
+**Note:** Subscriptions tab no longer has per-subscription filters - the global filter applies to all.
 
 ## Testing
 
@@ -351,9 +492,11 @@ glob = "0.3"                  # Find transformer scripts
 ## Known Limitations & Future Work
 
 ### Current Limitations
-1. **Relay to Miniserver**: Placeholder implementation
-   - Need to integrate with MiniserverClient
-   - Need topic → virtual input mapping configuration
+1. ~~**Relay to Miniserver**: Placeholder implementation~~ ✅ **IMPLEMENTED**
+   - ✅ Integrated with MiniserverClient (HTTP send)
+   - ✅ Topic → virtual input mapping (automatic underscore conversion)
+   - ✅ Regex filter support to exclude unwanted messages
+   - ⚠️ Future: Support topic-to-VI mapping configuration file
 
 2. **External Script Transformers**: Not fully implemented
    - Script execution framework in place
@@ -416,7 +559,8 @@ glob = "0.3"                  # Find transformer scripts
 - [x] API reload endpoints
 - [x] Docker integration
 - [x] Mosquitto configuration
-- [ ] End-to-end MQTT → Miniserver (needs MiniserverClient integration)
+- [x] End-to-end MQTT → Miniserver ✅ **IMPLEMENTED**
+- [x] Regex filter for subscriptions ✅ **IMPLEMENTED**
 - [ ] External script transformers (needs script interface)
 - [ ] JSON expansion (needs full implementation)
 

@@ -21,6 +21,7 @@ pub struct BackupDisplay {
 #[template(path = "backup.html")]
 pub struct BackupTemplate {
     pub backups: Vec<BackupDisplay>,
+    pub version: String,
 }
 
 fn format_size(bytes: u64) -> String {
@@ -52,7 +53,10 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         }
     };
 
-    let template = BackupTemplate { backups };
+    let template = BackupTemplate {
+        backups,
+        version: state.version.clone(),
+    };
     Html(
         template
             .render()

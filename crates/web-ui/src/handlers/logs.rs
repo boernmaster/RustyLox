@@ -20,6 +20,7 @@ pub struct LogFileDisplay {
 #[template(path = "logs.html")]
 pub struct LogsTemplate {
     pub log_files: Vec<LogFileDisplay>,
+    pub version: String,
 }
 
 fn format_size(bytes: u64) -> String {
@@ -51,7 +52,10 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         }
     };
 
-    let template = LogsTemplate { log_files };
+    let template = LogsTemplate {
+        log_files,
+        version: state.version.clone(),
+    };
     Html(
         template
             .render()
