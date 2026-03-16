@@ -72,7 +72,10 @@ fn default_lines() -> usize {
 }
 
 /// View log file contents (HTMX endpoint)
-pub async fn view(State(state): State<AppState>, Query(query): Query<ViewLogQuery>) -> Html<String> {
+pub async fn view(
+    State(state): State<AppState>,
+    Query(query): Query<ViewLogQuery>,
+) -> Html<String> {
     let file_name = match query.file {
         Some(ref f) if !f.is_empty() => f,
         _ => return Html("<p style='color: #888;'>No file selected.</p>".to_string()),
@@ -159,6 +162,9 @@ pub async fn view(State(state): State<AppState>, Query(query): Query<ViewLogQuer
                 escaped
             ))
         }
-        Err(e) => Html(format!("<div class='error'>Failed to read log: {}</div>", e)),
+        Err(e) => Html(format!(
+            "<div class='error'>Failed to read log: {}</div>",
+            e
+        )),
     }
 }
