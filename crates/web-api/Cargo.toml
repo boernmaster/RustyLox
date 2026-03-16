@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
+loxberry-metrics = { path = "../metrics" }
 miniserver-client = { path = "../miniserver-client" }
 plugin-manager = { path = "../plugin-manager" }
 mqtt-gateway = { path = "../mqtt-gateway" }

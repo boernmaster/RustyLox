@@ -64,6 +64,27 @@ pub fn create_router(state: AppState) -> Router {
             "/api/plugins/:md5/upgrade",
             post(routes::plugins::upgrade_plugin),
         )
+        // Plugin daemon routes (by folder name)
+        .route(
+            "/api/plugins/:folder/daemon/start",
+            post(routes::daemon::start_daemon),
+        )
+        .route(
+            "/api/plugins/:folder/daemon/stop",
+            post(routes::daemon::stop_daemon),
+        )
+        .route(
+            "/api/plugins/:folder/daemon/restart",
+            post(routes::daemon::restart_daemon),
+        )
+        .route(
+            "/api/plugins/:folder/daemon/status",
+            get(routes::daemon::get_daemon_status),
+        )
+        .route(
+            "/api/plugins/:folder/daemon/logs",
+            get(routes::daemon::get_daemon_logs),
+        )
         // MQTT Gateway routes
         .route("/api/mqtt/status", get(routes::mqtt::get_status))
         .route(
@@ -78,6 +99,10 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/system/status", get(routes::system::system_status))
         .route("/api/system/log-level", get(routes::system::get_log_level))
         .route("/api/system/log-level", put(routes::system::set_log_level))
+        // Metrics and monitoring
+        .route("/metrics", get(routes::metrics::prometheus_metrics))
+        .route("/api/system/metrics", get(routes::metrics::system_metrics))
+        .route("/api/health/detail", get(routes::metrics::detailed_health))
         // Backup routes
         .route("/api/backup", get(routes::backup::list_backups))
         .route("/api/backup/create", post(routes::backup::create_backup))

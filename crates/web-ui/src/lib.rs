@@ -78,6 +78,24 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/plugins/:md5/uninstall",
             post(handlers::plugins::uninstall),
         )
+        // Plugin web interfaces (public)
+        .route(
+            "/plugins/web/:name",
+            get(handlers::plugin_web::serve_plugin_public_index),
+        )
+        .route(
+            "/plugins/web/:name/*path",
+            get(handlers::plugin_web::serve_plugin_public),
+        )
+        // Plugin web interfaces (authenticated)
+        .route(
+            "/admin/plugins/:name",
+            get(handlers::plugin_web::serve_plugin_auth_index),
+        )
+        .route(
+            "/admin/plugins/:name/*path",
+            get(handlers::plugin_web::serve_plugin_auth),
+        )
         // Settings
         .route("/settings", get(handlers::settings::index))
         .route("/settings", post(handlers::settings::submit))
