@@ -96,6 +96,12 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/admin/plugins/:name/*path",
             get(handlers::plugin_web::serve_plugin_auth),
         )
+        // Email notifications
+        .route("/email", get(handlers::email::index))
+        // Scheduled tasks
+        .route("/tasks", get(handlers::tasks::index))
+        // Network diagnostics
+        .route("/network", get(handlers::network::index))
         // Settings
         .route("/settings", get(handlers::settings::index))
         .route("/settings", post(handlers::settings::submit))

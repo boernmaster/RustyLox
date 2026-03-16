@@ -8,6 +8,8 @@ members = [
     "crates/plugin-manager",
     "crates/mqtt-gateway",
     "crates/metrics",
+    "crates/email-manager",
+    "crates/task-scheduler",
     "crates/web-api",
     "crates/web-ui",
     "crates/loxberry-daemon",

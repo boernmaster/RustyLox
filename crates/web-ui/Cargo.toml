@@ -12,6 +12,7 @@ mqtt-gateway = { path = "../mqtt-gateway" }
 backup-manager = { path = "../backup-manager" }
 loxberry-logging = { path = "../loxberry-logging" }
 web-api = { path = "../web-api" }
+email-manager = { path = "../email-manager" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }

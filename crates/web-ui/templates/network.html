@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Diagnostics - LoxBerry</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/network" class="active">Network</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Network Diagnostics</h1>
+
+        <!-- Ping Tool -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Ping</h2>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; margin: 0;">
+                    <label for="ping-host">Host</label>
+                    <input type="text" id="ping-host" placeholder="192.168.1.100 or hostname">
+                </div>
+                <div class="form-group" style="width: 100px; margin: 0;">
+                    <label for="ping-count">Count</label>
+                    <input type="number" id="ping-count" value="4" min="1" max="10">
+                </div>
+                <button class="btn btn-primary" onclick="runPing()">Ping</button>
+            </div>
+            <div id="ping-result" style="margin-top: 12px;"></div>
+        </div>
+
+        <!-- TCP Connection Test -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>TCP Connection Test</h2>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; margin: 0;">
+                    <label for="tcp-host">Host</label>
+                    <input type="text" id="tcp-host" placeholder="192.168.1.100">
+                </div>
+                <div class="form-group" style="width: 120px; margin: 0;">
+                    <label for="tcp-port">Port</label>
+                    <input type="number" id="tcp-port" value="80" min="1" max="65535">
+                </div>
+                <button class="btn btn-primary" onclick="testTCP()">Test</button>
+            </div>
+            <div id="tcp-result" style="margin-top: 12px;"></div>
+        </div>
+
+        <!-- Network Interfaces -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2>Network Interfaces</h2>
+                <button class="btn btn-secondary" onclick="loadInterfaces()">Refresh</button>
+            </div>
+            <div id="interfaces-list">
+                <em>Loading...</em>
+            </div>
+        </div>
+
+        <!-- Miniserver Connectivity Test -->
+        <div class="card">
+            <h2>Test Miniserver Connectivity</h2>
+            <p style="color: #666; margin-bottom: 12px;">Tests HTTP reachability of a Miniserver.</p>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; margin: 0;">
+                    <label for="ms-host">Miniserver IP</label>
+                    <input type="text" id="ms-host" placeholder="192.168.1.100">
+                </div>
+                <div class="form-group" style="width: 100px; margin: 0;">
+                    <label for="ms-port">Port</label>
+                    <input type="number" id="ms-port" value="80">
+                </div>
+                <button class="btn btn-primary" onclick="testMiniserver()">Test</button>
+            </div>
+            <div id="ms-result" style="margin-top: 12px;"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    function runPing() {
+        const host = document.getElementById('ping-host').value.trim();
+        const count = parseInt(document.getElementById('ping-count').value) || 4;
+        if (!host) { alert('Enter a host to ping'); return; }
+        const el = document.getElementById('ping-result');
+        el.innerHTML = '<em>Pinging...</em>';
+        fetch('/api/network/ping', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ host, count }),
+        })
+        .then(r => r.json())
+        .then(d => {
+            const color = d.success ? '#198754' : '#dc3545';
+            el.innerHTML = `<pre style="background:#f8f9fa; padding:12px; border-radius:4px; color:${color}; overflow-x:auto;">${escHtml(d.output || d.error || '')}</pre>`;
+        })
+        .catch(e => { el.innerHTML = `<div class='alert alert-danger'>${e}</div>`; });
+    }
+
+    function testTCP() {
+        const host = document.getElementById('tcp-host').value.trim();
+        const port = parseInt(document.getElementById('tcp-port').value) || 80;
+        if (!host) { alert('Enter a host'); return; }
+        const el = document.getElementById('tcp-result');
+        el.innerHTML = '<em>Testing...</em>';
+        fetch('/api/network/test/connection', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ host, port }),
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                el.innerHTML = `<div class='alert alert-success'>Connected to ${escHtml(host)}:${port} in ${d.latency_ms}ms</div>`;
+            } else {
+                el.innerHTML = `<div class='alert alert-danger'>${escHtml(d.error || 'Connection failed')}</div>`;
+            }
+        })
+        .catch(e => { el.innerHTML = `<div class='alert alert-danger'>${e}</div>`; });
+    }
+
+    function loadInterfaces() {
+        fetch('/api/network/interfaces')
+            .then(r => r.json())
+            .then(ifaces => {
+                const el = document.getElementById('interfaces-list');
+                if (!ifaces || ifaces.length === 0) {
+                    el.innerHTML = '<em>No interfaces found.</em>';
+                    return;
+                }
+                el.innerHTML = ifaces.map(iface => `
+                    <div style="padding: 10px; border-bottom: 1px solid #dee2e6; display: flex; gap: 20px;">
+                        <strong style="min-width: 120px;">${escHtml(iface.name)}</strong>
+                        <span>${iface.addresses.map(a => escHtml(a)).join(', ') || '<em>no address</em>'}</span>
+                        <span style="color: #666; font-size: 0.9em;">
+                            ↑ ${formatBytes(iface.bytes_sent)} / ↓ ${formatBytes(iface.bytes_recv)}
+                        </span>
+                    </div>
+                `).join('');
+            })
+            .catch(e => {
+                document.getElementById('interfaces-list').innerHTML =
+                    `<div class='alert alert-danger'>${e}</div>`;
+            });
+    }
+
+    function testMiniserver() {
+        const host = document.getElementById('ms-host').value.trim();
+        const port = parseInt(document.getElementById('ms-port').value) || 80;
+        if (!host) { alert('Enter a Miniserver IP'); return; }
+        const el = document.getElementById('ms-result');
+        el.innerHTML = '<em>Testing...</em>';
+        fetch('/api/network/test/miniserver', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ host, port }),
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.reachable) {
+                el.innerHTML = `<div class='alert alert-success'>Miniserver reachable (${d.latency_ms}ms)</div>`;
+            } else {
+                el.innerHTML = `<div class='alert alert-danger'>${escHtml(d.error || 'Not reachable')}</div>`;
+            }
+        })
+        .catch(e => { el.innerHTML = `<div class='alert alert-danger'>${e}</div>`; });
+    }
+
+    function formatBytes(b) {
+        if (b == null) return '-';
+        if (b < 1024) return b + ' B';
+        if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+        if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB';
+        return (b / 1073741824).toFixed(2) + ' GB';
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    loadInterfaces();
+    </script>
+</body>
+</html>

@@ -7,6 +7,8 @@ edition = "2021"
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
 loxberry-metrics = { path = "../metrics" }
+email-manager = { path = "../email-manager" }
+task-scheduler = { path = "../task-scheduler" }
 miniserver-client = { path = "../miniserver-client" }
 plugin-manager = { path = "../plugin-manager" }
 mqtt-gateway = { path = "../mqtt-gateway" }
@@ -40,3 +42,6 @@ tokio-util = { version = "0.7", features = ["io"] }
 
 # Rate limiting
 tower_governor = { version = "0.4", features = ["axum"] }
+
+# System info for network diagnostics
+sysinfo = "0.32"

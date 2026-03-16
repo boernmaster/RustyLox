@@ -150,6 +150,36 @@ pub struct SettingsTemplate {
     pub version: String,
 }
 
+/// Email configuration template
+#[derive(Template)]
+#[template(path = "email.html")]
+pub struct EmailTemplate {
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_user: String,
+    pub smtp_pass: String,
+    pub smtp_tls: bool,
+    pub from_address: String,
+    pub from_name: String,
+    pub notification_addresses: String,
+    pub enabled: bool,
+    pub version: String,
+}
+
+/// Scheduled tasks template
+#[derive(Template)]
+#[template(path = "tasks.html")]
+pub struct TasksTemplate {
+    pub version: String,
+}
+
+/// Network diagnostics template
+#[derive(Template)]
+#[template(path = "network.html")]
+pub struct NetworkTemplate {
+    pub version: String,
+}
+
 /// API documentation template
 #[derive(Template)]
 #[template(path = "api_docs.html")]
