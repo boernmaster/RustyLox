@@ -16,7 +16,7 @@
 ## Services Status
 
 ```
-loxberry-rust   Up 3 minutes   Ports: 8080/tcp, 11884/udp
+rustylox      Up 3 minutes   Ports: 8080/tcp, 11884/udp
 mosquitto       Up 3 minutes   Ports: 1883/tcp, 9001/tcp
 ```
 
@@ -25,7 +25,7 @@ mosquitto       Up 3 minutes   Ports: 1883/tcp, 9001/tcp
 ### Health Check
 ```bash
 $ curl http://localhost:8080/health
-{"service":"loxberry-rust","status":"ok","version":"0.1.0"}
+{"service":"rustylox","status":"ok","version":"0.1.0"}
 ```
 **Status**: ✅ PASS
 

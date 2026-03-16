@@ -52,14 +52,14 @@ curl -X POST -F 'file=@examples/sample-plugin.zip' http://localhost:8080/api/plu
 
 3. Verify directories were created:
    ```bash
-   docker exec loxberry ls -la /opt/loxberry/data/plugins/sampleplugin
-   docker exec loxberry ls -la /opt/loxberry/config/plugins/sampleplugin
-   docker exec loxberry ls -la /opt/loxberry/webfrontend/htmlauth/plugins/sampleplugin
+   docker exec rustylox ls -la /opt/loxberry/data/plugins/sampleplugin
+   docker exec rustylox ls -la /opt/loxberry/config/plugins/sampleplugin
+   docker exec rustylox ls -la /opt/loxberry/webfrontend/htmlauth/plugins/sampleplugin
    ```
 
 4. Check plugin database:
    ```bash
-   docker exec loxberry cat /opt/loxberry/data/system/plugindatabase.json | jq '.'
+   docker exec rustylox cat /opt/loxberry/data/system/plugindatabase.json | jq '.'
    ```
 
 ## Uninstalling

@@ -169,18 +169,18 @@ curl http://localhost:8080/api/plugins/MD5_HASH | jq '.'
 
 ```bash
 # Check plugin directories
-docker exec loxberry ls -la /opt/loxberry/data/plugins/sampleplugin
-docker exec loxberry ls -la /opt/loxberry/config/plugins/sampleplugin
-docker exec loxberry ls -la /opt/loxberry/webfrontend/htmlauth/plugins/sampleplugin
+docker exec rustylox ls -la /opt/loxberry/data/plugins/sampleplugin
+docker exec rustylox ls -la /opt/loxberry/config/plugins/sampleplugin
+docker exec rustylox ls -la /opt/loxberry/webfrontend/htmlauth/plugins/sampleplugin
 
 # Check database
-docker exec loxberry cat /opt/loxberry/data/system/plugindatabase.json | jq '.'
+docker exec rustylox cat /opt/loxberry/data/system/plugindatabase.json | jq '.'
 
 # Check hook execution (should see install.cfg from preinstall hook)
-docker exec loxberry cat /opt/loxberry/config/plugins/sampleplugin/install.cfg
+docker exec rustylox cat /opt/loxberry/config/plugins/sampleplugin/install.cfg
 
 # Check sample data (from postinstall hook)
-docker exec loxberry cat /opt/loxberry/data/plugins/sampleplugin/sample.txt
+docker exec rustylox cat /opt/loxberry/data/plugins/sampleplugin/sample.txt
 ```
 
 ### Uninstall Plugin
@@ -193,11 +193,11 @@ curl -X DELETE http://localhost:8080/api/plugins/MD5_HASH
 
 ```bash
 # Directories should be gone
-docker exec loxberry ls -la /opt/loxberry/data/plugins/
-docker exec loxberry ls -la /opt/loxberry/config/plugins/
+docker exec rustylox ls -la /opt/loxberry/data/plugins/
+docker exec rustylox ls -la /opt/loxberry/config/plugins/
 
 # Database should be empty
-docker exec loxberry cat /opt/loxberry/data/system/plugindatabase.json | jq '.'
+docker exec rustylox cat /opt/loxberry/data/system/plugindatabase.json | jq '.'
 ```
 
 ## Plugin Configuration Format
