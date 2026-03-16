@@ -166,9 +166,7 @@ pub async fn edit_submit(
 
     // Check if Miniserver exists
     if !config.miniserver.contains_key(&id) {
-        return Html(format!(
-            "<div class='alert alert-danger'>Miniserver not found. <a href='/miniserver'>Back to list</a></div>"
-        ));
+        return Html("<div class='alert alert-danger'>Miniserver not found. <a href='/miniserver'>Back to list</a></div>".to_string());
     }
 
     // Build credentials
@@ -316,12 +314,13 @@ pub async fn monitor_stream(
         miniserver_name: "Monitor Active".to_string(),
         url: None,
         params: None,
-        response: Some("Miniserver monitor is active. Communication will appear here in real-time.".to_string()),
+        response: Some(
+            "Miniserver monitor is active. Communication will appear here in real-time."
+                .to_string(),
+        ),
         code: Some("200".to_string()),
         error: None,
-        timestamp: chrono::Utc::now()
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string(),
+        timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
     };
 
     // Create stream that converts MiniserverEvents to MiniserverMessages

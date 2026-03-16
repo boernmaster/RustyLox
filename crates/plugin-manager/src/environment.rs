@@ -2,11 +2,11 @@
 
 use crate::database::PluginEntry;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::Path;
 
 /// Build environment variables for plugin execution
 /// These match the original LoxBerry SDK environment
-pub fn build_plugin_env(plugin: &PluginEntry, lbhomedir: &PathBuf) -> HashMap<String, String> {
+pub fn build_plugin_env(plugin: &PluginEntry, lbhomedir: &Path) -> HashMap<String, String> {
     let mut env = HashMap::new();
 
     // Core paths
@@ -124,7 +124,7 @@ pub fn build_plugin_env(plugin: &PluginEntry, lbhomedir: &PathBuf) -> HashMap<St
 }
 
 /// Build system environment (for non-plugin scripts)
-pub fn build_system_env(lbhomedir: &PathBuf) -> HashMap<String, String> {
+pub fn build_system_env(lbhomedir: &Path) -> HashMap<String, String> {
     let mut env = HashMap::new();
 
     env.insert("LBHOMEDIR".to_string(), lbhomedir.display().to_string());

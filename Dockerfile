@@ -1,9 +1,19 @@
 # Multi-stage Dockerfile for LoxBerry Rust
+# Uses cargo-chef for dependency layer caching to speed up builds
 
-# Build stage
-FROM rust:bookworm AS builder
-
+# Chef stage - installs cargo-chef
+FROM rust:bookworm AS chef
+RUN cargo install cargo-chef --locked
 WORKDIR /build
+
+# Planner stage - generates a recipe of dependencies
+FROM chef AS planner
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Builder stage - caches dependencies separately from source
+FROM chef AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -11,11 +21,13 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy workspace files
-COPY Cargo.toml ./
-COPY crates ./crates
+# Build dependencies only (cached layer as long as Cargo.toml/Cargo.lock don't change)
+COPY --from=planner /build/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 
-# Build release binary
+# Build the actual application
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
 RUN cargo build --release --bin loxberry-daemon
 
 # Runtime stage

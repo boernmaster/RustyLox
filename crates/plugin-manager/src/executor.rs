@@ -35,8 +35,7 @@ impl PluginExecutor {
             return Err(loxberry_core::Error::plugin(format!(
                 "Script execution failed: {}",
                 stderr
-            ))
-            .into());
+            )));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -64,8 +63,7 @@ impl PluginExecutor {
             return Err(loxberry_core::Error::plugin(format!(
                 "Script execution failed: {}",
                 stderr
-            ))
-            .into());
+            )));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -93,8 +91,7 @@ impl PluginExecutor {
             return Err(loxberry_core::Error::plugin(format!(
                 "Script execution failed: {}",
                 stderr
-            ))
-            .into());
+            )));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
