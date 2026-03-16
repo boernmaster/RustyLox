@@ -142,7 +142,9 @@ impl BackupManager {
             }
         }
 
-        Err(loxberry_core::Error::backup("Metadata not found in backup".to_string()).into())
+        Err(loxberry_core::Error::backup(
+            "Metadata not found in backup".to_string(),
+        ))
     }
 
     /// Delete a backup
@@ -151,9 +153,10 @@ impl BackupManager {
         let backup_path = backup_dir.join(backup_name);
 
         if !backup_path.exists() {
-            return Err(
-                loxberry_core::Error::backup(format!("Backup not found: {}", backup_name)).into(),
-            );
+            return Err(loxberry_core::Error::backup(format!(
+                "Backup not found: {}",
+                backup_name
+            )));
         }
 
         tokio::fs::remove_file(&backup_path).await?;

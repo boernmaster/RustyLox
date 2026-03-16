@@ -1,7 +1,5 @@
 //! Error types for LoxBerry
 
-use std::fmt;
-
 /// Result type alias for LoxBerry operations
 pub type Result<T> = std::result::Result<T, Error>;
 

@@ -7,7 +7,9 @@ use std::path::PathBuf;
 /// Restore from a backup file
 pub async fn restore_backup(lbhomedir: PathBuf, backup_path: PathBuf) -> Result<()> {
     if !backup_path.exists() {
-        return Err(loxberry_core::Error::backup("Backup file not found".to_string()).into());
+        return Err(loxberry_core::Error::backup(
+            "Backup file not found".to_string(),
+        ));
     }
 
     tracing::info!("Restoring from backup: {}", backup_path.display());

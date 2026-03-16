@@ -12,8 +12,8 @@ use tokio::sync::{broadcast, RwLock};
 pub struct MiniserverEvent {
     pub miniserver_id: u8,
     pub miniserver_name: String,
-    pub direction: String,  // "sent", "received", "error"
-    pub protocol: String,   // "http", "udp"
+    pub direction: String, // "sent", "received", "error"
+    pub protocol: String,  // "http", "udp"
     pub url: Option<String>,
     pub params: Option<String>,
     pub response: Option<String>,
@@ -107,9 +107,7 @@ impl AppState {
                 response: event.response,
                 code: event.code,
                 error: event.error,
-                timestamp: chrono::Utc::now()
-                    .format("%Y-%m-%d %H:%M:%S")
-                    .to_string(),
+                timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
             });
         });
 

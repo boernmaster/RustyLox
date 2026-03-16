@@ -68,7 +68,6 @@ impl SubscriptionManager {
     /// Parse subscriptions from INI format
     fn parse_subscriptions_ini(&self, content: &str) -> Result<Vec<Subscription>> {
         let mut subscriptions = Vec::new();
-        let mut current_section: Option<String> = None;
         let mut current_topic: Option<String> = None;
         let mut current_enabled = true;
         let mut current_name: Option<String> = None;
@@ -94,7 +93,6 @@ impl SubscriptionManager {
                     });
                 }
 
-                current_section = Some(line[1..line.len() - 1].to_string());
                 current_enabled = true;
                 continue;
             }
@@ -171,7 +169,7 @@ fn topic_matches(filter: &str, topic: &str) -> bool {
 
     // # wildcard matches everything from this level down
     if filter.ends_with("/#") {
-        let prefix = &filter[..filter.len() - 2];
+        let prefix = filter.strip_suffix("/#").unwrap_or(filter);
         return topic.starts_with(prefix);
     }
 

@@ -19,8 +19,8 @@ pub type MonitorCallback = Arc<dyn Fn(MonitorEvent) + Send + Sync>;
 /// Miniserver communication event for monitoring
 #[derive(Debug, Clone)]
 pub struct MonitorEvent {
-    pub direction: String,  // "sent", "received", "error"
-    pub protocol: String,   // "http", "udp"
+    pub direction: String, // "sent", "received", "error"
+    pub protocol: String,  // "http", "udp"
     pub url: Option<String>,
     pub params: Option<String>,
     pub response: Option<String>,
@@ -51,6 +51,7 @@ impl std::fmt::Debug for MiniserverHttpClient {
 
 /// Miniserver XML response structure
 #[derive(Debug, Deserialize, Serialize)]
+#[allow(dead_code)]
 struct MiniserverResponse {
     #[serde(rename = "@value")]
     value: Option<String>,
