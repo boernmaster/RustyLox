@@ -72,10 +72,7 @@ pub fn create_router(state: AppState) -> Router {
             "/api/backup/:name/download",
             get(routes::backup::download_backup),
         )
-        .route(
-            "/api/backup/:name",
-            delete(routes::backup::delete_backup),
-        )
+        .route("/api/backup/:name", delete(routes::backup::delete_backup))
         .with_state(state)
         // Middleware
         .layer(CorsLayer::permissive())

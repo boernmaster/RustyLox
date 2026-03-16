@@ -1,11 +1,11 @@
 //! Backup and restore UI handlers
 
 use askama::Template;
+use axum::extract::State;
 use axum::{
     extract::{Path, Query},
     response::Html,
 };
-use axum::extract::State;
 use backup_manager::BackupManager;
 use serde::Deserialize;
 use web_api::AppState;
