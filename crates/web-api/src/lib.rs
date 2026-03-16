@@ -9,10 +9,21 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
+use std::sync::Arc;
+use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 /// Create the Axum router with all routes
 pub fn create_router(state: AppState) -> Router {
+    // Rate limit: 60 requests/minute per IP (replenish 1 req/s, burst 10)
+    let governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(1)
+            .burst_size(10)
+            .finish()
+            .expect("Invalid rate limit config"),
+    );
+
     Router::new()
         // Health check
         .route("/health", get(routes::health::health_check))
@@ -70,6 +81,8 @@ pub fn create_router(state: AppState) -> Router {
         // Backup routes
         .route("/api/backup", get(routes::backup::list_backups))
         .route("/api/backup/create", post(routes::backup::create_backup))
+        .route("/api/backup/schedule", get(routes::backup::get_schedule))
+        .route("/api/backup/schedule", put(routes::backup::update_schedule))
         .route(
             "/api/backup/:name/download",
             get(routes::backup::download_backup),
@@ -83,7 +96,8 @@ pub fn create_router(state: AppState) -> Router {
             delete(routes::backup::delete_backup),
         )
         .with_state(state)
-        // Middleware
+        // Middleware (innermost first)
+        .layer(GovernorLayer { config: governor_conf })
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
 }

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - LoxBerry</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>REST API Reference</h1>
+        <p style="color: #666; margin-bottom: 24px;">
+            All endpoints accept and return JSON. Rate limit: 10 burst / 1 req/s per IP.
+        </p>
+
+        {% for group in groups %}
+        <div class="card" style="margin-bottom: 24px;">
+            <h2 style="margin-bottom: 16px; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;">
+                {{ group.name }}
+            </h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Method</th>
+                        <th style="width: 320px;">Path</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ep in group.endpoints %}
+                    <tr>
+                        <td>
+                            <code style="
+                                background: {% if ep.method == "GET" %}#d4edda{% else if ep.method == "POST" %}#d1ecf1{% else if ep.method == "PUT" %}#fff3cd{% else %}#f8d7da{% endif %};
+                                color: {% if ep.method == "GET" %}#155724{% else if ep.method == "POST" %}#0c5460{% else if ep.method == "PUT" %}#856404{% else %}#721c24{% endif %};
+                                padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.8rem;">
+                                {{ ep.method }}
+                            </code>
+                        </td>
+                        <td><code>{{ ep.path }}</code></td>
+                        <td>{{ ep.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+
+        <div class="card" style="margin-bottom: 24px;">
+            <h2 style="margin-bottom: 12px;">Rate Limiting</h2>
+            <p>All API endpoints are rate-limited to <strong>1 request/second</strong> with a burst of <strong>10 requests</strong> per IP address.</p>
+            <p style="margin-top: 8px;">When the limit is exceeded, the server returns <code>429 Too Many Requests</code>.</p>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 12px;">Common Response Codes</h2>
+            <table class="table">
+                <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    <tr><td><code>200</code></td><td>Success</td></tr>
+                    <tr><td><code>400</code></td><td>Bad request / validation error</td></tr>
+                    <tr><td><code>404</code></td><td>Resource not found</td></tr>
+                    <tr><td><code>429</code></td><td>Rate limit exceeded</td></tr>
+                    <tr><td><code>500</code></td><td>Internal server error</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v4.0.0 | &copy; 2026</p>
+    </footer>
+</body>
+</html>

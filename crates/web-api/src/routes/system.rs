@@ -37,38 +37,63 @@ pub struct SetLogLevelRequest {
 
 const VALID_LOG_LEVELS: &[&str] = &["error", "warn", "info", "debug", "trace"];
 
-/// Set log level at runtime
+/// Validate a log level directive string.
+/// Accepts simple levels like "debug" or per-component like "web_api=debug,mqtt_gateway=trace"
+fn validate_log_directive(directive: &str) -> bool {
+    for part in directive.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        if part.contains('=') {
+            // component=level format
+            let mut iter = part.splitn(2, '=');
+            let _component = iter.next().unwrap_or("").trim();
+            let level = iter.next().unwrap_or("").trim();
+            if !VALID_LOG_LEVELS.contains(&level) {
+                return false;
+            }
+        } else if !VALID_LOG_LEVELS.contains(&part) {
+            return false;
+        }
+    }
+    true
+}
+
+/// Set log level at runtime.
+/// Accepts simple levels ("debug") or per-component directives ("web_api=debug,mqtt_gateway=trace")
 pub async fn set_log_level(
     State(state): State<AppState>,
     Json(body): Json<SetLogLevelRequest>,
 ) -> (StatusCode, Json<Value>) {
-    let level = body.log_level.to_lowercase();
+    let directive = body.log_level.to_lowercase();
+    let directive = directive.trim();
 
-    if !VALID_LOG_LEVELS.contains(&level.as_str()) {
+    if directive.is_empty() || !validate_log_directive(directive) {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({
                 "error": format!(
-                    "Invalid log level '{}'. Valid: error, warn, info, debug, trace",
-                    level
+                    "Invalid log directive '{}'. Use simple levels (error/warn/info/debug/trace) \
+                     or per-component format (web_api=debug,mqtt_gateway=trace).",
+                    directive
                 )
             })),
         );
     }
 
     let mut current = state.log_level.write().await;
-    *current = level.clone();
+    *current = directive.to_string();
 
-    // Propagate to environment so subprocesses (plugin scripts) inherit it
-    std::env::set_var("RUST_LOG", &level);
+    std::env::set_var("RUST_LOG", directive);
 
-    tracing::info!("Log level changed to: {}", level);
+    tracing::info!("Log level changed to: {}", directive);
 
     (
         StatusCode::OK,
         Json(json!({
             "success": true,
-            "log_level": level,
+            "log_level": directive,
             "message": "Log level updated."
         })),
     )
