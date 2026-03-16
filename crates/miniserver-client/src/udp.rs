@@ -14,6 +14,7 @@ const DEFAULT_DELIMITER: &str = "=";
 /// UDP client for Miniserver
 #[derive(Debug)]
 pub struct MiniserverUdpClient {
+    #[allow(dead_code)]
     config: MiniserverConfig,
     socket: UdpSocket,
     target_addr: SocketAddr,
@@ -173,16 +174,21 @@ impl MiniserverUdpClient {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_build_message() {
+    async fn make_test_client() -> MiniserverUdpClient {
         let config = MiniserverConfig::default();
-        let client = MiniserverUdpClient {
+        let socket = UdpSocket::bind("0.0.0.0:0").await.unwrap();
+        MiniserverUdpClient {
             config,
-            socket: unsafe { std::mem::zeroed() }, // For testing only
+            socket,
             target_addr: "127.0.0.1:8080".parse().unwrap(),
             delta_cache: DeltaCache::new(),
             delimiter: "=".to_string(),
-        };
+        }
+    }
+
+    #[tokio::test]
+    async fn test_build_message() {
+        let client = make_test_client().await;
 
         let message = client.build_message(
             Some("Weather".to_string()),
@@ -195,16 +201,9 @@ mod tests {
         assert_eq!(message, "Weather: Temp=23.5 Humidity=65");
     }
 
-    #[test]
-    fn test_chunk_message() {
-        let config = MiniserverConfig::default();
-        let client = MiniserverUdpClient {
-            config,
-            socket: unsafe { std::mem::zeroed() },
-            target_addr: "127.0.0.1:8080".parse().unwrap(),
-            delta_cache: DeltaCache::new(),
-            delimiter: "=".to_string(),
-        };
+    #[tokio::test]
+    async fn test_chunk_message() {
+        let client = make_test_client().await;
 
         let short_message = "test message";
         let chunks = client.chunk_message(short_message, 220);
