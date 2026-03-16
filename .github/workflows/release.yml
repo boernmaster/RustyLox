@@ -70,12 +70,6 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             archive: tar.gz
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            archive: tar.gz
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            archive: zip
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -92,31 +86,17 @@ jobs:
           shared-key: "release-${{ matrix.target }}"
           cache-on-failure: false
 
-      - name: Install cross-compilation tools (Linux ARM64)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-
       - name: Build release binary
         run: |
           cargo build --release --target ${{ matrix.target }} --bin loxberry-daemon
 
-      - name: Package binary (Linux)
-        if: matrix.archive == 'tar.gz'
+      - name: Package binary
         run: |
           cd target/${{ matrix.target }}/release
           tar czf loxberry-daemon-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz loxberry-daemon
           mv loxberry-daemon-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz ../../../
 
-      - name: Package binary (Windows)
-        if: matrix.archive == 'zip'
-        run: |
-          cd target/${{ matrix.target }}/release
-          Compress-Archive -Path loxberry-daemon.exe -DestinationPath ../../../loxberry-daemon-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
-
       - name: Upload Release Asset (tar.gz)
-        if: matrix.archive == 'tar.gz'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -125,17 +105,6 @@ jobs:
           asset_path: ./loxberry-daemon-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
           asset_name: loxberry-daemon-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.tar.gz
           asset_content_type: application/gzip
-
-      - name: Upload Release Asset (zip)
-        if: matrix.archive == 'zip'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./loxberry-daemon-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
-          asset_name: loxberry-daemon-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.zip
-          asset_content_type: application/zip
 
   publish-docker-release:
     name: Publish Docker Release
