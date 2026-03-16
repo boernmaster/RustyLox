@@ -54,7 +54,9 @@ pub fn validate_mqtt_config(config: &MqttConfig) -> Result<()> {
         .map_err(|_| Error::config("MQTT broker port must be a valid number (1-65535)"))?;
 
     if port == 0 {
-        return Err(Error::config("MQTT broker port must be between 1 and 65535"));
+        return Err(Error::config(
+            "MQTT broker port must be between 1 and 65535",
+        ));
     }
 
     let udp_port: u16 = config

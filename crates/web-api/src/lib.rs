@@ -91,13 +91,12 @@ pub fn create_router(state: AppState) -> Router {
             "/api/backup/:name/restore",
             post(routes::backup::restore_backup),
         )
-        .route(
-            "/api/backup/:name",
-            delete(routes::backup::delete_backup),
-        )
+        .route("/api/backup/:name", delete(routes::backup::delete_backup))
         .with_state(state)
         // Middleware (innermost first)
-        .layer(GovernorLayer { config: governor_conf })
+        .layer(GovernorLayer {
+            config: governor_conf,
+        })
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
 }

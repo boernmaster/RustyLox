@@ -102,14 +102,23 @@ pub struct BackupSchedule {
     pub keep_backups: usize,
 
     /// Whether to include plugin data in scheduled backups
-    #[serde(rename = "IncludePlugins", default = "BackupSchedule::default_include_plugins")]
+    #[serde(
+        rename = "IncludePlugins",
+        default = "BackupSchedule::default_include_plugins"
+    )]
     pub include_plugins: bool,
 }
 
 impl BackupSchedule {
-    fn default_interval() -> u64 { 24 }
-    fn default_keep() -> usize { 7 }
-    fn default_include_plugins() -> bool { true }
+    fn default_interval() -> u64 {
+        24
+    }
+    fn default_keep() -> usize {
+        7
+    }
+    fn default_include_plugins() -> bool {
+        true
+    }
 }
 
 impl Default for BackupSchedule {
