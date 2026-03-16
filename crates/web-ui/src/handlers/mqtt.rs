@@ -149,10 +149,25 @@ pub async fn config_submit(
     State(state): State<AppState>,
     Form(form): Form<MqttConfigFormData>,
 ) -> Html<String> {
-    // Get mutable config
-    let mut config = state.config.write().await;
+    // Build config for validation before writing
+    let candidate = loxberry_config::MqttConfig {
+        brokerhost: form.brokerhost.clone(),
+        brokerport: form.brokerport.clone(),
+        brokeruser: form.brokeruser.clone(),
+        brokerpass: form.brokerpass.clone(),
+        udpinport: form.udpinport.clone(),
+        ..Default::default()
+    };
 
-    // Update MQTT configuration
+    if let Err(e) = loxberry_config::validation::validate_mqtt_config(&candidate) {
+        return Html(format!(
+            "<div class='alert alert-danger'>Validation error: {}</div>",
+            e
+        ));
+    }
+
+    // Get mutable config and apply validated values
+    let mut config = state.config.write().await;
     config.mqtt.brokerhost = form.brokerhost;
     config.mqtt.brokerport = form.brokerport;
     config.mqtt.brokeruser = form.brokeruser;

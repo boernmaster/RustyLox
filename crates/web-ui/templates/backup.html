@@ -75,6 +75,12 @@
                                 <a href="/api/backup/{{ backup.name }}/download"
                                    class="btn btn-sm btn-secondary">Download</a>
                                 <button
+                                    hx-post="/backup/{{ backup.name }}/restore"
+                                    hx-target="#backup-result"
+                                    hx-swap="innerHTML"
+                                    hx-confirm="Restore from {{ backup.name }}? This will overwrite current configuration."
+                                    class="btn btn-sm btn-warning">Restore</button>
+                                <button
                                     hx-delete="/backup/{{ backup.name }}"
                                     hx-target="#row-{{ loop.index }}"
                                     hx-swap="outerHTML"

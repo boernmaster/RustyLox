@@ -65,12 +65,18 @@ pub fn create_router(state: AppState) -> Router {
         )
         // System routes
         .route("/api/system/status", get(routes::system::system_status))
+        .route("/api/system/log-level", get(routes::system::get_log_level))
+        .route("/api/system/log-level", put(routes::system::set_log_level))
         // Backup routes
         .route("/api/backup", get(routes::backup::list_backups))
         .route("/api/backup/create", post(routes::backup::create_backup))
         .route(
             "/api/backup/:name/download",
             get(routes::backup::download_backup),
+        )
+        .route(
+            "/api/backup/:name/restore",
+            post(routes::backup::restore_backup),
         )
         .route(
             "/api/backup/:name",

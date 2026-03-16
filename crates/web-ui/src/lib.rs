@@ -87,6 +87,7 @@ pub fn create_ui_router(state: AppState) -> Router {
         // Backup management
         .route("/backup", get(handlers::backup::index))
         .route("/backup/create", post(handlers::backup::create))
+        .route("/backup/:name/restore", post(handlers::backup::restore))
         .route(
             "/backup/:name",
             axum::routing::delete(handlers::backup::delete),

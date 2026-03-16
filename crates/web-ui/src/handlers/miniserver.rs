@@ -109,6 +109,14 @@ pub async fn add_submit(
         ..Default::default()
     };
 
+    // Validate before saving
+    if let Err(e) = loxberry_config::validation::validate_miniserver_config(&ms_config) {
+        return Html(format!(
+            "<div class='alert alert-danger'>Validation error: {}</div>",
+            e
+        ));
+    }
+
     // Add to config
     config.miniserver.insert(next_id.clone(), ms_config);
 
@@ -198,6 +206,14 @@ pub async fn edit_submit(
         ),
         ..Default::default()
     };
+
+    // Validate before saving
+    if let Err(e) = loxberry_config::validation::validate_miniserver_config(&ms_config) {
+        return Html(format!(
+            "<div class='alert alert-danger'>Validation error: {}</div>",
+            e
+        ));
+    }
 
     // Update in config
     config.miniserver.insert(id.clone(), ms_config);
