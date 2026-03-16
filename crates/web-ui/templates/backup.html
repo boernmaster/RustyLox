@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Restore - LoxBerry</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup" class="active">Backup</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Backup &amp; Restore</h1>
+            <div style="display: flex; gap: 10px;">
+                <button
+                    hx-post="/backup/create?include_plugins=true"
+                    hx-target="#backup-result"
+                    hx-swap="innerHTML"
+                    hx-indicator="#creating-spinner"
+                    class="btn btn-primary">
+                    Create Backup
+                </button>
+            </div>
+        </div>
+
+        <div id="creating-spinner" class="htmx-indicator" style="margin-bottom: 12px;">
+            Creating backup, please wait...
+        </div>
+
+        <div id="backup-result" style="margin-bottom: 16px;"></div>
+
+        {% if backups.is_empty() %}
+        <div class="card">
+            <p>No backups found. Create your first backup to protect your configuration.</p>
+        </div>
+        {% else %}
+        <div class="card">
+            <h2 style="margin-bottom: 16px;">Available Backups</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Size</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backup-list">
+                        {% for backup in backups %}
+                        <tr id="row-{{ loop.index }}">
+                            <td>{{ backup.name }}</td>
+                            <td>{{ backup.size_human }}</td>
+                            <td>{{ backup.created }}</td>
+                            <td style="display: flex; gap: 8px;">
+                                <a href="/api/backup/{{ backup.name }}/download"
+                                   class="btn btn-sm btn-secondary">Download</a>
+                                <button
+                                    hx-delete="/backup/{{ backup.name }}"
+                                    hx-target="#row-{{ loop.index }}"
+                                    hx-swap="outerHTML"
+                                    hx-confirm="Delete backup {{ backup.name }}?"
+                                    class="btn btn-sm btn-danger">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v4.0.0 | &copy; 2026</p>
+    </footer>
+</body>
+</html>

@@ -65,6 +65,17 @@ pub fn create_router(state: AppState) -> Router {
         )
         // System routes
         .route("/api/system/status", get(routes::system::system_status))
+        // Backup routes
+        .route("/api/backup", get(routes::backup::list_backups))
+        .route("/api/backup/create", post(routes::backup::create_backup))
+        .route(
+            "/api/backup/:name/download",
+            get(routes::backup::download_backup),
+        )
+        .route(
+            "/api/backup/:name",
+            delete(routes::backup::delete_backup),
+        )
         .with_state(state)
         // Middleware
         .layer(CorsLayer::permissive())

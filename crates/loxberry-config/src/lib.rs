@@ -5,6 +5,7 @@
 pub mod general;
 pub mod miniserver;
 pub mod mqtt;
+pub mod validation;
 
 pub use general::GeneralConfig;
 pub use miniserver::MiniserverConfig;
