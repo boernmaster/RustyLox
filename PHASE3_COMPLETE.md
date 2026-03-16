@@ -255,7 +255,7 @@ curl -X POST http://localhost:8080/api/mqtt/subscriptions/reload
 docker exec -it mosquitto mosquitto_pub -t "home/test" -m "hello"
 
 # Check logs
-docker logs loxberry-rust
+docker logs rustylox
 ```
 
 ### Test UDP → Gateway
@@ -480,7 +480,7 @@ curl http://localhost:8080/api/mqtt/status
 docker logs -f mosquitto
 
 # Monitor gateway logs
-docker logs -f loxberry-rust | grep mqtt
+docker logs -f rustylox | grep mqtt
 ```
 
 ## Compatibility

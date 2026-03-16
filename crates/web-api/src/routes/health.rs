@@ -11,7 +11,7 @@ pub async fn health_check(State(state): State<AppState>) -> (StatusCode, Json<Va
         StatusCode::OK,
         Json(json!({
             "status": "ok",
-            "service": "loxberry-rust",
+            "service": "rustylox",
             "version": state.version,
         })),
     )

@@ -205,9 +205,9 @@ docker pull ghcr.io/boernmaster/rustylox:1.0.0
 cat > docker-compose.yml << 'EOF'
 version: '3.8'
 services:
-  loxberry:
+  rustylox:
     image: ghcr.io/boernmaster/rustylox:1.0.0
-    container_name: loxberry
+    container_name: rustylox
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -269,7 +269,7 @@ cp volumes/config/system/general.json.example volumes/config/system/general.json
 docker compose up -d
 
 # View logs
-docker compose logs -f loxberry
+docker compose logs -f rustylox
 
 # Check status
 docker compose ps
@@ -379,7 +379,7 @@ echo '{"topic":"home/sensor1","value":"25.5"}' | nc -u localhost 11884
 
 The `docker-compose.yml` defines two services:
 
-1. **loxberry** - Main LoxBerry Rust application
+1. **rustylox** - Main RustyLox application
    - Port 8080: Web UI and REST API
    - Port 11884/udp: MQTT UDP input
 
@@ -413,7 +413,7 @@ LBHOMEDIR=/tmp/loxberry cargo run --bin loxberry-daemon
 ### Docker Build
 ```bash
 # Rebuild Docker image
-docker compose build loxberry
+docker compose build rustylox
 
 # Restart services
 docker compose down && docker compose up -d

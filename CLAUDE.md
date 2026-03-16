@@ -131,7 +131,7 @@ docker compose build
 docker compose up -d
 
 # View logs
-docker compose logs -f loxberry
+docker compose logs -f rustylox
 ```
 
 ### Editor Setup
@@ -723,7 +723,7 @@ COPY sdk /opt/loxberry/sdk
 
 ```yaml
 services:
-  loxberry:
+  rustylox:
     build: .
     ports:
       - "8080:8080"
@@ -751,7 +751,7 @@ docker compose build
 docker compose up -d
 
 # View logs
-docker compose logs -f loxberry
+docker compose logs -f rustylox
 
 # Stop services
 docker compose down
@@ -760,10 +760,10 @@ docker compose down
 docker compose down && docker compose build && docker compose up -d
 
 # Execute command in container
-docker compose exec loxberry bash
+docker compose exec rustylox bash
 
 # View container stats
-docker stats loxberry-rust
+docker stats rustylox
 ```
 
 ## Debugging

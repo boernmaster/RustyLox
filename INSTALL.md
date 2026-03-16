@@ -174,7 +174,7 @@ docker compose up -d
 ### Service won't start
 
 ```bash
-docker compose logs loxberry
+docker compose logs rustylox
 ```
 
 Look for `ERROR` lines. Common causes:
@@ -190,7 +190,7 @@ Look for `ERROR` lines. Common causes:
 ### Plugin hook fails
 
 1. Check plugin logs in `volumes/log/plugins/<plugin-name>/`.
-2. Verify Perl/PHP is available: `docker compose exec loxberry perl -v`
+2. Verify Perl/PHP is available: `docker compose exec rustylox perl -v`
 3. Ensure `LBHOMEDIR` is correctly set to `/opt/loxberry` inside the container.
 
 ---

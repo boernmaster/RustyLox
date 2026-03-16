@@ -118,7 +118,7 @@ docker compose build
 docker compose up -d
 
 # View logs
-docker compose logs -f loxberry
+docker compose logs -f rustylox
 ```
 
 ### 5. Access the Web Interface
@@ -471,7 +471,7 @@ cargo build -j 2
 
 2. Check logs:
    ```bash
-   docker compose logs loxberry
+   docker compose logs rustylox
    # or
    tail -f /tmp/loxberry/log/system/loxberry.log
    ```
