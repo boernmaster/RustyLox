@@ -1,6 +1,8 @@
 //! Web UI handlers
 
+pub mod backup;
 pub mod dashboard;
+pub mod logs;
 pub mod miniserver;
 pub mod mqtt;
 pub mod mqtt_management;
