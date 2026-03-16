@@ -187,6 +187,8 @@ loxberry-rust/
 
 ## Quick Start
 
+> 📖 **Detailed Build Instructions:** See [BUILD.md](BUILD.md) for comprehensive local build guide
+
 ### Prerequisites
 - Docker and Docker Compose
 - (Optional) Rust 1.80+ for local development
