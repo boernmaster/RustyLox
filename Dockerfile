@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for LoxBerry Rust
+# Multi-stage Dockerfile for RustyLox
 # Uses cargo-chef for dependency layer caching to speed up builds
 
 # Chef stage - installs cargo-chef
@@ -43,6 +43,13 @@ RUN cargo build --release --bin loxberry-daemon
 
 # Runtime stage
 FROM debian:bookworm-slim
+
+# Metadata labels
+LABEL org.opencontainers.image.title="RustyLox"
+LABEL org.opencontainers.image.description="Modern Rust rewrite of LoxBerry smart home platform"
+LABEL org.opencontainers.image.vendor="RustyLox Contributors"
+LABEL org.opencontainers.image.source="https://github.com/boernmaster/RustyLox"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # Install runtime dependencies
 # Including Perl, PHP, Bash for plugin SDK compatibility
