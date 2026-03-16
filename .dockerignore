@@ -10,7 +10,6 @@ PLAN_UPDATE_PHASE4.md
 
 # Build artifacts
 target
-Cargo.lock
 
 # Docker
 docker-compose.yml
