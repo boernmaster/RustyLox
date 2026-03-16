@@ -23,7 +23,8 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    info!("Starting LoxBerry Daemon v{}", env!("CARGO_PKG_VERSION"));
+    let version = env!("BUILD_VERSION");
+    info!("Starting LoxBerry Daemon v{}", version);
 
     // Get LoxBerry home directory from environment or use default
     let lbhomedir = std::env::var("LBHOMEDIR")
@@ -82,7 +83,13 @@ async fn main() -> Result<()> {
     };
 
     // Create application state
-    let state = AppState::new(lbhomedir, config_manager, config, mqtt_gateway);
+    let state = AppState::new(
+        lbhomedir,
+        version.to_string(),
+        config_manager,
+        config,
+        mqtt_gateway,
+    );
 
     // Create API router
     let api_router = create_router(state.clone());

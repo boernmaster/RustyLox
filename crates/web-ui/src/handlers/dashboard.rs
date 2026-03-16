@@ -11,7 +11,7 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
 
     // Get system status
     let system_status = SystemStatus {
-        version: config.base.version.clone(),
+        version: state.version.clone(),
         status: "running".to_string(),
         uptime: "Unknown".to_string(), // TODO: Calculate uptime
     };

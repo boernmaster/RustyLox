@@ -13,7 +13,7 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
     let template = SettingsTemplate {
         language: config.base.lang.clone(),
         timezone: config.timeserver.timezone.clone(),
-        version: config.base.version.clone(),
+        version: state.version.clone(),
     };
 
     Html(

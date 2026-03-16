@@ -28,6 +28,9 @@ pub struct AppState {
     /// LoxBerry home directory
     pub lbhomedir: PathBuf,
 
+    /// Build version (includes git tag/commit)
+    pub version: String,
+
     /// Configuration manager
     pub config_manager: Arc<ConfigManager>,
 
@@ -48,6 +51,7 @@ impl AppState {
     /// Create new application state
     pub fn new(
         lbhomedir: PathBuf,
+        version: String,
         config_manager: ConfigManager,
         config: GeneralConfig,
         mqtt_gateway: Option<Arc<mqtt_gateway::MqttGateway>>,
@@ -57,6 +61,7 @@ impl AppState {
 
         Self {
             lbhomedir,
+            version,
             config_manager: Arc::new(config_manager),
             config: Arc::new(RwLock::new(config)),
             miniserver_clients: Arc::new(DashMap::new()),
