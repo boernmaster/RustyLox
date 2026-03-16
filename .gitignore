@@ -22,3 +22,6 @@ volumes/
 # OS
 .DS_Store
 Thumbs.db
+
+# Test files
+*.zip

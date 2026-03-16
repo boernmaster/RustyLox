@@ -28,6 +28,12 @@ pub struct MqttConfig {
 
     #[serde(rename = "Finderdisabled")]
     pub finderdisabled: bool,
+
+    /// Global regex filter for topics sent to Miniserver
+    /// Matching topics are NOT forwarded. Topic slashes (/) are replaced with underscores (_) before filtering.
+    /// Example: "_healthcheck_|_info_|_announce_"
+    #[serde(rename = "Topicfilter", default)]
+    pub topicfilter: String,
 }
 
 impl MqttConfig {
@@ -72,6 +78,7 @@ impl Default for MqttConfig {
             uselocalbroker: "1".to_string(),
             websocketport: "9001".to_string(),
             finderdisabled: false,
+            topicfilter: String::new(),
         }
     }
 }

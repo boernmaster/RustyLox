@@ -26,7 +26,10 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
         Err(_) => Vec::new(),
     };
 
-    let template = PluginListTemplate { plugins };
+    let template = PluginListTemplate {
+        plugins,
+        version: state.version.clone(),
+    };
 
     Html(
         template
@@ -51,9 +54,103 @@ pub async fn install_form(State(_state): State<AppState>) -> Html<String> {
 }
 
 /// Submit plugin installation
-pub async fn install_submit(State(_state): State<AppState>, _multipart: Multipart) -> Html<String> {
-    // TODO: Handle file upload and install plugin
-    Html(String::from("<div class='success'>Plugin installed successfully. <a href='/plugins'>Back to list</a></div>"))
+pub async fn install_submit(
+    State(state): State<AppState>,
+    mut multipart: Multipart,
+) -> Html<String> {
+    // Extract uploaded file from multipart
+    let mut zip_path: Option<std::path::PathBuf> = None;
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let name = field.name().unwrap_or("").to_string();
+
+        if name == "file" {
+            // Get filename from content disposition
+            let filename = field
+                .file_name()
+                .unwrap_or("upload.zip")
+                .to_string();
+
+            // Validate ZIP extension
+            if !filename.to_lowercase().ends_with(".zip") {
+                return Html(String::from(
+                    "<div class='error'>Only .zip files are allowed</div>",
+                ));
+            }
+
+            // Read file data
+            let data = match field.bytes().await {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    return Html(format!(
+                        "<div class='error'>Failed to read uploaded file: {}</div>",
+                        e
+                    ));
+                }
+            };
+
+            // Save to temporary location
+            let temp_dir = state.lbhomedir.join("tmp");
+            if let Err(e) = tokio::fs::create_dir_all(&temp_dir).await {
+                return Html(format!(
+                    "<div class='error'>Failed to create temp directory: {}</div>",
+                    e
+                ));
+            }
+
+            let temp_path = temp_dir.join(&filename);
+            if let Err(e) = tokio::fs::write(&temp_path, &data).await {
+                return Html(format!(
+                    "<div class='error'>Failed to save uploaded file: {}</div>",
+                    e
+                ));
+            }
+
+            zip_path = Some(temp_path);
+            break;
+        }
+    }
+
+    // Check if we got a file
+    let zip_path = match zip_path {
+        Some(path) => path,
+        None => {
+            return Html(String::from(
+                "<div class='error'>No file uploaded</div>",
+            ));
+        }
+    };
+
+    // Install the plugin
+    let plugin_manager = plugin_manager::PluginInstaller::new(&state.lbhomedir);
+
+    let install_request = plugin_manager::InstallRequest {
+        zip_path: zip_path.clone(),
+        action: plugin_manager::InstallAction::Install,
+        force: false,
+    };
+
+    match plugin_manager.install(install_request).await {
+        Ok(plugin) => {
+            // Clean up temp file
+            let _ = tokio::fs::remove_file(&zip_path).await;
+
+            Html(format!(
+                "<div class='success'>Plugin <strong>{}</strong> v{} installed successfully. \
+                 <a href='/plugins'>Back to list</a></div>",
+                plugin.name, plugin.version
+            ))
+        }
+        Err(e) => {
+            // Clean up temp file
+            let _ = tokio::fs::remove_file(&zip_path).await;
+
+            Html(format!(
+                "<div class='error'>Failed to install plugin: {}</div>",
+                e
+            ))
+        }
+    }
 }
 
 /// Show plugin details

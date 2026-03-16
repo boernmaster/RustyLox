@@ -5,7 +5,7 @@ use askama::Template;
 use axum::{extract::State, response::Html};
 use web_api::AppState;
 
-pub async fn index(State(_state): State<AppState>) -> Html<String> {
+pub async fn index(State(state): State<AppState>) -> Html<String> {
     let groups = vec![
         ApiGroup {
             name: "Health".to_string(),
@@ -119,7 +119,10 @@ pub async fn index(State(_state): State<AppState>) -> Html<String> {
         },
     ];
 
-    let template = ApiDocsTemplate { groups };
+    let template = ApiDocsTemplate {
+        groups,
+        version: state.version.clone(),
+    };
     Html(
         template
             .render()

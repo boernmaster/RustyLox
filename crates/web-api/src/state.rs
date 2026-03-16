@@ -62,6 +62,23 @@ impl AppState {
         config: GeneralConfig,
         mqtt_gateway: Option<Arc<mqtt_gateway::MqttGateway>>,
     ) -> Self {
+        Self::new_with_shared_config(
+            lbhomedir,
+            version,
+            config_manager,
+            Arc::new(RwLock::new(config)),
+            mqtt_gateway,
+        )
+    }
+
+    /// Create new application state with a shared config (Arc<RwLock<GeneralConfig>>)
+    pub fn new_with_shared_config(
+        lbhomedir: PathBuf,
+        version: String,
+        config_manager: ConfigManager,
+        config: Arc<RwLock<GeneralConfig>>,
+        mqtt_gateway: Option<Arc<mqtt_gateway::MqttGateway>>,
+    ) -> Self {
         // Create broadcast channel for monitoring (buffer 1000 events)
         let (monitor_tx, _) = broadcast::channel(1000);
 
@@ -72,7 +89,7 @@ impl AppState {
             lbhomedir,
             version,
             config_manager: Arc::new(config_manager),
-            config: Arc::new(RwLock::new(config)),
+            config,
             miniserver_clients: Arc::new(DashMap::new()),
             mqtt_gateway,
             miniserver_monitor: monitor_tx,

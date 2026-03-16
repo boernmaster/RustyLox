@@ -7,6 +7,7 @@ use loxberry_config::{ConfigManager, GeneralConfig};
 use mqtt_gateway::MqttGateway;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use web_api::{create_router, AppState};
@@ -55,35 +56,42 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Wrap config in Arc<RwLock> for sharing between AppState and MqttGateway
+    let config = Arc::new(RwLock::new(config));
+
     // Initialize MQTT Gateway if enabled
-    let mqtt_gateway = if config.mqtt.udp_port() > 0 {
-        info!("Initializing MQTT Gateway");
-        match MqttGateway::new(config.mqtt.clone(), lbhomedir.clone()) {
-            Ok(gateway) => {
-                let gateway = Arc::new(gateway);
+    let mqtt_gateway = {
+        let config_read = config.read().await;
+        if config_read.mqtt.udp_port() > 0 {
+            drop(config_read);
+            info!("Initializing MQTT Gateway");
+            match MqttGateway::new(Arc::clone(&config), lbhomedir.clone()) {
+                Ok(gateway) => {
+                    let gateway = Arc::new(gateway);
 
-                // Start gateway in background
-                let gateway_clone = Arc::clone(&gateway);
-                tokio::spawn(async move {
-                    if let Err(e) = gateway_clone.start().await {
-                        error!("MQTT Gateway error: {}", e);
-                    }
-                });
+                    // Start gateway in background
+                    let gateway_clone = Arc::clone(&gateway);
+                    tokio::spawn(async move {
+                        if let Err(e) = gateway_clone.start().await {
+                            error!("MQTT Gateway error: {}", e);
+                        }
+                    });
 
-                Some(gateway)
+                    Some(gateway)
+                }
+                Err(e) => {
+                    warn!("Failed to initialize MQTT Gateway: {}", e);
+                    None
+                }
             }
-            Err(e) => {
-                warn!("Failed to initialize MQTT Gateway: {}", e);
-                None
-            }
+        } else {
+            info!("MQTT Gateway disabled (udpinport = 0)");
+            None
         }
-    } else {
-        info!("MQTT Gateway disabled (udpinport = 0)");
-        None
     };
 
     // Create application state
-    let state = AppState::new(
+    let state = AppState::new_with_shared_config(
         lbhomedir,
         version.to_string(),
         config_manager,

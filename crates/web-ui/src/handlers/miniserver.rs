@@ -32,7 +32,10 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
         })
         .collect();
 
-    let template = MiniserverListTemplate { miniservers };
+    let template = MiniserverListTemplate {
+        miniservers,
+        version: state.version.clone(),
+    };
 
     Html(
         template
@@ -42,10 +45,11 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
 }
 
 /// Show add Miniserver form
-pub async fn add_form(State(_state): State<AppState>) -> Html<String> {
+pub async fn add_form(State(state): State<AppState>) -> Html<String> {
     let template = MiniserverEditTemplate {
         miniserver: None,
         is_new: true,
+        version: state.version.clone(),
     };
 
     Html(
@@ -154,6 +158,7 @@ pub async fn edit_form(State(state): State<AppState>, Path(id): Path<String>) ->
     let template = MiniserverEditTemplate {
         miniserver,
         is_new: false,
+        version: state.version.clone(),
     };
 
     Html(
@@ -303,9 +308,10 @@ pub async fn test_connection(
 }
 
 /// Miniserver Monitor page (displays the UI)
-pub async fn monitor(State(_state): State<AppState>) -> Html<String> {
+pub async fn monitor(State(state): State<AppState>) -> Html<String> {
     let template = MiniserverMonitorTemplate {
         title: "Miniserver Monitor - Real-time Communication Viewer".to_string(),
+        version: state.version.clone(),
     };
 
     Html(

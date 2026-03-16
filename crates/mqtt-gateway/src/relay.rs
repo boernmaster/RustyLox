@@ -1,37 +1,145 @@
 //! Relay messages to Miniserver
 
-use loxberry_core::Result;
-use tracing::debug;
+use loxberry_config::GeneralConfig;
+use loxberry_core::{Error, Result};
+use miniserver_client::MiniserverClient;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use tracing::{debug, error, info, warn};
 
 /// Message relay to Miniserver
 pub struct Relay {
-    // In a full implementation, this would hold Miniserver clients
+    config: Arc<RwLock<GeneralConfig>>,
+    /// Cache of Miniserver clients (by Miniserver ID)
+    clients: RwLock<HashMap<String, Arc<MiniserverClient>>>,
 }
 
 impl Relay {
     /// Create a new relay
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(config: Arc<RwLock<GeneralConfig>>) -> Self {
+        Self {
+            config,
+            clients: RwLock::new(HashMap::new()),
+        }
+    }
+
+    /// Get or create a Miniserver client for the given ID
+    async fn get_client(&self, ms_id: &str) -> Result<Arc<MiniserverClient>> {
+        // Check cache first
+        {
+            let clients = self.clients.read().await;
+            if let Some(client) = clients.get(ms_id) {
+                return Ok(Arc::clone(client));
+            }
+        }
+
+        // Not in cache, create new client
+        let config = self.config.read().await;
+        let ms_config = config
+            .miniserver
+            .get(ms_id)
+            .ok_or_else(|| Error::miniserver(format!("Miniserver '{}' not found", ms_id)))?;
+
+        let client = Arc::new(MiniserverClient::new(ms_config.clone())?);
+
+        // Cache the client
+        let mut clients = self.clients.write().await;
+        clients.insert(ms_id.to_string(), Arc::clone(&client));
+
+        Ok(client)
+    }
+
+    /// Check if a topic should be filtered based on global regex filter
+    fn should_filter(&self, topic: &str, filter_pattern: &str) -> bool {
+        if filter_pattern.is_empty() {
+            return false;
+        }
+
+        // Replace slashes with underscores for filtering
+        let normalized_topic = topic.replace('/', "_");
+
+        // Try to compile and match regex
+        match regex::Regex::new(filter_pattern) {
+            Ok(re) => {
+                if re.is_match(&normalized_topic) {
+                    debug!(
+                        "Message filtered: topic '{}' matches global filter pattern '{}'",
+                        topic, filter_pattern
+                    );
+                    true
+                } else {
+                    false
+                }
+            }
+            Err(e) => {
+                warn!(
+                    "Invalid global regex filter '{}': {}",
+                    filter_pattern, e
+                );
+                false
+            }
+        }
     }
 
     /// Send message to Miniserver via HTTP/UDP
     pub async fn send_to_miniserver(&self, topic: &str, value: &str) -> Result<()> {
-        debug!("Relay to Miniserver: {} = {}", topic, value);
+        // Check global filter from config
+        let filter_pattern = {
+            let config = self.config.read().await;
+            config.mqtt.topicfilter.clone()
+        };
 
-        // In a full implementation, this would:
-        // 1. Map topic to Miniserver virtual input
-        // 2. Use MiniserverClient to send value
-        // 3. Handle errors and retries
+        if self.should_filter(topic, &filter_pattern) {
+            debug!(
+                "Message FILTERED (not sent to Miniserver): {} = {}",
+                topic, value
+            );
+            return Ok(());
+        }
 
-        // For now, just log
-        // TODO: Integrate with MiniserverClient
+        info!("Relay to Miniserver: {} = {}", topic, value);
 
-        Ok(())
-    }
-}
+        // Get the first configured Miniserver
+        // In the future, this should support multiple Miniservers and topic routing
+        let config = self.config.read().await;
+        let ms_id = if let Some((id, _)) = config.miniserver.iter().next() {
+            id.clone()
+        } else {
+            warn!("No Miniserver configured, cannot relay message");
+            return Ok(());
+        };
+        drop(config);
 
-impl Default for Relay {
-    fn default() -> Self {
-        Self::new()
+        // Get or create client
+        let client = match self.get_client(&ms_id).await {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Failed to get Miniserver client: {}", e);
+                return Err(e);
+            }
+        };
+
+        // Map topic to virtual input parameter
+        // Replace slashes with underscores to create a valid parameter name
+        let param_name = topic.replace('/', "_");
+
+        // Send to Miniserver via HTTP
+        match client.send(vec![(param_name.clone(), value.to_string())]).await {
+            Ok(results) => {
+                if let Some(&success) = results.get(&param_name) {
+                    if success {
+                        debug!("Successfully sent {} = {} to Miniserver {}", topic, value, ms_id);
+                    } else {
+                        warn!("Miniserver {} rejected parameter {}", ms_id, param_name);
+                    }
+                }
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to send to Miniserver {}: {}", ms_id, e);
+                Err(e)
+            }
+        }
     }
 }

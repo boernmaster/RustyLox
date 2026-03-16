@@ -19,11 +19,11 @@ pub use subscription::{Subscription, SubscriptionManager};
 pub use transformer::{TransformResult, Transformer, TransformerRegistry};
 pub use udp_listener::UdpListener;
 
-use loxberry_config::MqttConfig;
+use loxberry_config::GeneralConfig;
 use loxberry_core::Result;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, RwLock};
 use tracing::{error, info};
 
 /// Gateway message types
@@ -44,7 +44,7 @@ pub enum GatewayMessage {
 
 /// MQTT Gateway orchestrator
 pub struct MqttGateway {
-    config: MqttConfig,
+    config: Arc<RwLock<GeneralConfig>>,
     lbhomedir: PathBuf,
     broker_client: Arc<BrokerClient>,
     udp_listener: Arc<UdpListener>,
@@ -56,13 +56,19 @@ pub struct MqttGateway {
 
 impl MqttGateway {
     /// Create a new MQTT gateway
-    pub fn new(config: MqttConfig, lbhomedir: PathBuf) -> Result<Self> {
+    pub fn new(config: Arc<RwLock<GeneralConfig>>, lbhomedir: PathBuf) -> Result<Self> {
         info!("Initializing MQTT Gateway");
 
         let (message_tx, _) = broadcast::channel(1000);
 
+        // Get MQTT config for broker client
+        let mqtt_config = tokio::task::block_in_place(|| {
+            let config = config.blocking_read();
+            config.mqtt.clone()
+        });
+
         // Initialize components
-        let broker_client = Arc::new(BrokerClient::new(&config)?);
+        let broker_client = Arc::new(BrokerClient::new(&mqtt_config)?);
         let udp_listener = Arc::new(UdpListener::new(11884)?);
 
         let subscription_manager =
@@ -72,7 +78,7 @@ impl MqttGateway {
             lbhomedir.join("bin/mqtt/transform"),
         ));
 
-        let relay = Arc::new(Relay::new());
+        let relay = Arc::new(Relay::new(Arc::clone(&config)));
 
         Ok(Self {
             config,

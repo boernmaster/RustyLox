@@ -199,9 +199,9 @@
             <li><a href="/miniserver">Miniserver</a></li>
             <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
             <li><a href="/mqtt/config" class="active">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
             <li><a href="/logs">Logs</a></li>
             <li><a href="/backup">Backup</a></li>
-            <li><a href="/plugins">Plugins</a></li>
             <li><a href="/settings">Settings</a></li>
         </ul>
     </nav>
@@ -211,6 +211,7 @@
 
         <div class="tabs">
             <button class="tab active" onclick="showTab('broker')">Broker Settings</button>
+            <button class="tab" onclick="showTab('filter')">Topic Filter</button>
             <button class="tab" onclick="showTab('subscriptions')">Subscriptions</button>
             <button class="tab" onclick="showTab('conversions')">Conversions</button>
             <button class="tab" onclick="showTab('incoming')">Incoming Messages</button>
@@ -269,7 +270,7 @@
                     <div id="broker-result"></div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                        <button type="submit" class="btn btn-primary">Save Broker Settings</button>
                         <button type="button" hx-post="/api/mqtt/subscriptions/reload"
                                 hx-target="#broker-result" class="btn btn-secondary">
                             Reload Gateway
@@ -286,7 +287,84 @@
             </div>
         </div>
 
-        <!-- Tab 2: Subscriptions -->
+        <!-- Tab 2: Topic Filter -->
+        <div id="filter-tab" class="tab-content">
+            <div class="card">
+                <h3>Global Topic Filter</h3>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Configure a global regex filter to exclude unwanted MQTT messages from being sent to the Miniserver.
+                    The filter applies to <strong>all subscriptions</strong>.
+                </p>
+
+                <form method="post" hx-post="/mqtt/config" hx-target="#filter-result">
+                    <!-- Hidden fields to preserve other settings -->
+                    <input type="hidden" name="brokerhost" value="{{ config.brokerhost }}">
+                    <input type="hidden" name="brokerport" value="{{ config.brokerport }}">
+                    <input type="hidden" name="brokeruser" value="{{ config.brokeruser }}">
+                    <input type="hidden" name="brokerpass" value="{{ config.brokerpass }}">
+                    <input type="hidden" name="udpinport" value="{{ config.udpinport }}">
+
+                    <div class="form-group">
+                        <label for="topicfilter">Filter Pattern (Regular Expression)</label>
+                        <input type="text" id="topicfilter" name="topicfilter"
+                               value="{{ config.topicfilter }}"
+                               placeholder="Example: _healthcheck_|_info_|_announce_"
+                               style="font-family: monospace;">
+                        <small style="display: block; margin-top: 5px;">
+                            Regular expression to filter MQTT messages globally. Matching messages are <strong>NOT</strong> forwarded to Miniserver.<br>
+                            Topic slashes (/) are replaced with underscores (_) before filtering.<br>
+                            Leave empty to disable filtering.
+                        </small>
+                    </div>
+
+                    <details style="margin-top: 15px; margin-bottom: 20px;">
+                        <summary style="cursor: pointer; color: #1976D2; font-weight: bold;">📝 Common Filter Examples</summary>
+                        <div style="background: white; padding: 15px; margin-top: 10px; border-left: 3px solid #1976D2; font-family: monospace; font-size: 0.9em;">
+                            <p style="margin: 5px 0;"><strong>Exclude system topics:</strong></p>
+                            <code style="display: block; padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">_healthcheck_|_info_|_announce_</code>
+
+                            <p style="margin: 15px 0 5px 0;"><strong>Exclude gateway/schedule:</strong></p>
+                            <code style="display: block; padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">_mqttgateway_|_schedule_</code>
+
+                            <p style="margin: 15px 0 5px 0;"><strong>Exclude specific prefix:</strong></p>
+                            <code style="display: block; padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">^solcast_</code>
+
+                            <p style="margin: 15px 0 5px 0;"><strong>Combine multiple patterns:</strong></p>
+                            <code style="display: block; padding: 8px; background: #f5f5f5; margin: 5px 0; border-radius: 3px;">_healthcheck_|_info_|_announce_|_mqttgateway_|_schedule_|^solcast_</code>
+
+                            <p style="margin: 15px 0 5px 0;"><strong>Quick add buttons:</strong></p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_healthcheck_')">+ healthcheck</button>
+                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_info_')">+ info</button>
+                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_announce_')">+ announce</button>
+                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_mqttgateway_')">+ mqttgateway</button>
+                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_schedule_')">+ schedule</button>
+                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('^solcast_')">+ solcast</button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="form-group" style="padding: 15px; background: #e3f2fd; border-radius: 4px; border-left: 4px solid #2196F3;">
+                        <strong>ℹ️ How It Works</strong>
+                        <ul style="margin: 10px 0 0 20px; color: #333;">
+                            <li>Topic <code>home/sensor/_healthcheck_</code> becomes <code>home_sensor__healthcheck_</code></li>
+                            <li>Pattern <code>_healthcheck_</code> matches → message is <strong>excluded</strong></li>
+                            <li>Pattern <code>^solcast_</code> matches topics starting with "solcast"</li>
+                            <li>Use <code>|</code> to combine multiple patterns</li>
+                        </ul>
+                    </div>
+
+                    <div id="filter-result" style="margin-top: 15px;"></div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Filter</button>
+                        <button type="button" class="btn btn-secondary" onclick="clearFilter()">Clear Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 3: Subscriptions -->
         <div id="subscriptions-tab" class="tab-content">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -309,52 +387,15 @@
                                    required placeholder="Home Automation">
                         </div>
                         <div class="form-group">
-                            <label for="sub-filter">Filter Expression (RegEx)</label>
-                            <input type="text" id="sub-filter" name="filter"
-                                   placeholder="Example: _healthcheck_|_info_|_announce_">
-                            <small style="display: block; margin-top: 5px;">
-                                Regular expression to filter messages. Matching messages are NOT forwarded to Miniserver.<br>
-                                Topic slashes (/) are replaced with underscores (_) before filtering.
-                            </small>
-                            <details style="margin-top: 8px;">
-                                <summary style="cursor: pointer; color: #1976D2; font-weight: bold;">📝 Common Filter Examples</summary>
-                                <div style="background: white; padding: 12px; margin-top: 8px; border-left: 3px solid #1976D2; font-family: monospace; font-size: 0.9em;">
-                                    <p style="margin: 5px 0;"><strong>Exclude system topics:</strong></p>
-                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">_healthcheck_|_info_|_announce_</code>
-
-                                    <p style="margin: 10px 0 5px 0;"><strong>Exclude gateway/schedule:</strong></p>
-                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">_mqttgateway_|_schedule_</code>
-
-                                    <p style="margin: 10px 0 5px 0;"><strong>Exclude specific prefix:</strong></p>
-                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">^solcast_</code>
-
-                                    <p style="margin: 10px 0 5px 0;"><strong>Combine multiple patterns:</strong></p>
-                                    <code style="display: block; padding: 5px; background: #f5f5f5; margin: 5px 0;">_healthcheck_|_info_|_announce_|_mqttgateway_|_schedule_|^solcast_</code>
-
-                                    <p style="margin: 10px 0 5px 0;"><strong>Quick add buttons:</strong></p>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px;">
-                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_healthcheck_')">+ healthcheck</button>
-                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_info_')">+ info</button>
-                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_announce_')">+ announce</button>
-                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_mqttgateway_')">+ mqttgateway</button>
-                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('_schedule_')">+ schedule</button>
-                                        <button type="button" class="btn btn-sm" style="font-size: 0.85em; padding: 4px 8px;" onclick="addToFilter('^solcast_')">+ solcast</button>
-                                    </div>
-                                </div>
-                            </details>
-                        </div>
-                        <div class="form-group">
                             <label>
                                 <input type="checkbox" name="enabled" checked> Enabled
                             </label>
                         </div>
                         <div class="form-group" style="margin-top: 15px; padding: 12px; background: #e8f5e9; border-radius: 4px;">
-                            <strong>ℹ️ Subscription Filter Expressions (RegEx)</strong>
+                            <strong>ℹ️ Global Topic Filter</strong>
                             <p style="margin: 8px 0 0 0; font-size: 0.9em; color: #333;">
-                                Subscriptions may route a lot of data to the Miniserver, some of which is never required for your logic.
-                                Filter expressions are Regular Expressions (RegEx) that filter the JSON expanded data.
-                                A filter match is NOT forwarded to the Miniserver. At the stage of the filter, all topic delimiters (/) are
-                                replaced with underscores (_), even with UDP transmission.
+                                To filter topics globally (across all subscriptions), use the <strong>Topic Filter</strong> tab above.
+                                The global filter uses Regular Expressions (RegEx) to exclude unwanted messages from being sent to the Miniserver.
                             </p>
                         </div>
                         <div class="form-actions">
@@ -370,7 +411,7 @@
             </div>
         </div>
 
-        <!-- Tab 3: Conversions -->
+        <!-- Tab 4: Conversions -->
         <div id="conversions-tab" class="tab-content">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -419,7 +460,7 @@
             </div>
         </div>
 
-        <!-- Tab 4: Incoming Messages -->
+        <!-- Tab 5: Incoming Messages -->
         <div id="incoming-tab" class="tab-content">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -466,9 +507,9 @@
             document.getElementById('add-subscription').style.display = 'none';
         }
 
-        // Add filter pattern to input field
-        function addToFilter(pattern) {
-            const filterInput = document.getElementById('sub-filter');
+        // Add pattern to global filter input field
+        function addToGlobalFilter(pattern) {
+            const filterInput = document.getElementById('topicfilter');
             const currentValue = filterInput.value.trim();
 
             if (currentValue === '') {
@@ -485,6 +526,11 @@
             setTimeout(() => {
                 filterInput.style.background = '';
             }, 300);
+        }
+
+        // Clear filter
+        function clearFilter() {
+            document.getElementById('topicfilter').value = '';
         }
 
         // Conversion management
