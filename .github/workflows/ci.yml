@@ -36,7 +36,7 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --release --all-targets --all-features -- -D warnings
 
       - name: Build
         run: cargo build --release
@@ -153,21 +153,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: "v1-rust"
-          shared-key: "security-scan"
-          cache-on-failure: true
-
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-
       - name: Run security audit
-        run: cargo audit
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
