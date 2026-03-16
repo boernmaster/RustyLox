@@ -130,6 +130,47 @@ pub async fn download_backup(
         .unwrap())
 }
 
+/// Restore from a backup
+pub async fn restore_backup(
+    State(state): State<AppState>,
+    Path(name): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    // Prevent path traversal
+    if name.contains('/') || name.contains("..") {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "Invalid backup name"})),
+        ));
+    }
+
+    let backup_dir = backup_manager::backup_dir(&state.lbhomedir);
+    let backup_path = backup_dir.join(&name);
+
+    if !backup_path.exists() {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Backup not found"})),
+        ));
+    }
+
+    match backup_manager::restore_backup(state.lbhomedir.clone(), backup_path).await {
+        Ok(()) => Ok(Json(serde_json::json!({
+            "success": true,
+            "message": "Backup restored successfully. Restart may be required to apply all changes."
+        }))),
+        Err(e) => {
+            tracing::error!("Failed to restore backup {}: {}", name, e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "success": false,
+                    "error": e.to_string()
+                })),
+            ))
+        }
+    }
+}
+
 /// Delete a backup
 pub async fn delete_backup(
     State(state): State<AppState>,

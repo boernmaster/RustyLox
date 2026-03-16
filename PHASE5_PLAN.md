@@ -26,9 +26,9 @@ Implement SDK compatibility, logging, backup/restore, and polish existing featur
 - `crates/loxberry-logging/src/plugin_logger.rs` - Plugin-specific logging
 
 ### 1.2 Log Management
-- [ ] Log level configuration via API
+- [x] Log level configuration via API (`GET/PUT /api/system/log-level`)
 - [x] View logs via web UI (tail view with configurable line count)
-- [ ] Log search and filtering
+- [x] Log search and filtering (real-time filter with highlight in `/logs` viewer)
 - [x] Log retention policies (cleanup_logs with RotationPolicy)
 
 ## 2. SDK Compatibility Layer (Priority: HIGH)
@@ -126,16 +126,16 @@ POST   /api/backup/schedule        - Scheduled backups   (future)
 - [x] Backup page in web UI (`/backup`)
 - [x] One-click backup creation (HTMX)
 - [x] Backup download (link to API)
-- [ ] Restore with confirmation
+- [x] Restore with confirmation dialog (HTMX hx-confirm)
 - [ ] Schedule configuration
 
 ## 4. Polish Existing Features (Priority: MEDIUM)
 
 ### 4.1 Error Handling Improvements
-- [ ] Better error messages in web UI
+- [x] Better error messages in web UI (validation errors surfaced inline)
 - [ ] Detailed error logging
 - [ ] Recovery suggestions
-- [ ] Validation before operations
+- [x] Validation before operations (miniserver + MQTT forms validated pre-save)
 
 ### 4.2 Configuration Validation
 **Files created:**
@@ -210,9 +210,10 @@ pub fn validate_mqtt_config(config: &MqttConfig) -> Result<()>              // â
 ## Success Criteria
 
 - [ ] At least 3 real LoxBerry plugins can be installed and run
-- [x] Logs are properly rotated and accessible via UI (`/logs` viewer)
-- [x] Backups can be created and restored successfully (backup-manager crate + `/backup` UI)
-- [x] Config validation implemented for Miniserver and MQTT configs
+- [x] Logs are properly rotated and accessible via UI (`/logs` viewer with search)
+- [x] Backups can be created, downloaded, and restored (`/backup` UI + REST API)
+- [x] Config validation wired into Miniserver add/edit and MQTT config forms
+- [x] Log level adjustable at runtime via `GET/PUT /api/system/log-level`
 - [ ] All forms have proper validation
 - [ ] Error messages are clear and actionable
 - [ ] CI/CD pipeline passes
