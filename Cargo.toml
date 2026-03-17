@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/auth",
     "crates/loxberry-core",
     "crates/loxberry-config",
     "crates/loxberry-logging",
