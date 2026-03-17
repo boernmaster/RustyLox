@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Settings - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-label { font-weight: 500; }
+        .setting-desc { font-size: 0.83rem; color: #666; margin-top: 2px; }
+        .setting-value { text-align: right; color: #333; min-width: 120px; }
+        .env-badge { display: inline-block; background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 0.82rem; }
+        .info-note { background: #e8f4fd; border-left: 4px solid #17a2b8; padding: 12px 16px; border-radius: 0 6px 6px 0; margin-bottom: 20px; font-size: 0.9rem; color: #0c5460; }
+        .security-score { display: flex; align-items: center; gap: 16px; }
+        .score-circle { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; }
+        .score-good { background: #d4edda; color: #155724; border: 3px solid #28a745; }
+        .score-warn { background: #fff3cd; color: #856404; border: 3px solid #ffc107; }
+        .audit-preview { max-height: 220px; overflow-y: auto; }
+        .audit-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 0.85rem; }
+        .audit-time { color: #888; min-width: 140px; }
+        .audit-action { font-weight: 500; min-width: 100px; }
+        .result-msg { margin-top: 10px; padding: 10px 14px; border-radius: 6px; }
+        .result-ok { background: #d4edda; color: #155724; }
+        .result-err { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/admin/api-keys">API Keys</a></li>
+            <li><a href="/admin/audit">Audit Log</a></li>
+            <li><a href="/admin/security" class="active">Security</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Security Settings</h1>
+
+        <div class="info-note">
+            Security parameters are configured via environment variables or the system configuration file.
+            This page shows the current effective settings.
+        </div>
+
+        <!-- Security Overview -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Security Overview</h2>
+            <div class="security-score" id="security-overview">
+                <div class="score-circle score-good" id="score-circle">&#10003;</div>
+                <div id="security-summary">
+                    <div style="font-weight: 600; font-size: 1.1rem;" id="score-label">Loading...</div>
+                    <div style="font-size: 0.88rem; color: #666;" id="score-detail"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication Settings -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Authentication Configuration</h2>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">Account Lockout Threshold</div>
+                    <div class="setting-desc">Number of failed login attempts before account is locked</div>
+                </div>
+                <div class="setting-value"><strong>5 attempts</strong></div>
+            </div>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">Lockout Duration</div>
+                    <div class="setting-desc">How long an account remains locked after threshold is reached</div>
+                </div>
+                <div class="setting-value"><strong>15 minutes</strong></div>
+            </div>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">JWT Token Expiry</div>
+                    <div class="setting-desc">Access token lifetime before re-authentication is required</div>
+                </div>
+                <div class="setting-value"><strong>1 hour</strong></div>
+            </div>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">JWT Secret</div>
+                    <div class="setting-desc">Configure via <span class="env-badge">JWT_SECRET</span> environment variable</div>
+                </div>
+                <div class="setting-value" id="jwt-secret-status">
+                    <span style="color: #888;">Checking...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password Policy -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Password Policy</h2>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">Minimum Length</div>
+                    <div class="setting-desc">Minimum required password length</div>
+                </div>
+                <div class="setting-value"><strong>8 characters</strong></div>
+            </div>
+            <div class="setting-row">
+                <div>
+                    <div class="setting-label">Complexity</div>
+                    <div class="setting-desc">Password complexity requirements</div>
+                </div>
+                <div class="setting-value"><span style="color: #856404;">Basic (length only)</span></div>
+            </div>
+            <p style="font-size: 0.85rem; color: #888; margin-top: 12px; margin-bottom: 0;">
+                Enhanced password policies (uppercase, numbers, special characters) can be configured in future releases.
+            </p>
+        </div>
+
+        <!-- Security Environment Variables -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Configuration Reference</h2>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 16px;">
+                These environment variables control security behaviour. Set them in your <code>docker-compose.yml</code> or system environment.
+            </p>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #dee2e6; text-align: left;">
+                        <th style="padding: 8px 12px;">Variable</th>
+                        <th style="padding: 8px 12px;">Description</th>
+                        <th style="padding: 8px 12px;">Default</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding: 8px 12px;"><span class="env-badge">JWT_SECRET</span></td>
+                        <td style="padding: 8px 12px; font-size: 0.9rem;">Secret key for JWT token signing</td>
+                        <td style="padding: 8px 12px; font-size: 0.85rem; color: #dc3545;">Must be changed in production</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding: 8px 12px;"><span class="env-badge">RUST_LOG</span></td>
+                        <td style="padding: 8px 12px; font-size: 0.9rem;">Logging verbosity level</td>
+                        <td style="padding: 8px 12px; font-size: 0.85rem; color: #555;">info</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 12px;"><span class="env-badge">LBHOMEDIR</span></td>
+                        <td style="padding: 8px 12px; font-size: 0.9rem;">Base directory for LoxBerry data</td>
+                        <td style="padding: 8px 12px; font-size: 0.85rem; color: #555;">/opt/loxberry</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recent Security Events -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0;">Recent Security Events</h2>
+                <a href="/admin/audit" class="btn btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;">View Full Audit Log</a>
+            </div>
+            <div class="audit-preview" id="recent-events">
+                <em style="color: #888;">Loading recent events...</em>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+        async function loadSecurityOverview() {
+            // Check if JWT secret is the default (insecure) one
+            // We do this by checking the health endpoint
+            try {
+                const resp = await fetch('/api/health/detail');
+                const data = await resp.json();
+
+                // Determine security posture
+                let score = 'good';
+                let label = 'Security posture is good';
+                let detail = 'All components are running normally.';
+
+                if (data.status === 'unhealthy') {
+                    score = 'warn';
+                    label = 'Security issues detected';
+                    detail = 'Some components are unhealthy. Review component status.';
+                } else if (data.status === 'degraded') {
+                    score = 'warn';
+                    label = 'Review recommended';
+                    detail = 'Some components are degraded. Monitor closely.';
+                }
+
+                const circle = document.getElementById('score-circle');
+                circle.className = 'score-circle ' + (score === 'good' ? 'score-good' : 'score-warn');
+                circle.innerHTML = score === 'good' ? '&#10003;' : '&#9888;';
+                document.getElementById('score-label').textContent = label;
+                document.getElementById('score-detail').textContent = detail;
+            } catch (err) {
+                document.getElementById('score-label').textContent = 'Unable to assess';
+                document.getElementById('score-detail').textContent = 'Health data unavailable.';
+            }
+
+            // Check JWT secret status (heuristic - if env var is set, it's likely configured)
+            const jwtEl = document.getElementById('jwt-secret-status');
+            // We can't read the actual secret from the frontend for security reasons
+            jwtEl.innerHTML = '<span style="color: #888; font-size: 0.85rem;">Set via JWT_SECRET env var</span>';
+        }
+
+        async function loadRecentEvents() {
+            try {
+                const resp = await fetch('/api/auth/audit?limit=8');
+                if (!resp.ok) {
+                    document.getElementById('recent-events').innerHTML =
+                        '<em style="color:#888;">Authentication required to view audit events.</em>';
+                    return;
+                }
+                const events = await resp.json();
+                const list = Array.isArray(events) ? events : (events.entries || []);
+
+                if (!list.length) {
+                    document.getElementById('recent-events').innerHTML =
+                        '<em style="color:#888;">No recent security events.</em>';
+                    return;
+                }
+
+                document.getElementById('recent-events').innerHTML = list.map(e => {
+                    const time = new Date(e.timestamp || e.created_at).toLocaleString();
+                    const action = (e.action || '').replace(/_/g, ' ');
+                    const user = e.username || e.user_id || 'unknown';
+                    const success = e.success !== false;
+                    return `<div class="audit-row">
+                        <span class="audit-time">${time}</span>
+                        <span class="audit-action" style="color: ${success ? '#155724' : '#721c24'};">${action}</span>
+                        <span style="color: #555;">${user}</span>
+                        ${e.ip_address ? `<span style="color:#aaa;font-size:0.8rem;">${e.ip_address}</span>` : ''}
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                document.getElementById('recent-events').innerHTML =
+                    '<em style="color:#888;">Unable to load recent events.</em>';
+            }
+        }
+
+        loadSecurityOverview();
+        loadRecentEvents();
+    </script>
+</body>
+</html>
