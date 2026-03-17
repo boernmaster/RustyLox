@@ -188,10 +188,20 @@ async fn serve_static_file(path: &PathBuf, content_type: &str) -> Response {
 async fn serve_php_file(path: &PathBuf, plugin_name: &str) -> Response {
     debug!("Executing PHP file: {}", path.display());
 
+    // Set PHP include_path to include LoxBerry SDK libraries
+    let include_path = ".:/opt/loxberry/libs/phplib:/usr/share/php";
+
     let output = Command::new("php")
+        .arg("-d")
+        .arg(format!("include_path={}", include_path))
         .arg(path)
         .env("LBHOMEDIR", "/opt/loxberry")
         .env("LBPPLUGINDIR", plugin_name)
+        .env("LBPHTMLDIR", format!("/opt/loxberry/webfrontend/html/plugins/{}", plugin_name))
+        .env("LBPHTMLAUTHDIR", format!("/opt/loxberry/webfrontend/htmlauth/plugins/{}", plugin_name))
+        .env("LBPDATADIR", format!("/opt/loxberry/data/plugins/{}", plugin_name))
+        .env("LBPLOGDIR", format!("/opt/loxberry/log/plugins/{}", plugin_name))
+        .env("LBPCONFIGDIR", format!("/opt/loxberry/config/plugins/{}", plugin_name))
         .env("REDIRECT_STATUS", "200")
         .output()
         .await;
