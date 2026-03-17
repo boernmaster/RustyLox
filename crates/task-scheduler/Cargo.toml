@@ -1,0 +1,23 @@
+[package]
+name = "task-scheduler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loxberry-core = { path = "../loxberry-core" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+
+# Cron expression parsing
+cron = "0.12"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }

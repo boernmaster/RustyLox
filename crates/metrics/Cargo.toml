@@ -1,0 +1,19 @@
+[package]
+name = "loxberry-metrics"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+loxberry-core = { path = "../loxberry-core" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+
+# System information
+sysinfo = "0.32"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }

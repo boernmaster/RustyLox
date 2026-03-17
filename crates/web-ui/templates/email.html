@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Notifications - LoxBerry</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/email" class="active">Email</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Email Notifications</h1>
+
+        <div class="card">
+            <h2>SMTP Configuration</h2>
+            <div id="email-config-result" style="margin-bottom: 12px;"></div>
+            <form id="email-config-form">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="smtp_host">SMTP Host</label>
+                        <input type="text" id="smtp_host" name="smtp_host"
+                               value="{{ smtp_host }}" placeholder="smtp.example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_port">SMTP Port</label>
+                        <input type="number" id="smtp_port" name="smtp_port"
+                               value="{{ smtp_port }}" placeholder="587">
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_user">SMTP Username</label>
+                        <input type="text" id="smtp_user" name="smtp_user"
+                               value="{{ smtp_user }}" placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_pass">SMTP Password</label>
+                        <input type="password" id="smtp_pass" name="smtp_pass"
+                               value="{{ smtp_pass }}" placeholder="(unchanged if empty)">
+                    </div>
+                    <div class="form-group">
+                        <label for="from_address">From Address</label>
+                        <input type="email" id="from_address" name="from_address"
+                               value="{{ from_address }}" placeholder="loxberry@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="from_name">From Name</label>
+                        <input type="text" id="from_name" name="from_name"
+                               value="{{ from_name }}" placeholder="LoxBerry">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notification_addresses">Notification Recipients</label>
+                    <textarea id="notification_addresses" name="notification_addresses" rows="3"
+                              placeholder="One email address per line">{{ notification_addresses }}</textarea>
+                    <small>One email address per line</small>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="smtp_tls" name="smtp_tls" {% if smtp_tls %}checked{% endif %}>
+                    <label for="smtp_tls" style="margin: 0;">Use STARTTLS</label>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="enabled" name="enabled" {% if enabled %}checked{% endif %}>
+                    <label for="enabled" style="margin: 0;">Enable email notifications</label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+                    <button type="button" class="btn btn-secondary" onclick="sendTest()">Send Test Email</button>
+                </div>
+            </form>
+            <div id="test-result" style="margin-top: 12px;"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    function getFormData() {
+        const form = document.getElementById('email-config-form');
+        const addrs = document.getElementById('notification_addresses').value
+            .split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        return {
+            smtp_host: form.smtp_host.value,
+            smtp_port: parseInt(form.smtp_port.value) || 587,
+            smtp_user: form.smtp_user.value,
+            smtp_pass: form.smtp_pass.value || '********',
+            from_address: form.from_address.value,
+            from_name: form.from_name.value,
+            notification_addresses: addrs,
+            smtp_tls: form.smtp_tls.checked,
+            enabled: form.enabled.checked,
+        };
+    }
+
+    function saveConfig() {
+        fetch('/api/email/config', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(getFormData()),
+        })
+        .then(r => r.json())
+        .then(d => {
+            const el = document.getElementById('email-config-result');
+            if (d.success) {
+                el.innerHTML = "<div class='alert alert-success'>Configuration saved successfully.</div>";
+            } else {
+                el.innerHTML = "<div class='alert alert-danger'>" + (d.error || 'Save failed') + "</div>";
+            }
+        })
+        .catch(e => {
+            document.getElementById('email-config-result').innerHTML =
+                "<div class='alert alert-danger'>Request failed: " + e + "</div>";
+        });
+    }
+
+    function sendTest() {
+        const el = document.getElementById('test-result');
+        el.innerHTML = "<em>Sending test email...</em>";
+        fetch('/api/email/test', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({}),
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                el.innerHTML = "<div class='alert alert-success'>" + d.message + "</div>";
+            } else {
+                el.innerHTML = "<div class='alert alert-danger'>" + (d.error || 'Send failed') + "</div>";
+            }
+        })
+        .catch(e => {
+            el.innerHTML = "<div class='alert alert-danger'>Request failed: " + e + "</div>";
+        });
+    }
+    </script>
+</body>
+</html>
