@@ -188,12 +188,15 @@ async fn serve_static_file(path: &PathBuf, content_type: &str) -> Response {
 async fn serve_php_file(path: &PathBuf, plugin_name: &str) -> Response {
     debug!("Executing PHP file: {}", path.display());
 
-    // Set PHP include_path to include LoxBerry SDK libraries
+    // Set PHP include_path and auto-prepend bootstrap for PHP 8.x compatibility
     let include_path = ".:/opt/loxberry/libs/phplib:/usr/share/php";
+    let bootstrap = "/opt/loxberry/libs/phplib/loxberry_bootstrap.php";
 
     let output = Command::new("php")
         .arg("-d")
         .arg(format!("include_path={}", include_path))
+        .arg("-d")
+        .arg(format!("auto_prepend_file={}", bootstrap))
         .arg(path)
         .env("LBHOMEDIR", "/opt/loxberry")
         .env("LBPPLUGINDIR", plugin_name)

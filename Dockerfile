@@ -98,6 +98,9 @@ COPY sdk/perllib /opt/loxberry/libs/perllib
 COPY sdk/phplib /opt/loxberry/libs/phplib
 COPY sdk/bashlib /opt/loxberry/libs/bashlib
 
+# Copy system templates for LoxBerry plugin web framework
+COPY sdk/templates/system /opt/loxberry/templates/system
+
 # Set permissions
 RUN chown -R loxberry:loxberry /opt/loxberry
 
