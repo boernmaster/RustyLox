@@ -147,9 +147,9 @@ impl TaskExecutor {
         // Find log files older than 30 days and remove them
         let cutoff = Utc::now() - chrono::Duration::days(30);
 
-        let mut entries = tokio::fs::read_dir(&log_dir).await.map_err(|e| {
-            Error::plugin(format!("Failed to read log directory: {}", e))
-        })?;
+        let mut entries = tokio::fs::read_dir(&log_dir)
+            .await
+            .map_err(|e| Error::plugin(format!("Failed to read log directory: {}", e)))?;
 
         while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();

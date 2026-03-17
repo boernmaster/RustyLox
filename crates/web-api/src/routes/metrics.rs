@@ -8,7 +8,8 @@ use axum::{
     Json,
 };
 use loxberry_metrics::{
-    collector::MetricsCollector, health::{ComponentStatus, HealthCheck, HealthMetrics},
+    collector::MetricsCollector,
+    health::{ComponentStatus, HealthCheck, HealthMetrics},
 };
 use tracing::error;
 
@@ -90,7 +91,10 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
     if sys_metrics.disk_usage_percent > 95.0 {
         components.push(ComponentStatus::unhealthy(
             "disk_space",
-            format!("Disk usage critical: {:.1}%", sys_metrics.disk_usage_percent),
+            format!(
+                "Disk usage critical: {:.1}%",
+                sys_metrics.disk_usage_percent
+            ),
         ));
     } else if sys_metrics.disk_usage_percent > 85.0 {
         components.push(ComponentStatus::degraded(
@@ -113,7 +117,10 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
     } else if sys_metrics.memory_usage_percent > 85.0 {
         components.push(ComponentStatus::degraded(
             "memory",
-            format!("Memory usage high: {:.1}%", sys_metrics.memory_usage_percent),
+            format!(
+                "Memory usage high: {:.1}%",
+                sys_metrics.memory_usage_percent
+            ),
         ));
     } else {
         components.push(ComponentStatus::ok("memory"));

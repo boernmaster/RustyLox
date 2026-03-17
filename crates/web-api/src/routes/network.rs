@@ -66,7 +66,11 @@ pub async fn ping_host(
     }
 
     // Sanitize host - only allow alphanumeric, dots, hyphens, colons (IPv6)
-    if !req.host.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-' || c == ':') {
+    if !req
+        .host
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '.' || c == '-' || c == ':')
+    {
         return (
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({ "error": "Invalid host characters" })),

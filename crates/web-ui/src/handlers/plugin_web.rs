@@ -117,10 +117,7 @@ async fn serve_plugin_file(base_dir: &PathBuf, path: &str, plugin_name: &str) ->
     // Check base directory exists
     if !base_dir.exists() {
         warn!("Plugin web directory not found: {}", base_dir.display());
-        return not_found_response(&format!(
-            "Plugin '{}' has no web interface",
-            plugin_name
-        ));
+        return not_found_response(&format!("Plugin '{}' has no web interface", plugin_name));
     }
 
     // Security: resolve the path and ensure it stays within the base directory
@@ -176,7 +173,9 @@ async fn serve_static_file(path: &PathBuf, content_type: &str) -> Response {
                 .status(StatusCode::OK)
                 .header(header::CONTENT_TYPE, content_type)
                 .body(Body::from(content))
-                .unwrap_or_else(|_| error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error"))
+                .unwrap_or_else(|_| {
+                    error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error")
+                })
         }
         Err(e) => {
             error!("Failed to read file {}: {}", path.display(), e);
@@ -204,15 +203,17 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str) -> Response {
                 .status(StatusCode::OK)
                 .header(header::CONTENT_TYPE, "text/html; charset=utf-8")
                 .body(Body::from(body))
-                .unwrap_or_else(|_| error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error"))
+                .unwrap_or_else(|_| {
+                    error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error")
+                })
         }
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr);
-            error!("PHP execution failed for plugin {}: {}", plugin_name, stderr);
-            error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "PHP execution failed",
-            )
+            error!(
+                "PHP execution failed for plugin {}: {}",
+                plugin_name, stderr
+            );
+            error_response(StatusCode::INTERNAL_SERVER_ERROR, "PHP execution failed")
         }
         Err(e) => {
             // php-cli may not be installed
@@ -220,10 +221,7 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str) -> Response {
                 "Failed to execute PHP for plugin {} (is php installed?): {}",
                 plugin_name, e
             );
-            error_response(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "PHP runtime not available",
-            )
+            error_response(StatusCode::SERVICE_UNAVAILABLE, "PHP runtime not available")
         }
     }
 }
@@ -261,7 +259,5 @@ fn error_response(status: StatusCode, message: &str) -> Response {
         .status(status)
         .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
         .body(Body::from(message.to_string()))
-        .unwrap_or_else(|_| {
-            (StatusCode::INTERNAL_SERVER_ERROR, "Error").into_response()
-        })
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Error").into_response())
 }
