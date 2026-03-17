@@ -123,8 +123,8 @@ pub fn create_ui_router(state: AppState) -> Router {
         .route("/login", post(handlers::auth::handle_login))
         // User profile
         .route("/profile", get(handlers::profile::index))
-        // System health dashboard
-        .route("/health", get(handlers::health::index))
+        // System health dashboard (renamed to avoid conflict with API /health endpoint)
+        .route("/system-health", get(handlers::health::index))
         // Admin: User management
         .route("/admin/users", get(handlers::auth::users))
         // Admin: API key management

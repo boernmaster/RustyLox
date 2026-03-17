@@ -10,7 +10,7 @@ pub struct HealthTemplate {
     pub version: String,
 }
 
-/// GET /health - system health dashboard
+/// GET /system-health - system health dashboard
 pub async fn index(State(state): State<AppState>) -> Html<String> {
     let template = HealthTemplate {
         version: state.version.clone(),
