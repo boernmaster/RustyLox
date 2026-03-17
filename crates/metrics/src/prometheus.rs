@@ -81,9 +81,7 @@ impl PrometheusExporter {
         ));
 
         // Load average
-        output.push_str(
-            "# HELP loxberry_load_average System load average (1m, 5m, 15m windows)\n",
-        );
+        output.push_str("# HELP loxberry_load_average System load average (1m, 5m, 15m windows)\n");
         output.push_str("# TYPE loxberry_load_average gauge\n");
         output.push_str(&format!(
             "loxberry_load_average{{window=\"1m\"}} {:.4}\n",

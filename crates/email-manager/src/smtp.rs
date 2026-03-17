@@ -58,7 +58,14 @@ impl EmailManager {
         let mut results = Vec::new();
 
         for recipient in &self.config.notification_addresses {
-            let result = self.send_email(recipient, &template.subject, &template.html_body, &template.text_body).await;
+            let result = self
+                .send_email(
+                    recipient,
+                    &template.subject,
+                    &template.html_body,
+                    &template.text_body,
+                )
+                .await;
             results.push(result);
         }
 
@@ -75,7 +82,13 @@ impl EmailManager {
             &self.version,
         );
 
-        self.send_email(recipient, &template.subject, &template.html_body, &template.text_body).await
+        self.send_email(
+            recipient,
+            &template.subject,
+            &template.html_body,
+            &template.text_body,
+        )
+        .await
     }
 
     /// Send a single email
@@ -94,31 +107,32 @@ impl EmailManager {
 
         debug!("Sending email to {}: {}", recipient, subject);
 
-        let build_result = (|| -> std::result::Result<Message, Box<dyn std::error::Error + Send + Sync>> {
-            let from = format!("{} <{}>", self.config.from_name, self.config.from_address)
-                .parse()?;
-            let to = recipient.parse()?;
+        let build_result =
+            (|| -> std::result::Result<Message, Box<dyn std::error::Error + Send + Sync>> {
+                let from =
+                    format!("{} <{}>", self.config.from_name, self.config.from_address).parse()?;
+                let to = recipient.parse()?;
 
-            let message = Message::builder()
-                .from(from)
-                .to(to)
-                .subject(subject)
-                .multipart(
-                    MultiPart::alternative()
-                        .singlepart(
-                            SinglePart::builder()
-                                .header(ContentType::TEXT_PLAIN)
-                                .body(text_body.to_string()),
-                        )
-                        .singlepart(
-                            SinglePart::builder()
-                                .header(ContentType::TEXT_HTML)
-                                .body(html_body.to_string()),
-                        ),
-                )?;
+                let message = Message::builder()
+                    .from(from)
+                    .to(to)
+                    .subject(subject)
+                    .multipart(
+                        MultiPart::alternative()
+                            .singlepart(
+                                SinglePart::builder()
+                                    .header(ContentType::TEXT_PLAIN)
+                                    .body(text_body.to_string()),
+                            )
+                            .singlepart(
+                                SinglePart::builder()
+                                    .header(ContentType::TEXT_HTML)
+                                    .body(html_body.to_string()),
+                            ),
+                    )?;
 
-            Ok(message)
-        })();
+                Ok(message)
+            })();
 
         let message = match build_result {
             Ok(m) => m,
@@ -135,34 +149,22 @@ impl EmailManager {
         };
 
         // Build SMTP transport
-        let creds = Credentials::new(
-            self.config.smtp_user.clone(),
-            self.config.smtp_pass.clone(),
-        );
+        let creds = Credentials::new(self.config.smtp_user.clone(), self.config.smtp_pass.clone());
 
         let send_result = if self.config.smtp_tls {
             let transport =
                 AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&self.config.smtp_host)
                     .map_err(|e| format!("SMTP relay error: {}", e))
-                    .map(|b| {
-                        b.port(self.config.smtp_port)
-                            .credentials(creds)
-                            .build()
-                    });
+                    .map(|b| b.port(self.config.smtp_port).credentials(creds).build());
 
             match transport {
                 Ok(t) => t.send(message).await.map_err(|e| e.to_string()),
                 Err(e) => Err(e),
             }
         } else {
-            let transport =
-                AsyncSmtpTransport::<Tokio1Executor>::relay(&self.config.smtp_host)
-                    .map_err(|e| format!("SMTP relay error: {}", e))
-                    .map(|b| {
-                        b.port(self.config.smtp_port)
-                            .credentials(creds)
-                            .build()
-                    });
+            let transport = AsyncSmtpTransport::<Tokio1Executor>::relay(&self.config.smtp_host)
+                .map_err(|e| format!("SMTP relay error: {}", e))
+                .map(|b| b.port(self.config.smtp_port).credentials(creds).build());
 
             match transport {
                 Ok(t) => t.send(message).await.map_err(|e| e.to_string()),

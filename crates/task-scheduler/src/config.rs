@@ -55,11 +55,7 @@ pub struct ScheduledTask {
 
 impl ScheduledTask {
     /// Create a new task with a random ID
-    pub fn new(
-        name: impl Into<String>,
-        schedule: impl Into<String>,
-        task_type: TaskType,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, schedule: impl Into<String>, task_type: TaskType) -> Self {
         // Generate a simple ID from name + timestamp
         let name = name.into();
         let id = format!(

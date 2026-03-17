@@ -65,7 +65,10 @@ impl EmailTemplate {
             EmailType::PluginInstalled { name, version: ver } => (
                 format!("[RustyLox] Plugin installed: {}", name),
                 format!("Plugin Installed: {}", name),
-                format!("Plugin '{}' version {} was successfully installed.", name, ver),
+                format!(
+                    "Plugin '{}' version {} was successfully installed.",
+                    name, ver
+                ),
                 "color: #28a745".to_string(),
             ),
             EmailType::PluginUninstalled { name } => (
@@ -84,10 +87,7 @@ impl EmailTemplate {
                 (
                     format!("[RustyLox] Backup {}", status),
                     format!("Backup {}", status),
-                    format!(
-                        "Backup '{}' {} ({:.1} MB).",
-                        filename, status, size_mb
-                    ),
+                    format!("Backup '{}' {} ({:.1} MB).", filename, status, size_mb),
                     if *success {
                         "color: #28a745".to_string()
                     } else {

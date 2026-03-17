@@ -73,10 +73,7 @@ impl Relay {
                 }
             }
             Err(e) => {
-                warn!(
-                    "Invalid global regex filter '{}': {}",
-                    filter_pattern, e
-                );
+                warn!("Invalid global regex filter '{}': {}", filter_pattern, e);
                 false
             }
         }
@@ -125,11 +122,17 @@ impl Relay {
         let param_name = topic.replace('/', "_");
 
         // Send to Miniserver via HTTP
-        match client.send(vec![(param_name.clone(), value.to_string())]).await {
+        match client
+            .send(vec![(param_name.clone(), value.to_string())])
+            .await
+        {
             Ok(results) => {
                 if let Some(&success) = results.get(&param_name) {
                     if success {
-                        debug!("Successfully sent {} = {} to Miniserver {}", topic, value, ms_id);
+                        debug!(
+                            "Successfully sent {} = {} to Miniserver {}",
+                            topic, value, ms_id
+                        );
                     } else {
                         warn!("Miniserver {} rejected parameter {}", ms_id, param_name);
                     }

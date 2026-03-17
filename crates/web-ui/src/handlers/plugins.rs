@@ -66,10 +66,7 @@ pub async fn install_submit(
 
         if name == "file" {
             // Get filename from content disposition
-            let filename = field
-                .file_name()
-                .unwrap_or("upload.zip")
-                .to_string();
+            let filename = field.file_name().unwrap_or("upload.zip").to_string();
 
             // Validate ZIP extension
             if !filename.to_lowercase().ends_with(".zip") {
@@ -115,9 +112,7 @@ pub async fn install_submit(
     let zip_path = match zip_path {
         Some(path) => path,
         None => {
-            return Html(String::from(
-                "<div class='error'>No file uploaded</div>",
-            ));
+            return Html(String::from("<div class='error'>No file uploaded</div>"));
         }
     };
 
