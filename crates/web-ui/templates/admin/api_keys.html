@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Keys - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 8px; padding: 32px; width: 100%; max-width: 520px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
+        .modal-box h2 { margin-top: 0; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .key-display { font-family: monospace; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px 12px; word-break: break-all; font-size: 0.9em; }
+        .copy-btn { background: none; border: 1px solid #6c757d; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 0.85rem; margin-left: 8px; }
+        .copy-btn:hover { background: #6c757d; color: #fff; }
+        .perm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .perm-item { display: flex; align-items: center; gap: 6px; font-size: 0.9em; }
+        select[multiple] { height: 90px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; background: #e2e3e5; color: #383d41; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/admin/api-keys" class="active">API Keys</a></li>
+            <li><a href="/admin/audit">Audit Log</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>API Keys</h1>
+            <button class="btn btn-primary" onclick="openCreateModal()">+ Generate API Key</button>
+        </div>
+
+        <div id="key-result" style="margin-bottom: 12px;"></div>
+
+        <div class="card">
+            <p style="color: #6c757d; margin-bottom: 16px;">
+                API keys allow programmatic access to the RustyLox API.
+                Keys are shown only once upon creation — store them securely.
+            </p>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 10px; text-align: left;">Name</th>
+                        <th style="padding: 10px; text-align: left;">Key Prefix</th>
+                        <th style="padding: 10px; text-align: left;">Created</th>
+                        <th style="padding: 10px; text-align: left;">Last Used</th>
+                        <th style="padding: 10px; text-align: left;">Expires</th>
+                        <th style="padding: 10px; text-align: left;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="keys-tbody">
+                    <tr><td colspan="6" style="padding: 20px; text-align: center;">Loading API keys...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Create Key Modal -->
+    <div id="create-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>Generate API Key</h2>
+            <div class="form-group">
+                <label>Key Name</label>
+                <input type="text" id="new-key-name" placeholder="e.g., Home Assistant integration">
+            </div>
+            <div class="form-group">
+                <label>Expires After (days, 0 = never)</label>
+                <input type="number" id="new-key-expires" value="0" min="0" max="3650">
+            </div>
+            <div class="form-group">
+                <label>Permissions</label>
+                <select id="new-key-permissions" multiple>
+                    <option value="miniserver:read" selected>Miniserver - Read</option>
+                    <option value="miniserver:write">Miniserver - Write</option>
+                    <option value="mqtt_gateway:read" selected>MQTT - Read</option>
+                    <option value="mqtt_gateway:write">MQTT - Write</option>
+                    <option value="plugins:read" selected>Plugins - Read</option>
+                    <option value="plugins:write">Plugins - Write</option>
+                    <option value="settings:read" selected>Settings - Read</option>
+                    <option value="settings:write">Settings - Write</option>
+                    <option value="logs:read" selected>Logs - Read</option>
+                    <option value="backup:read">Backup - Read</option>
+                    <option value="backup:write">Backup - Write</option>
+                    <option value="system:read" selected>System - Read</option>
+                </select>
+                <small>Hold Ctrl/Cmd to select multiple permissions</small>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createKey()">Generate Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Key Display Modal -->
+    <div id="new-key-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>API Key Created</h2>
+            <div class="alert alert-warning" style="margin-bottom: 16px;">
+                <strong>Copy this key now.</strong> It will not be shown again.
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                <div class="key-display" id="new-key-value" style="flex: 1;"></div>
+                <button class="copy-btn" onclick="copyKey()">Copy</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="closeNewKeyModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    function loadKeys() {
+        fetch('/api/auth/keys')
+            .then(r => r.json())
+            .then(keys => {
+                const tbody = document.getElementById('keys-tbody');
+                if (!keys || keys.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center;">No API keys configured.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = keys.map(k => {
+                    const created = k.created_at ? new Date(k.created_at).toLocaleDateString() : '-';
+                    const lastUsed = k.last_used ? new Date(k.last_used).toLocaleDateString() : 'Never';
+                    const expires = k.expires_at
+                        ? (new Date(k.expires_at) < new Date()
+                            ? `<span class="badge badge-danger">Expired</span>`
+                            : escHtml(new Date(k.expires_at).toLocaleDateString()))
+                        : '<span style="color:#6c757d;">Never</span>';
+                    const prefix = k.key_prefix || k.name.substring(0, 8);
+                    return `
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 10px; font-weight: 600;">${escHtml(k.name)}</td>
+                            <td style="padding: 10px;"><code>${escHtml(prefix)}***</code></td>
+                            <td style="padding: 10px; color: #6c757d; font-size: 0.9em;">${escHtml(created)}</td>
+                            <td style="padding: 10px; color: #6c757d; font-size: 0.9em;">${escHtml(lastUsed)}</td>
+                            <td style="padding: 10px;">${expires}</td>
+                            <td style="padding: 10px;">
+                                <button class="btn btn-sm btn-danger" onclick="revokeKey('${k.id}', '${escHtml(k.name)}')">
+                                    Revoke
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            })
+            .catch(e => {
+                document.getElementById('keys-tbody').innerHTML =
+                    `<tr><td colspan="6" style="color:red; padding:10px;">Error loading keys: ${escHtml(String(e))}</td></tr>`;
+            });
+    }
+
+    function openCreateModal() {
+        document.getElementById('new-key-name').value = '';
+        document.getElementById('create-modal').classList.add('open');
+    }
+    function closeCreateModal() {
+        document.getElementById('create-modal').classList.remove('open');
+    }
+
+    function createKey() {
+        const name = document.getElementById('new-key-name').value.trim();
+        if (!name) { alert('Enter a key name.'); return; }
+        const expiresInDays = parseInt(document.getElementById('new-key-expires').value) || 0;
+        const permissions = Array.from(document.getElementById('new-key-permissions').selectedOptions)
+            .map(o => o.value);
+        const payload = {
+            name,
+            permissions,
+            expires_in_days: expiresInDays > 0 ? expiresInDays : null,
+        };
+        fetch('/api/auth/keys', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.key || d.raw_key) {
+                closeCreateModal();
+                document.getElementById('new-key-value').textContent = d.key || d.raw_key;
+                document.getElementById('new-key-modal').classList.add('open');
+                loadKeys();
+            } else {
+                document.getElementById('key-result').innerHTML =
+                    "<div class='alert alert-danger'>" + escHtml(d.error || d.message || 'Failed to create key') + "</div>";
+            }
+        })
+        .catch(e => {
+            document.getElementById('key-result').innerHTML =
+                "<div class='alert alert-danger'>Request failed: " + escHtml(String(e)) + "</div>";
+        });
+    }
+
+    function copyKey() {
+        const val = document.getElementById('new-key-value').textContent;
+        navigator.clipboard.writeText(val).then(() => {
+            const btn = document.querySelector('#new-key-modal .copy-btn');
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        });
+    }
+
+    function closeNewKeyModal() {
+        document.getElementById('new-key-modal').classList.remove('open');
+    }
+
+    function revokeKey(keyId, name) {
+        if (!confirm(`Revoke API key "${name}"? Applications using this key will lose access.`)) return;
+        fetch(`/api/auth/keys/${keyId}`, { method: 'DELETE' })
+            .then(r => {
+                const el = document.getElementById('key-result');
+                if (r.ok) {
+                    el.innerHTML = "<div class='alert alert-success'>API key revoked.</div>";
+                    loadKeys();
+                } else {
+                    return r.json().then(d => {
+                        el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || 'Revoke failed') + "</div>";
+                    });
+                }
+            })
+            .catch(e => {
+                document.getElementById('key-result').innerHTML =
+                    "<div class='alert alert-danger'>Request failed: " + escHtml(String(e)) + "</div>";
+            });
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('open');
+        });
+    });
+
+    loadKeys();
+    </script>
+</body>
+</html>

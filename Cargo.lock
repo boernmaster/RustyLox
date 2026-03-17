@@ -3643,6 +3643,7 @@ dependencies = [
  "askama",
  "askama_axum",
  "async-stream",
+ "auth",
  "axum",
  "backup-manager",
  "chrono",

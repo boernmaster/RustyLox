@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 8px; padding: 32px; width: 100%; max-width: 480px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
+        .modal-box h2 { margin-top: 0; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .status-active { color: #198754; font-weight: 600; }
+        .status-locked { color: #dc3545; font-weight: 600; }
+        .roles-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+        .badge-admin { background: #d1ecf1; color: #0c5460; }
+        .badge-operator { background: #d4edda; color: #155724; }
+        .badge-viewer { background: #e2e3e5; color: #383d41; }
+        .badge-plugin_manager { background: #fff3cd; color: #856404; }
+        select[multiple] { height: 90px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/admin/users" class="active">Users</a></li>
+            <li><a href="/admin/api-keys">API Keys</a></li>
+            <li><a href="/admin/audit">Audit Log</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>User Management</h1>
+            <button class="btn btn-primary" onclick="openCreateModal()">+ New User</button>
+        </div>
+
+        <div id="user-result" style="margin-bottom: 12px;"></div>
+
+        <div class="card">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 10px; text-align: left;">Username</th>
+                        <th style="padding: 10px; text-align: left;">Email</th>
+                        <th style="padding: 10px; text-align: left;">Roles</th>
+                        <th style="padding: 10px; text-align: left;">Status</th>
+                        <th style="padding: 10px; text-align: left;">Last Login</th>
+                        <th style="padding: 10px; text-align: left;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody">
+                    <tr><td colspan="6" style="padding: 20px; text-align: center;">Loading users...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Create User Modal -->
+    <div id="create-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>Create New User</h2>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="new-username" placeholder="username" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="new-email" placeholder="user@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="new-password" placeholder="Password" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label>Roles</label>
+                <select id="new-roles" multiple>
+                    <option value="admin">Admin</option>
+                    <option value="operator" selected>Operator</option>
+                    <option value="viewer">Viewer</option>
+                    <option value="plugin_manager">Plugin Manager</option>
+                </select>
+                <small>Hold Ctrl/Cmd to select multiple</small>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createUser()">Create User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="password-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>Change Password</h2>
+            <input type="hidden" id="pw-user-id">
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="new-pw" placeholder="New password" autocomplete="new-password">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    function roleBadge(role) {
+        const cls = 'badge badge-' + role;
+        return `<span class="${cls}">${escHtml(role)}</span>`;
+    }
+
+    function loadUsers() {
+        fetch('/api/users')
+            .then(r => r.json())
+            .then(users => {
+                const tbody = document.getElementById('users-tbody');
+                if (!users || users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center;">No users found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = users.map(u => {
+                    const locked = u.is_locked || (u.locked_until && new Date(u.locked_until) > new Date());
+                    const statusHtml = locked
+                        ? '<span class="status-locked">Locked</span>'
+                        : (u.enabled ? '<span class="status-active">Active</span>' : '<span style="color:#6c757d;">Disabled</span>');
+                    const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString() : 'Never';
+                    const roles = (u.roles || []).map(roleBadge).join(' ');
+                    return `
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 10px; font-weight: 600;">${escHtml(u.username)}</td>
+                            <td style="padding: 10px;">${escHtml(u.email || '')}</td>
+                            <td style="padding: 10px;"><div class="roles-cell">${roles}</div></td>
+                            <td style="padding: 10px;">${statusHtml}</td>
+                            <td style="padding: 10px; color: #6c757d; font-size: 0.9em;">${escHtml(lastLogin)}</td>
+                            <td style="padding: 10px; display: flex; gap: 6px;">
+                                <button class="btn btn-sm btn-secondary" onclick="openPasswordModal('${u.id}')">
+                                    Reset PW
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}', '${escHtml(u.username)}')">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            })
+            .catch(e => {
+                document.getElementById('users-tbody').innerHTML =
+                    `<tr><td colspan="6" style="color:red; padding:10px;">Error loading users: ${escHtml(String(e))}</td></tr>`;
+            });
+    }
+
+    function openCreateModal() {
+        document.getElementById('new-username').value = '';
+        document.getElementById('new-email').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('create-modal').classList.add('open');
+    }
+    function closeCreateModal() {
+        document.getElementById('create-modal').classList.remove('open');
+    }
+
+    function createUser() {
+        const roles = Array.from(document.getElementById('new-roles').selectedOptions).map(o => o.value);
+        const payload = {
+            username: document.getElementById('new-username').value,
+            email: document.getElementById('new-email').value,
+            password: document.getElementById('new-password').value,
+            roles,
+        };
+        if (!payload.username || !payload.password) {
+            alert('Username and password are required.');
+            return;
+        }
+        fetch('/api/users', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        })
+        .then(r => r.json())
+        .then(d => {
+            const el = document.getElementById('user-result');
+            if (d.id || d.username) {
+                el.innerHTML = "<div class='alert alert-success'>User created successfully.</div>";
+                closeCreateModal();
+                loadUsers();
+            } else {
+                el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || d.message || 'Failed to create user') + "</div>";
+            }
+        })
+        .catch(e => {
+            document.getElementById('user-result').innerHTML =
+                "<div class='alert alert-danger'>Request failed: " + escHtml(String(e)) + "</div>";
+        });
+    }
+
+    function openPasswordModal(userId) {
+        document.getElementById('pw-user-id').value = userId;
+        document.getElementById('new-pw').value = '';
+        document.getElementById('password-modal').classList.add('open');
+    }
+    function closePasswordModal() {
+        document.getElementById('password-modal').classList.remove('open');
+    }
+
+    function changePassword() {
+        const userId = document.getElementById('pw-user-id').value;
+        const newPassword = document.getElementById('new-pw').value;
+        if (!newPassword) { alert('Enter a new password.'); return; }
+        fetch(`/api/users/${userId}/password`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ new_password: newPassword }),
+        })
+        .then(r => r.json())
+        .then(d => {
+            const el = document.getElementById('user-result');
+            if (d.success !== false) {
+                el.innerHTML = "<div class='alert alert-success'>Password changed successfully.</div>";
+                closePasswordModal();
+            } else {
+                el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || 'Failed') + "</div>";
+            }
+        })
+        .catch(e => {
+            document.getElementById('user-result').innerHTML =
+                "<div class='alert alert-danger'>Request failed: " + escHtml(String(e)) + "</div>";
+        });
+    }
+
+    function deleteUser(userId, username) {
+        if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+        fetch(`/api/users/${userId}`, { method: 'DELETE' })
+            .then(r => {
+                const el = document.getElementById('user-result');
+                if (r.ok) {
+                    el.innerHTML = "<div class='alert alert-success'>User deleted.</div>";
+                    loadUsers();
+                } else {
+                    return r.json().then(d => {
+                        el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || 'Delete failed') + "</div>";
+                    });
+                }
+            })
+            .catch(e => {
+                document.getElementById('user-result').innerHTML =
+                    "<div class='alert alert-danger'>Request failed: " + escHtml(String(e)) + "</div>";
+            });
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('open');
+        });
+    });
+
+    loadUsers();
+    </script>
+</body>
+</html>
