@@ -1,0 +1,32 @@
+<!-- pagestart.html START -->
+	<div data-role="page" id="<TMPL_VAR PAGE>" class="ui-responsive-panel">
+		<!-- header -->
+		<nav class="navbar">
+			<div class="nav-brand">
+				<a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+					<img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+				</a>
+			</div>
+			<ul class="nav-menu">
+				<li><a href="/">Dashboard</a></li>
+				<li><a href="/miniserver">Miniserver</a></li>
+				<li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+				<li><a href="/mqtt/config">MQTT Config</a></li>
+				<li><a href="/plugins" class="active">Plugins</a></li>
+				<li><a href="/health">Health</a></li>
+				<li><a href="/logs">Logs</a></li>
+				<li><a href="/backup">Backup</a></li>
+				<li><a href="/admin/users">Users</a></li>
+				<li><a href="/settings">Settings</a></li>
+			</ul>
+		</nav>
+		<!-- /header -->
+		<!-- content -->
+		<main class="container">
+			<div style="margin-bottom: 16px;">
+				<a href="/plugins" style="color: #3498db; text-decoration: none;">← Back to Plugins</a>
+			</div>
+			<h1><TMPL_VAR TEMPLATETITLE></h1>
+			<div class="loxberry-logo">
+				<div id="page_content" class="page_content">
+<!-- pagestart.html END -->

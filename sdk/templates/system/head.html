@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="<TMPL_VAR LANG>">
+<!-- head.html START -->
+<head>
+	<title><TMPL_VAR TEMPLATETITLE></title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+	<link rel="stylesheet" href="/static/css/style.css">
+	<style>
+		/* LoxBerry plugin compatibility styles */
+		.wide { font-size: 1.2rem; font-weight: 600; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin: 24px 0 16px 0; }
+		.hint { font-size: 0.85rem; color: #7f8c8d; margin-top: 4px; }
+		.mono { font-family: monospace; font-size: 110%; font-weight: bold; color: #27ae60; }
+		[data-role="fieldcontain"] { margin-bottom: 16px; }
+		[data-role="fieldcontain"] label { display: block; font-weight: 600; color: #2c3e50; margin-bottom: 4px; }
+		[data-role="fieldcontain"] input[type="text"],
+		[data-role="fieldcontain"] input[type="password"],
+		[data-role="fieldcontain"] select,
+		[data-role="fieldcontain"] textarea { width: 100%; max-width: 500px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; }
+		[data-role="fieldcontain"] input:focus,
+		[data-role="fieldcontain"] select:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 2px rgba(52,152,219,0.2); }
+		[data-role="controlgroup"] { margin-bottom: 16px; }
+		[data-role="controlgroup"] label { font-weight: normal; margin-left: 6px; }
+		[data-role="button"], a[data-role="button"] {
+			display: inline-block; padding: 10px 20px; background: #3498db; color: white;
+			border: none; border-radius: 4px; cursor: pointer; text-decoration: none;
+			font-size: 0.95rem; margin: 4px 2px;
+		}
+		[data-role="button"]:hover, a[data-role="button"]:hover { background: #2980b9; }
+		[data-icon="check"] { background: #27ae60; }
+		[data-icon="check"]:hover { background: #219a52; }
+		[data-icon="delete"] { background: #e74c3c; }
+		[data-icon="delete"]:hover { background: #c0392b; }
+		.ui-body-a, .ui-body { padding: 20px; }
+		.loxberry-logo { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
+		.page_content { margin: 0 !important; }
+		#overlay { display: none !important; }
+		/* jQuery Mobile data-role overrides */
+		select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+		input[type="checkbox"] { margin-right: 6px; }
+	</style>
+	<TMPL_VAR HTMLHEAD>
+</head>
+<body>
+<!-- head.html END -->
