@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f0f2f5; margin: 0; }
+        .login-container { width: 100%; max-width: 400px; padding: 16px; }
+        .login-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.12); padding: 40px; }
+        .login-logo { text-align: center; margin-bottom: 28px; }
+        .login-logo img { height: 56px; }
+        .login-title { text-align: center; font-size: 1.5rem; font-weight: 700; color: #212529; margin-bottom: 6px; }
+        .login-subtitle { text-align: center; color: #6c757d; font-size: 0.9rem; margin-bottom: 28px; }
+        .password-wrapper { position: relative; }
+        .password-wrapper input { padding-right: 80px; width: 100%; box-sizing: border-box; }
+        .password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #6c757d; cursor: pointer; font-size: 0.85rem; padding: 4px 8px; }
+        .password-toggle:hover { color: #343a40; }
+        .btn-block { width: 100%; }
+        .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .remember-row label { margin: 0; color: #495057; font-size: 0.9rem; cursor: pointer; }
+        .login-footer { text-align: center; margin-top: 24px; color: #6c757d; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="/static/logo.svg" alt="RustyLox">
+            </div>
+            <div class="login-title">Welcome to RustyLox</div>
+            <div class="login-subtitle">Sign in to manage your smart home system</div>
+
+            {% if let Some(err) = error %}
+            <div class="alert alert-danger" style="margin-bottom: 16px;">{{ err }}</div>
+            {% endif %}
+
+            <form method="post" action="/login">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autofocus
+                           autocomplete="username" placeholder="Enter username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" required
+                               autocomplete="current-password" placeholder="Enter password">
+                        <button type="button" class="password-toggle" onclick="togglePassword()">Show</button>
+                    </div>
+                </div>
+
+                <div class="remember-row">
+                    <input type="checkbox" id="remember_me" name="remember_me">
+                    <label for="remember_me">Remember me for 30 days</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            </form>
+
+            <div class="login-footer">
+                <small>RustyLox v{{ version }}</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function togglePassword() {
+        const inp = document.getElementById('password');
+        const btn = inp.parentElement.querySelector('.password-toggle');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            btn.textContent = 'Hide';
+        } else {
+            inp.type = 'password';
+            btn.textContent = 'Show';
+        }
+    }
+    </script>
+</body>
+</html>
