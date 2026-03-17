@@ -7,6 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 	<link rel="stylesheet" href="/static/css/style.css">
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 	<style>
 		/* LoxBerry plugin compatibility styles */
 		.wide { font-size: 1.2rem; font-weight: 600; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; margin: 24px 0 16px 0; }
@@ -36,10 +37,32 @@
 		.loxberry-logo { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
 		.page_content { margin: 0 !important; }
 		#overlay { display: none !important; }
-		/* jQuery Mobile data-role overrides */
 		select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-		input[type="checkbox"] { margin-right: 6px; }
+		input[type="checkbox"] { margin-right: 6px; width: auto; }
+		/* Plugin tab navigation */
+		.plugin-tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid #dee2e6; }
+		.plugin-tabs a { padding: 10px 20px; text-decoration: none; color: #7f8c8d; font-weight: 600; font-size: 0.95rem;
+			border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+		.plugin-tabs a:hover { color: #2c3e50; border-bottom-color: #bdc3c7; }
+		.plugin-tabs a.active { color: #3498db; border-bottom-color: #3498db; }
+		/* Flipswitch compatibility */
+		.ui-flipswitch { display: inline-block; }
+		/* jQuery Mobile shims */
+		.ui-grid-a { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+		.ui-grid-b { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+		.ui-block-a, .ui-block-b, .ui-block-c { padding: 4px; }
+		.ui-li-divider { font-weight: 600; color: #2c3e50; padding: 8px 0; }
 	</style>
+	<script>
+		/* jQuery Mobile compatibility shims */
+		$.fn.checkboxradio = function() { return this; };
+		$.fn.selectmenu = function() { return this; };
+		$.fn.flipswitch = function() { return this; };
+		$.fn.slider = function() { return this; };
+		$.fn.textinput = function() { return this; };
+		$.fn.button = function() { return this; };
+		$.mobile = { page: { prototype: { options: { domCache: false } } }, ajaxEnabled: false };
+	</script>
 	<TMPL_VAR HTMLHEAD>
 </head>
 <body>

@@ -96,7 +96,8 @@ pub fn create_ui_router(state: AppState) -> Router {
         )
         .route(
             "/admin/plugins/:name/*path",
-            get(handlers::plugin_web::serve_plugin_auth),
+            get(handlers::plugin_web::serve_plugin_auth)
+                .post(handlers::plugin_web::serve_plugin_auth_post),
         )
         // Email notifications
         .route("/email", get(handlers::email::index))
