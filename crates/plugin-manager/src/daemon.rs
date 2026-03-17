@@ -341,7 +341,10 @@ mod tests {
         assert_eq!(detect_interpreter(Path::new("daemon.pl")).unwrap(), "perl");
         assert_eq!(detect_interpreter(Path::new("daemon.sh")).unwrap(), "bash");
         assert_eq!(detect_interpreter(Path::new("daemon.php")).unwrap(), "php");
-        assert_eq!(detect_interpreter(Path::new("daemon.py")).unwrap(), "python3");
+        assert_eq!(
+            detect_interpreter(Path::new("daemon.py")).unwrap(),
+            "python3"
+        );
     }
 
     #[test]
