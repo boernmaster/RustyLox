@@ -1,5 +1,6 @@
 //! Application state for the web API
 
+use auth::AuthService;
 use dashmap::DashMap;
 use loxberry_config::{ConfigManager, GeneralConfig};
 use miniserver_client::MiniserverClient;
@@ -51,6 +52,9 @@ pub struct AppState {
 
     /// Current log level (runtime-adjustable)
     pub log_level: LogLevelHandle,
+
+    /// Authentication service (optional - disabled if not configured)
+    pub auth_service: Option<Arc<AuthService>>,
 }
 
 impl AppState {
@@ -94,7 +98,14 @@ impl AppState {
             mqtt_gateway,
             miniserver_monitor: monitor_tx,
             log_level: Arc::new(RwLock::new(initial_level)),
+            auth_service: None,
         }
+    }
+
+    /// Attach an AuthService to the application state
+    pub fn with_auth(mut self, auth_service: AuthService) -> Self {
+        self.auth_service = Some(Arc::new(auth_service));
+        self
     }
 
     /// Reload configuration from disk

@@ -3,6 +3,7 @@
 //! This is the main orchestrator binary that starts all services.
 
 use anyhow::Result;
+use auth::{AuditLogger, AuthService, AuthStore};
 use loxberry_config::{ConfigManager, GeneralConfig};
 use mqtt_gateway::MqttGateway;
 use std::path::PathBuf;
@@ -90,6 +91,17 @@ async fn main() -> Result<()> {
         }
     };
 
+    // Initialize authentication service
+    let data_dir = lbhomedir.join("data/system");
+    let log_dir = lbhomedir.join("log/system");
+    let auth_store = AuthStore::new(&data_dir);
+    let audit_logger = AuditLogger::new(&log_dir);
+    let auth_service = AuthService::new(auth_store, audit_logger);
+    match auth_service.init().await {
+        Ok(()) => info!("Auth service initialized"),
+        Err(e) => warn!("Auth service init warning: {}", e),
+    }
+
     // Create application state
     let state = AppState::new_with_shared_config(
         lbhomedir,
@@ -97,7 +109,8 @@ async fn main() -> Result<()> {
         config_manager,
         config,
         mqtt_gateway,
-    );
+    )
+    .with_auth(auth_service);
 
     // Create API router
     let api_router = create_router(state.clone());

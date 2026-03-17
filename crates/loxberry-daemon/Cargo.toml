@@ -8,6 +8,7 @@ name = "loxberry-daemon"
 path = "src/main.rs"
 
 [dependencies]
+auth = { path = "../auth" }
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
 mqtt-gateway = { path = "../mqtt-gateway" }
