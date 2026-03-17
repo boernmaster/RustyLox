@@ -14,7 +14,13 @@
 
 	// lbhomedir
 	$lbhomedir = LBHOMEDIR;
-	list($scriptPath) = get_included_files();
+	// Use SCRIPT_FILENAME from CGI env if available (handles auto_prepend_file case
+	// where get_included_files()[0] returns the bootstrap instead of the actual script)
+	if (getenv('SCRIPT_FILENAME') && strpos(getenv('SCRIPT_FILENAME'), LBHOMEDIR) === 0) {
+		$scriptPath = getenv('SCRIPT_FILENAME');
+	} else {
+		list($scriptPath) = get_included_files();
+	}
 	$p = explode("/", substr($scriptPath, strlen(LBHOMEDIR)));
 	
 	// // Debugging

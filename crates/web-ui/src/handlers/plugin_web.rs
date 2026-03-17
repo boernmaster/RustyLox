@@ -82,7 +82,13 @@ pub async fn serve_plugin_public_index(
         .join("webfrontend/html/plugins")
         .join(&plugin_name);
 
-    serve_plugin_file(&base_dir, "index.html", &plugin_name, PhpRequest::get_only()).await
+    serve_plugin_file(
+        &base_dir,
+        "index.html",
+        &plugin_name,
+        PhpRequest::get_only(),
+    )
+    .await
 }
 
 /// Serve authenticated plugin web interface (GET)
@@ -266,7 +272,7 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
     let include_path = ".:/opt/loxberry/libs/phplib:/usr/share/php";
     let bootstrap = "/opt/loxberry/libs/phplib/loxberry_bootstrap.php";
 
-    let mut cmd = Command::new("php");
+    let mut cmd = Command::new("php-cgi");
     cmd.arg("-d")
         .arg(format!("include_path={}", include_path))
         .arg("-d")
@@ -281,10 +287,7 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         )
         .env(
             "LBPHTMLAUTHDIR",
-            format!(
-                "/opt/loxberry/webfrontend/htmlauth/plugins/{}",
-                plugin_name
-            ),
+            format!("/opt/loxberry/webfrontend/htmlauth/plugins/{}", plugin_name),
         )
         .env(
             "LBPDATADIR",
@@ -326,7 +329,7 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
                 warn!("Failed to spawn PHP for plugin {}: {}", plugin_name, e);
                 return error_response(
                     StatusCode::SERVICE_UNAVAILABLE,
-                    "PHP runtime not available",
+                    "PHP runtime not available (php-cgi)",
                 );
             }
         };
@@ -366,16 +369,19 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
                 }
             }
 
-            builder
-                .body(Body::from(body))
-                .unwrap_or_else(|_| error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error"))
+            builder.body(Body::from(body)).unwrap_or_else(|_| {
+                error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error")
+            })
         }
         Err(e) => {
             warn!(
                 "Failed to execute PHP for plugin {} (is php installed?): {}",
                 plugin_name, e
             );
-            error_response(StatusCode::SERVICE_UNAVAILABLE, "PHP runtime not available")
+            error_response(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "PHP runtime not available (php-cgi)",
+            )
         }
     }
 }

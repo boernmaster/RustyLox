@@ -1,6 +1,8 @@
 //! Plugin management handlers
 
-use crate::templates::{PluginDetailsTemplate, PluginDisplay, PluginInstallTemplate, PluginListTemplate};
+use crate::templates::{
+    PluginDetailsTemplate, PluginDisplay, PluginInstallTemplate, PluginListTemplate,
+};
 use askama::Template;
 use axum::{
     extract::{Multipart, Path, State},
@@ -17,7 +19,11 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
             let mut displays = Vec::new();
             for p in plugins {
                 // Check if plugin has daemon
-                let daemon_dir = state.lbhomedir.join("bin/plugins").join(&p.folder).join("daemon");
+                let daemon_dir = state
+                    .lbhomedir
+                    .join("bin/plugins")
+                    .join(&p.folder)
+                    .join("daemon");
                 let has_daemon = daemon_dir.exists();
 
                 // Check daemon status if it exists
@@ -29,7 +35,10 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
                 };
 
                 // Check if plugin has web UI
-                let webui_dir = state.lbhomedir.join("webfrontend/htmlauth/plugins").join(&p.folder);
+                let webui_dir = state
+                    .lbhomedir
+                    .join("webfrontend/htmlauth/plugins")
+                    .join(&p.folder);
                 let has_web_ui = webui_dir.exists();
 
                 // Format install date

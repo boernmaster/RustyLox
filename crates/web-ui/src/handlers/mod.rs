@@ -3,8 +3,8 @@
 pub mod api_docs;
 pub mod auth;
 pub mod backup;
-pub mod database;
 pub mod dashboard;
+pub mod database;
 pub mod email;
 pub mod health;
 pub mod logs;
