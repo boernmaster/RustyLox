@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ plugin.title }} - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .details-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .detail-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .detail-value {
+            color: #7f8c8d;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/mqtt/monitor">MQTT Monitor</a>
+        <a href="/mqtt/stats">MQTT Stats</a>
+        <a href="/plugins" class="active">Plugins</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/api-keys">API Keys</a>
+        <a href="/settings">Settings</a>
+    </nav>
+
+    <div class="container">
+        <div style="margin-bottom: 20px;">
+            <a href="/plugins" style="color: #3498db; text-decoration: none;">← Back to Plugins</a>
+        </div>
+
+        <h1>{{ plugin.title }}</h1>
+
+        <div class="details-grid">
+            <div class="detail-card">
+                <h2>Plugin Information</h2>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">{{ plugin.name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Version:</span>
+                    <span class="detail-value">{{ plugin.version }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Author:</span>
+                    <span class="detail-value">{{ plugin.author }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">{{ plugin.author_email }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Folder:</span>
+                    <span class="detail-value"><code>{{ plugin.folder }}</code></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">MD5:</span>
+                    <span class="detail-value"><code>{{ plugin.md5 }}</code></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Installed:</span>
+                    <span class="detail-value">{{ plugin.install_date }}</span>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h2>Features</h2>
+                <div class="detail-row">
+                    <span class="detail-label">Web Interface:</span>
+                    <span class="detail-value">{% if plugin.has_web_ui %}✅ Yes{% else %}❌ No{% endif %}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Daemon Service:</span>
+                    <span class="detail-value">{% if plugin.has_daemon %}✅ Yes{% else %}❌ No{% endif %}</span>
+                </div>
+
+                <h3 style="margin-top: 24px;">Actions</h3>
+                <div class="action-buttons">
+                    {% if plugin.has_web_ui %}
+                    <a href="/admin/plugins/{{ plugin.folder }}" target="_blank" class="btn btn-primary">
+                        🌐 Open Web UI
+                    </a>
+                    {% endif %}
+
+                    <button class="btn btn-danger"
+                            hx-post="/plugins/{{ plugin.md5 }}/uninstall"
+                            hx-confirm="Are you sure you want to uninstall {{ plugin.name }}?"
+                            hx-target="body">
+                        🗑 Uninstall Plugin
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <footer>
+        <p>RustyLox v{{ version }} | <a href="/api-docs">API Docs</a></p>
+    </footer>
+</body>
+</html>

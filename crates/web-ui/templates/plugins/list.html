@@ -3,81 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plugin Management - LoxBerry</title>
+    <title>Plugin Management - RustyLox</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .plugins-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        .search-bar input {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+        .plugins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .plugin-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: box-shadow 0.2s;
+        }
+        .plugin-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .plugin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        .plugin-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 4px 0;
+        }
+        .plugin-version {
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .plugin-author {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        .plugin-features {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .feature-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .feature-badge.active {
+            background: #27ae60;
+            color: white;
+        }
+        .plugin-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 8px;
+            color: #95a5a6;
+        }
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">
-            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
-            </a>
-        </div>
-        <ul class="nav-menu">
-            <li><a href="/">Dashboard</a></li>
-            <li><a href="/miniserver">Miniserver</a></li>
-            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
-            <li><a href="/mqtt/config">MQTT Config</a></li>
-            <li><a href="/plugins" class="active">Plugins</a></li>
-            <li><a href="/logs">Logs</a></li>
-            <li><a href="/backup">Backup</a></li>
-            <li><a href="/admin/users">Users</a></li>
-            <li><a href="/admin/api-keys">API Keys</a></li>
-            <li><a href="/settings">Settings</a></li>
-        </ul>
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/mqtt/monitor">MQTT Monitor</a>
+        <a href="/mqtt/stats">MQTT Stats</a>
+        <a href="/plugins" class="active">Plugins</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/api-keys">API Keys</a>
+        <a href="/settings">Settings</a>
     </nav>
 
-    <main class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div class="container">
+        <div class="plugins-header">
             <h1>Plugin Management</h1>
-            <a href="/plugins/install" class="btn btn-primary">Install Plugin</a>
+            <a href="/plugins/install" class="btn btn-primary">+ Install Plugin</a>
         </div>
 
-        {% if plugins.is_empty() %}
-        <div class="card">
-            <p>No plugins installed yet.</p>
-            <a href="/plugins/install" class="btn btn-primary">Install Your First Plugin</a>
-        </div>
-        {% else %}
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Title</th>
-                        <th>Version</th>
-                        <th>Author</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for plugin in plugins %}
-                    <tr>
-                        <td>{{ plugin.name }}</td>
-                        <td>{{ plugin.title }}</td>
-                        <td>{{ plugin.version }}</td>
-                        <td>{{ plugin.author }}</td>
-                        <td>
-                            <a href="/plugins/{{ plugin.md5 }}" class="btn btn-sm btn-secondary">Details</a>
-                            <button hx-post="/plugins/{{ plugin.md5 }}/uninstall"
-                                    hx-confirm="Are you sure you want to uninstall {{ plugin.name }}?"
-                                    hx-target="#result"
-                                    class="btn btn-sm btn-danger">Uninstall</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        {% if !plugins.is_empty() %}
+        <div class="search-bar">
+            <input type="text"
+                   id="plugin-search"
+                   placeholder="Search plugins by name or author..."
+                   onkeyup="filterPlugins()">
         </div>
         {% endif %}
 
-        <div id="result"></div>
-    </main>
+        {% if plugins.is_empty() %}
+        <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+            <p>No plugins installed yet.</p>
+            <a href="/plugins/install" class="btn btn-primary" style="margin-top: 16px;">
+                Install Your First Plugin
+            </a>
+        </div>
+        {% else %}
+        <div class="plugins-grid" id="plugins-grid">
+            {% for plugin in plugins %}
+            <div class="plugin-card" data-name="{{ plugin.name }}" data-author="{{ plugin.author }}">
+                <div class="plugin-header">
+                    <div>
+                        <h3 class="plugin-title">{{ plugin.title }}</h3>
+                        <div class="plugin-author">by {{ plugin.author }}</div>
+                    </div>
+                    <span class="plugin-version">v{{ plugin.version }}</span>
+                </div>
 
-    <footer class="footer">
-        <p>RustyLox {{ version }} | &copy; 2026</p>
+                <div class="plugin-features">
+                    {% if plugin.has_web_ui %}
+                    <span class="feature-badge active">🌐 Web UI</span>
+                    {% endif %}
+                    {% if plugin.has_daemon %}
+                    <span class="feature-badge active">⚙️ Daemon</span>
+                    {% endif %}
+                </div>
+
+                <div class="plugin-actions">
+                    <a href="/plugins/{{ plugin.md5 }}" class="btn-sm btn-primary">
+                        📋 Details
+                    </a>
+
+                    {% if plugin.has_web_ui %}
+                    <a href="/admin/plugins/{{ plugin.folder }}" target="_blank" class="btn-sm btn-secondary">
+                        🌐 Open UI
+                    </a>
+                    {% endif %}
+
+                    <button class="btn-sm btn-danger"
+                            hx-post="/plugins/{{ plugin.md5 }}/uninstall"
+                            hx-confirm="Are you sure you want to uninstall {{ plugin.name }}?"
+                            hx-target="closest .plugin-card"
+                            hx-swap="outerHTML swap:1s">
+                        🗑 Uninstall
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <footer>
+        <p>RustyLox v{{ version }} | <a href="/api-docs">API Docs</a> | <a href="/logs">System Logs</a></p>
     </footer>
+
+    <script>
+        function filterPlugins() {
+            const search = document.getElementById('plugin-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.plugin-card');
+
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                const author = card.getAttribute('data-author').toLowerCase();
+
+                if (name.includes(search) || author.includes(search)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>

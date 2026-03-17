@@ -114,13 +114,34 @@ pub struct PluginListTemplate {
     pub version: String,
 }
 
+/// Plugin details template
+#[derive(Template)]
+#[template(path = "plugins/details.html")]
+pub struct PluginDetailsTemplate {
+    pub plugin: PluginDisplay,
+    pub version: String,
+}
+
+/// Plugin install template
+#[derive(Template)]
+#[template(path = "plugins/install.html")]
+pub struct PluginInstallTemplate {
+    pub version: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDisplay {
     pub md5: String,
     pub name: String,
+    pub folder: String,
     pub version: String,
     pub author: String,
+    pub author_email: String,
     pub title: String,
+    pub has_web_ui: bool,
+    pub has_daemon: bool,
+    pub daemon_running: bool,
+    pub install_date: String,
 }
 
 /// MQTT config template
