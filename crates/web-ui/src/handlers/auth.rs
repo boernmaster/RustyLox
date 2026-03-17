@@ -1,6 +1,8 @@
 //! Authentication and admin UI handlers
 
-use crate::templates::{AdminApiKeysTemplate, AdminAuditTemplate, AdminUsersTemplate, LoginTemplate};
+use crate::templates::{
+    AdminApiKeysTemplate, AdminAuditTemplate, AdminUsersTemplate, LoginTemplate,
+};
 use askama::Template;
 use axum::{
     extract::{Form, Query, State},
@@ -39,10 +41,7 @@ pub async fn show_login(
 }
 
 /// POST /login - handle login form submission
-pub async fn handle_login(
-    State(state): State<AppState>,
-    Form(creds): Form<LoginForm>,
-) -> Redirect {
+pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<LoginForm>) -> Redirect {
     // If auth service is not configured, redirect to dashboard
     let Some(auth_service) = &state.auth_service else {
         return Redirect::to("/");
