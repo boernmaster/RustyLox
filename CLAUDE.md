@@ -38,13 +38,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **serde/serde_json** - Serialization (JSON config files)
 - **serde_ini** - INI file parsing (plugin configs)
 - **DashMap** - Concurrent hashmaps
-- **Future**: PostgreSQL/SQLite abstraction (Phase 6)
+- **PostgreSQL/SQLite** - Database abstraction layer (Phase 6)
 
 ### DevOps
 - **Docker** - Multi-stage builds
 - **docker-compose** - Stack orchestration
 - **GitHub Actions** - CI/CD
-- **Prometheus** - Metrics (planned Phase 6)
+- **Prometheus** - Metrics collection & monitoring
 
 ## Repository Structure
 
@@ -53,11 +53,15 @@ loxberry-rust/
 ├── crates/                         # Rust workspace crates
 │   ├── loxberry-core/             # Common types, errors
 │   ├── loxberry-config/           # JSON config management
-│   ├── loxberry-logging/          # Logging framework (future)
+│   ├── loxberry-logging/          # Logging framework
 │   ├── miniserver-client/         # HTTP/UDP Miniserver client
 │   ├── mqtt-gateway/              # MQTT gateway with transformers
 │   ├── plugin-manager/            # Plugin lifecycle management
-│   ├── backup-manager/            # Backup/restore (future)
+│   ├── auth/                      # Authentication & authorization (JWT, RBAC)
+│   ├── database/                  # Database abstraction (PostgreSQL/SQLite)
+│   ├── email-manager/             # Email notifications (SMTP)
+│   ├── task-scheduler/            # Scheduled tasks (cron-like)
+│   ├── backup-manager/            # Backup/restore functionality
 │   ├── web-api/                   # REST API (Axum)
 │   ├── web-ui/                    # Server-rendered UI (Askama + HTMX)
 │   └── loxberry-daemon/           # Main binary orchestrator
@@ -839,11 +843,11 @@ This project follows a **phased development approach**. See detailed docs:
 - ✅ [Phase 2](PHASE2_COMPLETE.md) - Plugin System (COMPLETE)
 - ✅ [Phase 3](PHASE3_COMPLETE.md) - MQTT Gateway (COMPLETE)
 - ✅ [Phase 4](PHASE4_COMPLETE.md) - Web UI (COMPLETE)
-- 🚧 [Phase 5](PHASE5_PLAN.md) - SDK & Logging (PLANNING)
-- 📅 [Phase 6](PHASE6_PLAN.md) - Updates & Monitoring (FUTURE)
-- 📅 [Phase 7](PHASE7_PLAN.md) - Production Hardening (FUTURE)
+- ✅ [Phase 5](PHASE5_COMPLETE.md) - SDK & Logging (COMPLETE)
+- ✅ [Phase 6](PHASE6_COMPLETE.md) - Performance & Monitoring (COMPLETE)
+- ✅ [Phase 7](PHASE7_COMPLETE.md) - Security Hardening (COMPLETE)
 
-**Current Focus**: Preparing for Phase 5 (SDK Compatibility & Logging)
+**Current Status**: All 7 phases complete! Production-ready v1.3.0 released.
 
 ## Additional Resources
 

@@ -7,21 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Changed
+- Ongoing improvements and bug fixes
+
+## [1.3.0] - 2026-03-17
+
+### Added - Phase 6: Performance & Monitoring
+- Database abstraction layer with PostgreSQL and SQLite support
+- Email notification system with SMTP and HTML templates
+- Task scheduler with cron expression support
+- Network diagnostics tools (ping, port scan, connectivity tests)
+- System health monitoring (CPU, memory, disk usage)
+- Backup and restore functionality
+- Enhanced health check endpoint with detailed metrics
+
+### Added - Phase 7: Security Hardening
+- JWT authentication with HS256 signing
+- Role-Based Access Control (RBAC) with Admin, Operator, Viewer, PluginManager roles
+- API key management with `lbx_` prefix and SHA-256 hashing
+- Argon2id password hashing for secure credential storage
+- Account lockout after 5 failed login attempts
+- Security headers middleware (CSP, X-Frame-Options, etc.)
+- Comprehensive audit logging for all security-sensitive operations
+- Auth REST API endpoints (`/api/auth/*`, `/api/users/*`)
+- In-memory session management with automatic expiry
+- Default admin user creation on first run
+
+### Fixed
+- Disabled rate limiting to resolve Docker API failures
+- Fixed "Unable To Extract Key!" errors on all endpoints
+
+### Security
+- All passwords now hashed with Argon2id
+- JWT tokens for stateless authentication
+- API keys stored as SHA-256 hashes
+- Security headers on all HTTP responses
+- Audit log for compliance and security monitoring
+
+## [1.2.0] - 2026-03-16
+
+### Added - Phase 5: Logging & SDK
+- Structured logging framework
+- Plugin logging integration
+- Configuration validation
+- Initial backup/restore functionality
+
+### Changed
 - Brand new icon and logo design for RustyLox
 - Comprehensive badges in README.md (license, language, CI status, etc.)
 - MQTT configuration interface with subscriptions and conversions management
 - RegEx filter support for MQTT subscriptions
 - Real-time incoming messages viewer in MQTT config
 - JSON expansion with boolean conversion display
-- LICENSE file (Apache 2.0)
-- CONTRIBUTING.md with contribution guidelines
-- This CHANGELOG.md file
-
-### Changed
 - Updated all template files to include favicon and logo
 - Enhanced README with better structure and badges
 - Updated all phase documentation with status badges
+
+### Added
+- LICENSE file (Apache 2.0)
+- CONTRIBUTING.md with contribution guidelines
+- This CHANGELOG.md file
 
 ## [1.0.0] - 2026-03-15
 
@@ -113,6 +158,8 @@ This is the first stable release of RustyLox, a complete rewrite of LoxBerry in 
 
 ---
 
-[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/boernmaster/RustyLox/releases/tag/v1.3.0
+[1.2.0]: https://github.com/boernmaster/RustyLox/releases/tag/v1.2.0
 [1.0.0]: https://github.com/boernmaster/RustyLox/releases/tag/v1.0.0
 [0.1.0]: https://github.com/boernmaster/RustyLox/releases/tag/v0.1.0
