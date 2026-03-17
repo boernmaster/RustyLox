@@ -9,12 +9,14 @@
 
 pub mod broker_client;
 pub mod relay;
+pub mod stats;
 pub mod subscription;
 pub mod transformer;
 pub mod udp_listener;
 
 pub use broker_client::BrokerClient;
 pub use relay::Relay;
+pub use stats::{MqttGatewayStats, RejectedParam, StatsSnapshot};
 pub use subscription::{Subscription, SubscriptionManager};
 pub use transformer::{TransformResult, Transformer, TransformerRegistry};
 pub use udp_listener::UdpListener;
@@ -51,6 +53,7 @@ pub struct MqttGateway {
     subscription_manager: Arc<SubscriptionManager>,
     transformer_registry: Arc<TransformerRegistry>,
     relay: Arc<Relay>,
+    stats: Arc<MqttGatewayStats>,
     message_tx: broadcast::Sender<GatewayMessage>,
 }
 
@@ -78,7 +81,8 @@ impl MqttGateway {
             lbhomedir.join("bin/mqtt/transform"),
         ));
 
-        let relay = Arc::new(Relay::new(Arc::clone(&config)));
+        let stats = Arc::new(MqttGatewayStats::new());
+        let relay = Arc::new(Relay::new(Arc::clone(&config), Arc::clone(&stats)));
 
         Ok(Self {
             config,
@@ -88,6 +92,7 @@ impl MqttGateway {
             subscription_manager,
             transformer_registry,
             relay,
+            stats,
             message_tx,
         })
     }
@@ -142,6 +147,18 @@ impl MqttGateway {
             })
         };
 
+        // Start periodic stats logger (every 5 minutes)
+        let stats_logger_handle = {
+            let stats = Arc::clone(&self.stats);
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(300)); // 5 minutes
+                loop {
+                    interval.tick().await;
+                    Self::log_stats_summary(&stats);
+                }
+            })
+        };
+
         info!("MQTT Gateway started successfully");
 
         // Wait for all tasks (in production, these would run forever)
@@ -161,9 +178,44 @@ impl MqttGateway {
                     .await
                     .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
             },
+            async {
+                stats_logger_handle
+                    .await
+                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+            },
         )?;
 
         Ok(())
+    }
+
+    /// Log statistics summary
+    fn log_stats_summary(stats: &MqttGatewayStats) {
+        let snapshot = stats.snapshot();
+        let top_rejected = stats.top_rejected(10);
+
+        if snapshot.messages_received == 0 {
+            return; // Don't log if no activity
+        }
+
+        info!(
+            "MQTT Gateway Summary (last 5min): {} msgs received, {} relayed ({:.1}%), {} filtered, {} accepted by MS ({:.1}% success), {} rejected",
+            snapshot.messages_received,
+            snapshot.messages_relayed,
+            if snapshot.messages_received > 0 { (snapshot.messages_relayed as f64 / snapshot.messages_received as f64) * 100.0 } else { 0.0 },
+            snapshot.messages_filtered,
+            snapshot.miniserver_accepted,
+            snapshot.success_rate(),
+            snapshot.miniserver_rejected
+        );
+
+        if !top_rejected.is_empty() {
+            let top_3: Vec<String> = top_rejected
+                .iter()
+                .take(3)
+                .map(|(name, param)| format!("{} ({}x)", name, param.count))
+                .collect();
+            info!("Top rejected parameters: {}", top_3.join(", "));
+        }
     }
 
     /// Process incoming messages
@@ -194,6 +246,7 @@ impl MqttGateway {
     async fn handle_message(&self, msg: GatewayMessage) -> Result<()> {
         match msg {
             GatewayMessage::MqttReceived { topic, payload } => {
+                self.stats.inc_received();
                 let value = String::from_utf8_lossy(&payload).to_string();
 
                 // Apply transformers
@@ -201,9 +254,12 @@ impl MqttGateway {
 
                 // Relay to Miniserver if configured
                 if result.relay_to_miniserver {
+                    self.stats.inc_relayed();
                     self.relay
                         .send_to_miniserver(&result.topic, &result.value)
                         .await?;
+                } else {
+                    self.stats.inc_filtered();
                 }
             }
             GatewayMessage::UdpReceived { topic, value } => {
@@ -252,8 +308,14 @@ impl MqttGateway {
             subscription_manager: Arc::clone(&self.subscription_manager),
             transformer_registry: Arc::clone(&self.transformer_registry),
             relay: Arc::clone(&self.relay),
+            stats: Arc::clone(&self.stats),
             message_tx: self.message_tx.clone(),
         }
+    }
+
+    /// Get statistics
+    pub fn stats(&self) -> Arc<MqttGatewayStats> {
+        Arc::clone(&self.stats)
     }
 
     /// Get gateway status

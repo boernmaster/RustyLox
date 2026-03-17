@@ -257,6 +257,19 @@ impl MiniserverHttpClient {
     }
 
     /// Raw HTTP call to Miniserver (mshttp_call equivalent)
+    /// Redact credentials from URL for secure logging
+    fn redact_url_credentials(url: &str) -> String {
+        // Replace user:pass@ with ***:***@
+        if let Some(at_pos) = url.find('@') {
+            if let Some(proto_end) = url.find("://") {
+                let proto_part = &url[..proto_end + 3]; // "http://"
+                let after_at = &url[at_pos..]; // "@host:port/path"
+                return format!("{}***:***{}", proto_part, after_at);
+            }
+        }
+        url.to_string()
+    }
+
     ///
     /// # Arguments
     /// * `command` - Command path (e.g., "/dev/sps/io/V1/100")
@@ -266,7 +279,7 @@ impl MiniserverHttpClient {
     pub async fn call(&self, command: &str) -> Result<(Option<String>, Option<String>, String)> {
         let url = self.build_url(command);
 
-        debug!("Miniserver HTTP call: {}", url);
+        debug!("Miniserver HTTP call: {}", Self::redact_url_credentials(&url));
 
         let response = self
             .client

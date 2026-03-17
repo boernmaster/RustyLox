@@ -9,6 +9,7 @@ pub mod health;
 pub mod metrics;
 pub mod miniserver;
 pub mod mqtt;
+pub mod mqtt_stats;
 pub mod network;
 pub mod plugins;
 pub mod system;

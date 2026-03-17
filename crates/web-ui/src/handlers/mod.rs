@@ -11,6 +11,7 @@ pub mod logs;
 pub mod miniserver;
 pub mod mqtt;
 pub mod mqtt_management;
+pub mod mqtt_stats;
 pub mod network;
 pub mod plugin_web;
 pub mod plugins;

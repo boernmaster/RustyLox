@@ -29,3 +29,6 @@ notify = "6.1"
 
 # Process execution for transformers
 glob = "0.3"
+
+# Statistics tracking
+dashmap = "6.0"

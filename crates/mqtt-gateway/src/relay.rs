@@ -1,5 +1,6 @@
 //! Relay messages to Miniserver
 
+use crate::stats::MqttGatewayStats;
 use loxberry_config::GeneralConfig;
 use loxberry_core::{Error, Result};
 use miniserver_client::MiniserverClient;
@@ -11,15 +12,17 @@ use tracing::{debug, error, info, warn};
 /// Message relay to Miniserver
 pub struct Relay {
     config: Arc<RwLock<GeneralConfig>>,
+    stats: Arc<MqttGatewayStats>,
     /// Cache of Miniserver clients (by Miniserver ID)
     clients: RwLock<HashMap<String, Arc<MiniserverClient>>>,
 }
 
 impl Relay {
     /// Create a new relay
-    pub fn new(config: Arc<RwLock<GeneralConfig>>) -> Self {
+    pub fn new(config: Arc<RwLock<GeneralConfig>>, stats: Arc<MqttGatewayStats>) -> Self {
         Self {
             config,
+            stats,
             clients: RwLock::new(HashMap::new()),
         }
     }
@@ -129,12 +132,18 @@ impl Relay {
             Ok(results) => {
                 if let Some(&success) = results.get(&param_name) {
                     if success {
+                        self.stats.record_accepted();
                         debug!(
                             "Successfully sent {} = {} to Miniserver {}",
                             topic, value, ms_id
                         );
                     } else {
-                        warn!("Miniserver {} rejected parameter {}", ms_id, param_name);
+                        self.stats
+                            .record_rejected(param_name.clone(), value.to_string());
+                        debug!(
+                            "Miniserver {} rejected parameter {} (virtual input may not exist)",
+                            ms_id, param_name
+                        );
                     }
                 }
                 Ok(())

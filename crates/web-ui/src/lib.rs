@@ -43,6 +43,8 @@ pub fn create_ui_router(state: AppState) -> Router {
         // MQTT Configuration
         .route("/mqtt/config", get(handlers::mqtt::config))
         .route("/mqtt/config", post(handlers::mqtt::config_submit))
+        // MQTT Statistics
+        .route("/mqtt/stats", get(handlers::mqtt_stats::stats))
         // MQTT Subscriptions Management
         .route(
             "/mqtt/subscriptions/list",
