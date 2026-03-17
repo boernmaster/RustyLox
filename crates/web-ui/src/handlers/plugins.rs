@@ -1,6 +1,6 @@
 //! Plugin management handlers
 
-use crate::templates::{PluginDisplay, PluginListTemplate};
+use crate::templates::{PluginDetailsTemplate, PluginDisplay, PluginInstallTemplate, PluginListTemplate};
 use askama::Template;
 use axum::{
     extract::{Multipart, Path, State},
@@ -13,16 +13,51 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
     let plugin_manager = plugin_manager::PluginInstaller::new(&state.lbhomedir);
 
     let plugins = match plugin_manager.list().await {
-        Ok(plugins) => plugins
-            .iter()
-            .map(|p| PluginDisplay {
-                md5: p.md5.clone(),
-                name: p.name.clone(),
-                version: p.version.clone(),
-                author: p.author_name.clone(),
-                title: p.title.get("en").cloned().unwrap_or_else(|| p.name.clone()),
-            })
-            .collect(),
+        Ok(plugins) => {
+            let mut displays = Vec::new();
+            for p in plugins {
+                // Check if plugin has daemon
+                let daemon_dir = state.lbhomedir.join("bin/plugins").join(&p.folder).join("daemon");
+                let has_daemon = daemon_dir.exists();
+
+                // Check daemon status if it exists
+                let daemon_running = if has_daemon {
+                    // Check if daemon is running via pidfile or process
+                    false // TODO: implement proper daemon status check
+                } else {
+                    false
+                };
+
+                // Check if plugin has web UI
+                let webui_dir = state.lbhomedir.join("webfrontend/htmlauth/plugins").join(&p.folder);
+                let has_web_ui = webui_dir.exists();
+
+                // Format install date
+                let install_date = p
+                    .install_timestamp
+                    .map(|ts| {
+                        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+                        let d = UNIX_EPOCH + Duration::from_secs(ts);
+                        format!("{:?}", d) // Simple formatting
+                    })
+                    .unwrap_or_else(|| "Unknown".to_string());
+
+                displays.push(PluginDisplay {
+                    md5: p.md5.clone(),
+                    name: p.name.clone(),
+                    folder: p.folder.clone(),
+                    version: p.version.clone(),
+                    author: p.author_name.clone(),
+                    author_email: p.author_email.clone(),
+                    title: p.title.get("en").cloned().unwrap_or_else(|| p.name.clone()),
+                    has_web_ui,
+                    has_daemon,
+                    daemon_running,
+                    install_date,
+                });
+            }
+            displays
+        }
         Err(_) => Vec::new(),
     };
 
@@ -39,18 +74,16 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
 }
 
 /// Show plugin install form
-pub async fn install_form(State(_state): State<AppState>) -> Html<String> {
-    Html(String::from(
-        "<h2>Install Plugin</h2>\
-         <form method=\"post\" enctype=\"multipart/form-data\" hx-post=\"/plugins/install\" hx-target=\"#result\">\
-             <div class=\"form-group\">\
-                 <label for=\"file\">Plugin ZIP File:</label>\
-                 <input type=\"file\" id=\"file\" name=\"file\" accept=\".zip\" required>\
-             </div>\
-             <button type=\"submit\" class=\"btn btn-primary\">Install Plugin</button>\
-         </form>\
-         <div id=\"result\"></div>",
-    ))
+pub async fn install_form(State(state): State<AppState>) -> Html<String> {
+    let template = PluginInstallTemplate {
+        version: state.version.clone(),
+    };
+
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
 }
 
 /// Submit plugin installation
@@ -153,21 +186,53 @@ pub async fn details(State(state): State<AppState>, Path(md5): Path<String>) -> 
     let plugin_manager = plugin_manager::PluginInstaller::new(&state.lbhomedir);
 
     match plugin_manager.get(&md5).await {
-        Ok(Some(plugin)) => {
-            let html = format!(
-                "<h2>{}</h2>\
-                 <p><strong>Version:</strong> {}</p>\
-                 <p><strong>Author:</strong> {}</p>\
-                 <p><strong>MD5:</strong> {}</p>\
-                 <form method=\"post\" hx-post=\"/plugins/{}/uninstall\" hx-target=\"#result\">\
-                     <button type=\"submit\" class=\"btn btn-danger\">Uninstall</button>\
-                 </form>\
-                 <div id=\"result\"></div>",
-                plugin.name, plugin.version, plugin.author_name, plugin.md5, plugin.md5
-            );
-            Html(html)
+        Ok(Some(p)) => {
+            // Check features
+            let daemon_dir = state.lbhomedir.join("bin/plugins").join(&p.folder).join("daemon");
+            let has_daemon = daemon_dir.exists();
+            let webui_dir = state
+                .lbhomedir
+                .join("webfrontend/htmlauth/plugins")
+                .join(&p.folder);
+            let has_web_ui = webui_dir.exists();
+
+            let install_date = p
+                .install_timestamp
+                .map(|ts| {
+                    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+                    let d = UNIX_EPOCH + Duration::from_secs(ts);
+                    format!("{:?}", d)
+                })
+                .unwrap_or_else(|| "Unknown".to_string());
+
+            let plugin_display = PluginDisplay {
+                md5: p.md5.clone(),
+                name: p.name.clone(),
+                folder: p.folder.clone(),
+                version: p.version.clone(),
+                author: p.author_name.clone(),
+                author_email: p.author_email.clone(),
+                title: p.title.get("en").cloned().unwrap_or_else(|| p.name.clone()),
+                has_web_ui,
+                has_daemon,
+                daemon_running: false,
+                install_date,
+            };
+
+            let template = PluginDetailsTemplate {
+                plugin: plugin_display,
+                version: state.version.clone(),
+            };
+
+            Html(
+                template
+                    .render()
+                    .unwrap_or_else(|_| "Error rendering template".to_string()),
+            )
         }
-        _ => Html(String::from("<div class='error'>Plugin not found</div>")),
+        _ => Html(String::from(
+            "<html><body><h1>Plugin not found</h1><a href='/plugins'>Back to plugins</a></body></html>",
+        )),
     }
 }
 
