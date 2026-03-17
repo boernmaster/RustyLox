@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+auth = { path = "../auth" }
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
 loxberry-metrics = { path = "../metrics" }
@@ -33,6 +34,9 @@ dashmap = { workspace = true }
 
 # Time handling for timestamps
 chrono = "0.4"
+
+# UUID
+uuid = { version = "1.8", features = ["v4", "serde"] }
 
 # Temp files
 tempfile = { workspace = true }

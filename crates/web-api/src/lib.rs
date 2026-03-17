@@ -1,11 +1,13 @@
 //! Web API - REST API for LoxBerry management
 
+pub mod middleware;
 pub mod routes;
 pub mod state;
 
 pub use state::AppState;
 
 use axum::{
+    middleware as axum_middleware,
     routing::{delete, get, post, put},
     Router,
 };
@@ -134,8 +136,27 @@ pub fn create_router(state: AppState) -> Router {
             post(routes::backup::restore_backup),
         )
         .route("/api/backup/:name", delete(routes::backup::delete_backup))
+        // Auth routes
+        .route("/api/auth/login", post(routes::auth::login))
+        .route("/api/auth/logout", post(routes::auth::logout))
+        .route("/api/auth/me", get(routes::auth::me))
+        .route("/api/auth/keys", get(routes::auth::list_api_keys))
+        .route("/api/auth/keys", post(routes::auth::create_api_key))
+        .route("/api/auth/keys/:id", delete(routes::auth::delete_api_key))
+        .route("/api/auth/audit", get(routes::auth::get_audit_log))
+        // User management routes
+        .route("/api/users", get(routes::auth::list_users))
+        .route("/api/users", post(routes::auth::create_user))
+        .route("/api/users/:id", delete(routes::auth::delete_user))
+        .route(
+            "/api/users/:id/password",
+            put(routes::auth::change_password),
+        )
         .with_state(state)
         // Middleware (innermost first)
+        .layer(axum_middleware::from_fn(
+            middleware::security_headers::add_security_headers,
+        ))
         // Note: Rate limiting disabled due to issues with GovernorLayer in Docker
         // TODO: Re-enable with proper IP extraction once fixed
         .layer(CorsLayer::permissive())
