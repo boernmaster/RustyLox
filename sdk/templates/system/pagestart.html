@@ -24,9 +24,54 @@
 		<!-- content -->
 		<main class="container">
 			<div style="margin-bottom: 16px;">
-				<a href="/plugins" style="color: #3498db; text-decoration: none;">← Back to Plugins</a>
+				<a href="/plugins" style="color: #3498db; text-decoration: none;">&larr; Back to Plugins</a>
 			</div>
 			<h1><TMPL_VAR TEMPLATETITLE></h1>
+
+			<!-- Plugin JSON menu data (hidden, parsed by JS below) -->
+			<TMPL_VAR JSONMENU>
+
+			<!-- Plugin navbar rendered as plain HTML if provided -->
+			<TMPL_VAR NAVBAR_PLAIN>
+
+			<!-- Plugin tab navigation (built from JSON menu by JS) -->
+			<div class="plugin-tabs" id="plugin-tabs"></div>
+
+			<script>
+			(function() {
+				var menuEl = document.getElementById('jsonmenu');
+				if (!menuEl) return;
+				try {
+					var menu = JSON.parse(menuEl.textContent);
+					var tabsEl = document.getElementById('plugin-tabs');
+					var currentPage = window.location.pathname.split('/').pop() || 'index.php';
+					// Build base path: everything up to and including the plugin name
+					var pathParts = window.location.pathname.split('/');
+					// For /admin/plugins/PluginName/file.php -> base is /admin/plugins/PluginName/
+					// For /admin/plugins/PluginName -> base is /admin/plugins/PluginName/
+					var basePath = window.location.pathname;
+					if (basePath.match(/\.\w+$/)) {
+						// Has file extension - strip the filename
+						basePath = basePath.substring(0, basePath.lastIndexOf('/') + 1);
+					} else if (!basePath.endsWith('/')) {
+						basePath += '/';
+					}
+					var html = '';
+					for (var i = 0; i < menu.length; i++) {
+						if (!menu[i] || !menu[i].Name) continue;
+						var url = menu[i].URL || '#';
+						// Make relative URLs absolute
+						if (url && !url.startsWith('/') && !url.startsWith('http')) {
+							url = basePath + url;
+						}
+						var isActive = (menu[i].URL === currentPage || menu[i].active) ? ' class="active"' : '';
+						html += '<a href="' + url + '"' + isActive + '>' + menu[i].Name + '</a>';
+					}
+					tabsEl.innerHTML = html;
+				} catch(e) { console.log('Plugin menu parse error:', e); }
+			})();
+			</script>
+
 			<div class="loxberry-logo">
 				<div id="page_content" class="page_content">
 <!-- pagestart.html END -->
