@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plugin Management - RustyLox</title>
+    <title>Plugins - RustyLox</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
@@ -135,19 +135,29 @@
     </style>
 </head>
 <body>
-    <nav>
-        <a href="/">Dashboard</a>
-        <a href="/mqtt/monitor">MQTT Monitor</a>
-        <a href="/mqtt/stats">MQTT Stats</a>
-        <a href="/plugins" class="active">Plugins</a>
-        <a href="/admin/users">Users</a>
-        <a href="/admin/api-keys">API Keys</a>
-        <a href="/settings">Settings</a>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins" class="active">Plugins</a></li>
+            <li><a href="/health">Health</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
     </nav>
 
-    <div class="container">
+    <main class="container">
         <div class="plugins-header">
-            <h1>Plugin Management</h1>
+            <h1>Plugins</h1>
             <a href="/plugins/install" class="btn btn-primary">+ Install Plugin</a>
         </div>
 
@@ -214,10 +224,10 @@
             {% endfor %}
         </div>
         {% endif %}
-    </div>
+    </main>
 
-    <footer>
-        <p>RustyLox v{{ version }} | <a href="/api-docs">API Docs</a> | <a href="/logs">System Logs</a></p>
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
     </footer>
 
     <script>

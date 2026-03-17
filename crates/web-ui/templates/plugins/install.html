@@ -68,17 +68,27 @@
     </style>
 </head>
 <body>
-    <nav>
-        <a href="/">Dashboard</a>
-        <a href="/mqtt/monitor">MQTT Monitor</a>
-        <a href="/mqtt/stats">MQTT Stats</a>
-        <a href="/plugins" class="active">Plugins</a>
-        <a href="/admin/users">Users</a>
-        <a href="/admin/api-keys">API Keys</a>
-        <a href="/settings">Settings</a>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins" class="active">Plugins</a></li>
+            <li><a href="/health">Health</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
     </nav>
 
-    <div class="container">
+    <main class="container">
         <div style="margin-bottom: 20px;">
             <a href="/plugins" style="color: #3498db; text-decoration: none;">← Back to Plugins</a>
         </div>
@@ -117,10 +127,10 @@
 
             <div id="upload-result"></div>
         </div>
-    </div>
+    </main>
 
-    <footer>
-        <p>RustyLox v{{ version }} | <a href="/api-docs">API Docs</a></p>
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
     </footer>
 
     <script>
