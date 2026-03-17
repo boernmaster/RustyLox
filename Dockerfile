@@ -57,6 +57,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     perl \
     php-cli \
+    php-cgi \
     bash \
     && rm -rf /var/lib/apt/lists/*
 

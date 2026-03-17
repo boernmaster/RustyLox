@@ -95,6 +95,10 @@ pub fn create_ui_router(state: AppState) -> Router {
             get(handlers::plugin_web::serve_plugin_auth_index),
         )
         .route(
+            "/admin/plugins/:name/",
+            get(handlers::plugin_web::serve_plugin_auth_index),
+        )
+        .route(
             "/admin/plugins/:name/*path",
             get(handlers::plugin_web::serve_plugin_auth)
                 .post(handlers::plugin_web::serve_plugin_auth_post),

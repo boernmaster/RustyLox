@@ -96,7 +96,10 @@ pub fn create_router(state: AppState) -> Router {
             "/api/mqtt/rejected",
             get(routes::mqtt_stats::get_rejected_params),
         )
-        .route("/api/mqtt/stats/reset", post(routes::mqtt_stats::reset_stats))
+        .route(
+            "/api/mqtt/stats/reset",
+            post(routes::mqtt_stats::reset_stats),
+        )
         // System routes
         .route("/api/system/status", get(routes::system::system_status))
         .route("/api/system/log-level", get(routes::system::get_log_level))

@@ -279,7 +279,10 @@ impl MiniserverHttpClient {
     pub async fn call(&self, command: &str) -> Result<(Option<String>, Option<String>, String)> {
         let url = self.build_url(command);
 
-        debug!("Miniserver HTTP call: {}", Self::redact_url_credentials(&url));
+        debug!(
+            "Miniserver HTTP call: {}",
+            Self::redact_url_credentials(&url)
+        );
 
         let response = self
             .client

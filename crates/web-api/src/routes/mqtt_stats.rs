@@ -29,9 +29,7 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<StatsResponse> {
 }
 
 /// Get top rejected parameters
-pub async fn get_rejected_params(
-    State(state): State<AppState>,
-) -> Json<RejectedParamsResponse> {
+pub async fn get_rejected_params(State(state): State<AppState>) -> Json<RejectedParamsResponse> {
     let mqtt_gateway = state
         .mqtt_gateway
         .as_ref()
