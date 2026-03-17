@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .profile-header { display: flex; align-items: center; gap: 20px; margin-bottom: 28px; }
+        .avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #6c757d, #343a40); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 2rem; font-weight: 700; flex-shrink: 0; }
+        .profile-meta { flex: 1; }
+        .profile-meta h2 { margin: 0 0 4px; font-size: 1.4rem; }
+        .profile-meta p { margin: 0; color: #666; font-size: 0.9rem; }
+        .role-badge { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin-right: 4px; }
+        .role-admin { background: #d1ecf1; color: #0c5460; }
+        .role-operator { background: #d4edda; color: #155724; }
+        .role-viewer { background: #e2e3e5; color: #383d41; }
+        .result-msg { margin-top: 10px; padding: 10px 14px; border-radius: 6px; }
+        .result-ok { background: #d4edda; color: #155724; }
+        .result-err { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/profile" class="active">Profile</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>My Profile</h1>
+
+        <!-- Profile Header -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="profile-header" id="profile-header">
+                <div class="avatar" id="avatar-initial">?</div>
+                <div class="profile-meta">
+                    <h2 id="profile-username">Loading...</h2>
+                    <p id="profile-roles"></p>
+                    <p id="profile-userid" style="font-size: 0.78rem; color: #aaa; margin-top: 4px;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Change Password</h2>
+            <p style="color: #666; margin-bottom: 16px; font-size: 0.9rem;">Update your account password. You will need to log in again after changing it.</p>
+            <div style="max-width: 420px;">
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" placeholder="Enter new password" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" placeholder="Confirm new password" autocomplete="new-password">
+                </div>
+                <div id="password-result"></div>
+                <div class="form-actions" style="margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Actions -->
+        <div class="card">
+            <h2>Account Actions</h2>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="/login" class="btn btn-secondary" onclick="return doLogout()">Sign Out</a>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.85rem; color: #888;">
+                To manage other users, visit <a href="/admin/users">User Management</a>.
+            </p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+        let currentUserId = null;
+
+        async function loadProfile() {
+            try {
+                const resp = await fetch('/api/auth/me');
+                if (!resp.ok) {
+                    document.getElementById('profile-username').textContent = 'Not authenticated';
+                    return;
+                }
+                const data = await resp.json();
+                currentUserId = data.user_id;
+
+                const initial = (data.username || '?').charAt(0).toUpperCase();
+                document.getElementById('avatar-initial').textContent = initial;
+                document.getElementById('profile-username').textContent = data.username;
+                document.getElementById('profile-userid').textContent = 'ID: ' + data.user_id;
+
+                const roles = (data.roles || []);
+                document.getElementById('profile-roles').innerHTML = roles.length
+                    ? roles.map(r => `<span class="role-badge role-${r.toLowerCase()}">${r}</span>`).join('')
+                    : '<em style="color:#aaa;">No roles assigned</em>';
+            } catch (err) {
+                document.getElementById('profile-username').textContent = 'Error loading profile';
+            }
+        }
+
+        async function changePassword() {
+            const newPass = document.getElementById('new-password').value;
+            const confirmPass = document.getElementById('confirm-password').value;
+            const resultEl = document.getElementById('password-result');
+
+            if (!newPass) {
+                resultEl.innerHTML = '<div class="result-msg result-err">Please enter a new password.</div>';
+                return;
+            }
+            if (newPass !== confirmPass) {
+                resultEl.innerHTML = '<div class="result-msg result-err">Passwords do not match.</div>';
+                return;
+            }
+            if (newPass.length < 8) {
+                resultEl.innerHTML = '<div class="result-msg result-err">Password must be at least 8 characters.</div>';
+                return;
+            }
+            if (!currentUserId) {
+                resultEl.innerHTML = '<div class="result-msg result-err">Not authenticated.</div>';
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/api/users/${currentUserId}/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_password: newPass }),
+                });
+                if (resp.ok) {
+                    resultEl.innerHTML = '<div class="result-msg result-ok">Password updated successfully.</div>';
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                } else {
+                    const err = await resp.json().catch(() => ({}));
+                    resultEl.innerHTML = `<div class="result-msg result-err">${err.error || 'Failed to update password.'}</div>`;
+                }
+            } catch (err) {
+                resultEl.innerHTML = `<div class="result-msg result-err">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function doLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (_) {}
+            window.location.href = '/login';
+            return false;
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

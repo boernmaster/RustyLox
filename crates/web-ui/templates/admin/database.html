@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Management - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .data-store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
+        .data-card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; }
+        .data-card h3 { margin: 0 0 12px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .data-icon { font-size: 1.3rem; }
+        .data-stat { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 0.9rem; border-bottom: 1px solid #f5f5f5; }
+        .data-stat:last-child { border-bottom: none; }
+        .stat-key { color: #666; }
+        .stat-val { font-weight: 600; color: #333; }
+        .store-type { display: inline-block; font-size: 0.75rem; background: #e9ecef; color: #495057; padding: 2px 7px; border-radius: 4px; }
+        .result-msg { padding: 10px 14px; border-radius: 6px; margin-top: 10px; }
+        .result-ok { background: #d4edda; color: #155724; }
+        .result-err { background: #f8d7da; color: #721c24; }
+        .backup-hint { background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 0.9rem; color: #856404; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/admin/api-keys">API Keys</a></li>
+            <li><a href="/admin/database" class="active">Data</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Data Management</h1>
+
+        <div class="backup-hint">
+            RustyLox uses JSON-based data stores. Before making changes, consider creating a
+            <a href="/backup">backup</a> first.
+        </div>
+
+        <!-- Data Stores Overview -->
+        <div class="data-store-grid" id="data-stores-grid">
+            <!-- User Store -->
+            <div class="data-card">
+                <h3><span class="data-icon">&#128100;</span> Users <span class="store-type">Auth Store</span></h3>
+                <div id="users-stats">
+                    <div class="data-stat"><span class="stat-key">Total Users</span><span class="stat-val" id="total-users">--</span></div>
+                    <div class="data-stat"><span class="stat-key">Active Users</span><span class="stat-val" id="active-users">--</span></div>
+                    <div class="data-stat"><span class="stat-key">Locked Users</span><span class="stat-val" id="locked-users">--</span></div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <a href="/admin/users" class="btn btn-secondary" style="font-size: 0.85rem; padding: 5px 12px;">Manage Users</a>
+                </div>
+            </div>
+
+            <!-- API Keys Store -->
+            <div class="data-card">
+                <h3><span class="data-icon">&#128273;</span> API Keys <span class="store-type">Auth Store</span></h3>
+                <div id="apikeys-stats">
+                    <div class="data-stat"><span class="stat-key">Total Keys</span><span class="stat-val" id="total-keys">--</span></div>
+                    <div class="data-stat"><span class="stat-key">Active Keys</span><span class="stat-val" id="active-keys">--</span></div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <a href="/admin/api-keys" class="btn btn-secondary" style="font-size: 0.85rem; padding: 5px 12px;">Manage Keys</a>
+                </div>
+            </div>
+
+            <!-- Plugin Database -->
+            <div class="data-card">
+                <h3><span class="data-icon">&#129518;</span> Plugins <span class="store-type">JSON File</span></h3>
+                <div id="plugin-stats">
+                    <div class="data-stat"><span class="stat-key">Installed</span><span class="stat-val" id="total-plugins">--</span></div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <a href="/plugins" class="btn btn-secondary" style="font-size: 0.85rem; padding: 5px 12px;">Manage Plugins</a>
+                </div>
+            </div>
+
+            <!-- System Config -->
+            <div class="data-card">
+                <h3><span class="data-icon">&#9881;</span> Configuration <span class="store-type">JSON File</span></h3>
+                <div id="config-stats">
+                    <div class="data-stat"><span class="stat-key">Miniservers</span><span class="stat-val" id="miniserver-count">--</span></div>
+                    <div class="data-stat"><span class="stat-key">System Version</span><span class="stat-val" id="sys-version">--</span></div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <a href="/settings" class="btn btn-secondary" style="font-size: 0.85rem; padding: 5px 12px;">System Settings</a>
+                </div>
+            </div>
+
+            <!-- Backups -->
+            <div class="data-card">
+                <h3><span class="data-icon">&#128190;</span> Backups <span class="store-type">Archive Files</span></h3>
+                <div id="backup-stats">
+                    <div class="data-stat"><span class="stat-key">Available Backups</span><span class="stat-val" id="backup-count">--</span></div>
+                    <div class="data-stat"><span class="stat-key">Total Size</span><span class="stat-val" id="backup-size">--</span></div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <a href="/backup" class="btn btn-secondary" style="font-size: 0.85rem; padding: 5px 12px;">Backup Manager</a>
+                </div>
+            </div>
+
+            <!-- Task History -->
+            <div class="data-card">
+                <h3><span class="data-icon">&#128336;</span> Task History <span class="store-type">In-Memory</span></h3>
+                <div id="task-stats">
+                    <div class="data-stat"><span class="stat-key">Scheduled Tasks</span><span class="stat-val" id="total-tasks">--</span></div>
+                    <div class="data-stat"><span class="stat-key">Execution Records</span><span class="stat-val" id="history-count">--</span></div>
+                </div>
+                <div style="margin-top: 12px;">
+                    <a href="/tasks" class="btn btn-secondary" style="font-size: 0.85rem; padding: 5px 12px;">Task Scheduler</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Events -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0;">Audit Trail</h2>
+                <a href="/admin/audit" class="btn btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;">Full Audit Log</a>
+            </div>
+            <p style="font-size: 0.9rem; color: #666; margin-bottom: 12px;">Record of all data-affecting operations.</p>
+            <div id="audit-summary">
+                <div class="data-stat"><span class="stat-key">Total Audit Events</span><span class="stat-val" id="audit-count">--</span></div>
+            </div>
+        </div>
+
+        <!-- Data Health -->
+        <div class="card">
+            <h2>Data Health</h2>
+            <div id="data-health">
+                <em style="color: #888;">Checking data integrity...</em>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+        function formatBytes(bytes) {
+            if (!bytes) return '0 B';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        async function loadAll() {
+            await Promise.allSettled([
+                loadUsers(),
+                loadApiKeys(),
+                loadPlugins(),
+                loadSystemStatus(),
+                loadBackups(),
+                loadTasks(),
+                loadAudit(),
+            ]);
+            checkDataHealth();
+        }
+
+        async function loadUsers() {
+            try {
+                const resp = await fetch('/api/users');
+                if (!resp.ok) return;
+                const users = await resp.json();
+                const list = Array.isArray(users) ? users : [];
+                document.getElementById('total-users').textContent = list.length;
+                document.getElementById('active-users').textContent = list.filter(u => u.enabled).length;
+                document.getElementById('locked-users').textContent = list.filter(u => u.is_locked).length;
+            } catch (_) {}
+        }
+
+        async function loadApiKeys() {
+            try {
+                const resp = await fetch('/api/auth/keys');
+                if (!resp.ok) return;
+                const keys = await resp.json();
+                const list = Array.isArray(keys) ? keys : [];
+                const now = new Date();
+                document.getElementById('total-keys').textContent = list.length;
+                document.getElementById('active-keys').textContent = list.filter(k =>
+                    !k.expires_at || new Date(k.expires_at) > now
+                ).length;
+            } catch (_) {}
+        }
+
+        async function loadPlugins() {
+            try {
+                const resp = await fetch('/api/plugins');
+                if (!resp.ok) return;
+                const plugins = await resp.json();
+                document.getElementById('total-plugins').textContent = Array.isArray(plugins) ? plugins.length : 0;
+            } catch (_) {}
+        }
+
+        async function loadSystemStatus() {
+            try {
+                const resp = await fetch('/api/system/status');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                document.getElementById('miniserver-count').textContent = data.miniserver_count ?? '--';
+                document.getElementById('sys-version').textContent = data.version ?? '--';
+            } catch (_) {}
+        }
+
+        async function loadBackups() {
+            try {
+                const resp = await fetch('/api/backup');
+                if (!resp.ok) return;
+                const backups = await resp.json();
+                const list = Array.isArray(backups) ? backups : [];
+                document.getElementById('backup-count').textContent = list.length;
+                const total = list.reduce((sum, b) => sum + (b.size_bytes || 0), 0);
+                document.getElementById('backup-size').textContent = formatBytes(total);
+            } catch (_) {}
+        }
+
+        async function loadTasks() {
+            try {
+                const [tasksResp, histResp] = await Promise.allSettled([
+                    fetch('/api/tasks'),
+                    fetch('/api/tasks/history'),
+                ]);
+                if (tasksResp.status === 'fulfilled' && tasksResp.value.ok) {
+                    const tasks = await tasksResp.value.json();
+                    document.getElementById('total-tasks').textContent = Array.isArray(tasks) ? tasks.length : 0;
+                }
+                if (histResp.status === 'fulfilled' && histResp.value.ok) {
+                    const hist = await histResp.value.json();
+                    document.getElementById('history-count').textContent = Array.isArray(hist) ? hist.length : 0;
+                }
+            } catch (_) {}
+        }
+
+        async function loadAudit() {
+            try {
+                const resp = await fetch('/api/auth/audit?limit=1000');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const list = Array.isArray(data) ? data : (data.entries || []);
+                document.getElementById('audit-count').textContent = list.length + (list.length >= 1000 ? '+' : '');
+            } catch (_) {}
+        }
+
+        function checkDataHealth() {
+            const healthEl = document.getElementById('data-health');
+            const issues = [];
+
+            const lockedUsers = parseInt(document.getElementById('locked-users').textContent) || 0;
+            if (lockedUsers > 0) issues.push(`${lockedUsers} user account(s) are currently locked`);
+
+            if (!issues.length) {
+                healthEl.innerHTML = '<div style="color: #155724; display: flex; align-items: center; gap: 8px;"><span style="font-size:1.2rem;">&#10003;</span> All data stores appear healthy.</div>';
+            } else {
+                healthEl.innerHTML = issues.map(i =>
+                    `<div style="color:#856404; display:flex; align-items:center; gap:8px; padding:4px 0;"><span>&#9888;</span> ${i}</div>`
+                ).join('');
+            }
+        }
+
+        loadAll();
+    </script>
+</body>
+</html>

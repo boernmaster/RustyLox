@@ -121,12 +121,20 @@ pub fn create_ui_router(state: AppState) -> Router {
         // Authentication
         .route("/login", get(handlers::auth::show_login))
         .route("/login", post(handlers::auth::handle_login))
+        // User profile
+        .route("/profile", get(handlers::profile::index))
+        // System health dashboard
+        .route("/health", get(handlers::health::index))
         // Admin: User management
         .route("/admin/users", get(handlers::auth::users))
         // Admin: API key management
         .route("/admin/api-keys", get(handlers::auth::api_keys))
         // Admin: Audit log
         .route("/admin/audit", get(handlers::auth::audit_log))
+        // Admin: Security settings
+        .route("/admin/security", get(handlers::security::index))
+        // Admin: Data management
+        .route("/admin/database", get(handlers::database::index))
         // Static files (CSS, JS, images)
         .nest_service("/static", ServeDir::new(static_dir))
         .with_state(state)
