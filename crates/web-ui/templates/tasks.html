@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled Tasks - LoxBerry</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/mqtt/config">MQTT Config</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/tasks" class="active">Tasks</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Scheduled Tasks</h1>
+            <button class="btn btn-primary" onclick="showAddForm()">Add Task</button>
+        </div>
+
+        <div id="task-result" style="margin-bottom: 12px;"></div>
+
+        <!-- Add Task Form (hidden by default) -->
+        <div id="add-task-form" class="card" style="display: none; margin-bottom: 20px;">
+            <h2>New Task</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="new-task-name">Task Name</label>
+                    <input type="text" id="new-task-name" placeholder="My Task">
+                </div>
+                <div class="form-group">
+                    <label for="new-task-schedule">Cron Schedule</label>
+                    <input type="text" id="new-task-schedule" placeholder="0 0 2 * * *">
+                    <small>Seconds Minutes Hours Day Month Weekday</small>
+                </div>
+                <div class="form-group">
+                    <label for="new-task-type">Task Type</label>
+                    <select id="new-task-type">
+                        <option value="Backup">Backup</option>
+                        <option value="LogRotation">Log Rotation</option>
+                        <option value="HealthCheck">Health Check</option>
+                        <option value="Custom">Custom Script</option>
+                    </select>
+                </div>
+                <div class="form-group" id="script-path-group" style="display: none;">
+                    <label for="new-task-script">Script Path</label>
+                    <input type="text" id="new-task-script" placeholder="/opt/loxberry/scripts/my-script.sh">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="createTask()">Create Task</button>
+                <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Task List -->
+        <div class="card">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 10px; text-align: left;">Name</th>
+                        <th style="padding: 10px; text-align: left;">Schedule</th>
+                        <th style="padding: 10px; text-align: left;">Type</th>
+                        <th style="padding: 10px; text-align: left;">Status</th>
+                        <th style="padding: 10px; text-align: left;">Last Run</th>
+                        <th style="padding: 10px; text-align: left;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tasks-tbody">
+                    <tr><td colspan="6" style="padding: 20px; text-align: center;">Loading tasks...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Execution History -->
+        <div class="card" style="margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2>Execution History</h2>
+                <button class="btn btn-secondary" onclick="loadHistory()">Refresh</button>
+            </div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 10px; text-align: left;">Task</th>
+                        <th style="padding: 10px; text-align: left;">Started</th>
+                        <th style="padding: 10px; text-align: left;">Duration</th>
+                        <th style="padding: 10px; text-align: left;">Status</th>
+                        <th style="padding: 10px; text-align: left;">Output</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                    <tr><td colspan="5" style="padding: 20px; text-align: center;">Loading history...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    let allTasks = [];
+
+    function loadTasks() {
+        fetch('/api/tasks')
+            .then(r => r.json())
+            .then(tasks => {
+                allTasks = tasks;
+                const tbody = document.getElementById('tasks-tbody');
+                if (!tasks || tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center;">No tasks configured.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = tasks.map(t => `
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 10px;">${escHtml(t.name)}</td>
+                        <td style="padding: 10px;"><code>${escHtml(t.schedule)}</code></td>
+                        <td style="padding: 10px;">${escHtml(t.task_type)}</td>
+                        <td style="padding: 10px;">
+                            <span class="badge ${t.enabled ? 'badge-success' : 'badge-secondary'}">
+                                ${t.enabled ? 'Enabled' : 'Disabled'}
+                            </span>
+                        </td>
+                        <td style="padding: 10px;">${t.last_run ? escHtml(t.last_run) : '-'}</td>
+                        <td style="padding: 10px; display: flex; gap: 6px;">
+                            <button class="btn btn-sm btn-primary" onclick="runTask('${t.id}')">Run Now</button>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleTask('${t.id}', ${!t.enabled})">
+                                ${t.enabled ? 'Disable' : 'Enable'}
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTask('${t.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            })
+            .catch(e => {
+                document.getElementById('tasks-tbody').innerHTML =
+                    `<tr><td colspan="6" style="color:red; padding:10px;">Error: ${e}</td></tr>`;
+            });
+    }
+
+    function loadHistory() {
+        fetch('/api/tasks/history')
+            .then(r => r.json())
+            .then(history => {
+                const tbody = document.getElementById('history-tbody');
+                if (!history || history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center;">No history yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = history.slice(0, 20).map(h => {
+                    const statusClass = h.status === 'Completed' ? 'badge-success'
+                                      : h.status === 'Failed' ? 'badge-danger' : 'badge-secondary';
+                    return `
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 10px;">${escHtml(h.task_id)}</td>
+                            <td style="padding: 10px;">${escHtml(h.started_at || '-')}</td>
+                            <td style="padding: 10px;">${h.duration_ms != null ? h.duration_ms + 'ms' : '-'}</td>
+                            <td style="padding: 10px;"><span class="badge ${statusClass}">${escHtml(h.status)}</span></td>
+                            <td style="padding: 10px; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                                <code style="font-size: 0.8em;">${escHtml((h.output || h.error || '').substring(0, 100))}</code>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            });
+    }
+
+    function runTask(id) {
+        fetch(`/api/tasks/${id}/run`, { method: 'POST' })
+            .then(r => r.json())
+            .then(d => {
+                const el = document.getElementById('task-result');
+                if (d.status) {
+                    el.innerHTML = "<div class='alert alert-success'>Task started: " + escHtml(d.status) + "</div>";
+                } else {
+                    el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || 'Failed') + "</div>";
+                }
+                setTimeout(() => { loadTasks(); loadHistory(); }, 2000);
+            });
+    }
+
+    function toggleTask(id, enable) {
+        const task = allTasks.find(t => t.id === id);
+        if (!task) return;
+        const updated = Object.assign({}, task, { enabled: enable });
+        fetch(`/api/tasks/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(updated),
+        })
+        .then(r => r.json())
+        .then(() => loadTasks());
+    }
+
+    function deleteTask(id) {
+        if (!confirm('Delete this task?')) return;
+        fetch(`/api/tasks/${id}`, { method: 'DELETE' })
+            .then(() => loadTasks());
+    }
+
+    function showAddForm() {
+        document.getElementById('add-task-form').style.display = 'block';
+    }
+    function hideAddForm() {
+        document.getElementById('add-task-form').style.display = 'none';
+    }
+
+    document.getElementById('new-task-type').addEventListener('change', function() {
+        document.getElementById('script-path-group').style.display =
+            this.value === 'Custom' ? 'block' : 'none';
+    });
+
+    function createTask() {
+        const taskType = document.getElementById('new-task-type').value;
+        const scriptPath = document.getElementById('new-task-script').value || null;
+        const payload = {
+            name: document.getElementById('new-task-name').value,
+            schedule: document.getElementById('new-task-schedule').value,
+            task_type: taskType === 'Custom'
+                ? { Custom: { script_path: scriptPath } }
+                : taskType,
+            enabled: true,
+        };
+        fetch('/api/tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+        })
+        .then(r => r.json())
+        .then(d => {
+            const el = document.getElementById('task-result');
+            if (d.id) {
+                el.innerHTML = "<div class='alert alert-success'>Task created.</div>";
+                hideAddForm();
+                loadTasks();
+            } else {
+                el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || 'Failed') + "</div>";
+            }
+        });
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    loadTasks();
+    loadHistory();
+    </script>
+</body>
+</html>

@@ -115,7 +115,7 @@ mod tests {
     #[tokio::test]
     async fn test_udp_json_parsing() {
         let listener = UdpListener::new(0).unwrap(); // Bind to random port
-        let (tx, _) = broadcast::channel(10);
+        let (tx, _rx) = broadcast::channel(10);
 
         let json = r#"{"topic": "home/temperature", "value": "23.5"}"#;
         listener.process_udp_message(json.as_bytes(), &tx).unwrap();
@@ -124,7 +124,7 @@ mod tests {
     #[tokio::test]
     async fn test_udp_simple_parsing() {
         let listener = UdpListener::new(0).unwrap();
-        let (tx, _) = broadcast::channel(10);
+        let (tx, _rx) = broadcast::channel(10);
 
         let simple = b"home/humidity=65";
         listener.process_udp_message(simple, &tx).unwrap();

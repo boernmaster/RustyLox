@@ -8,6 +8,7 @@
 //! - Directory isolation
 
 pub mod config_parser;
+pub mod daemon;
 pub mod database;
 pub mod directory_manager;
 pub mod environment;
@@ -16,6 +17,7 @@ pub mod installer;
 pub mod lifecycle;
 
 pub use config_parser::PluginConfig;
+pub use daemon::{DaemonInfo, DaemonManager, DaemonStatus};
 pub use database::{PluginDatabase, PluginEntry};
 pub use directory_manager::DirectoryManager;
 pub use environment::{build_plugin_env, build_system_env};
