@@ -180,6 +180,35 @@ pub struct NetworkTemplate {
     pub version: String,
 }
 
+/// Login page template
+#[derive(Template)]
+#[template(path = "login.html")]
+pub struct LoginTemplate {
+    pub error: Option<String>,
+    pub version: String,
+}
+
+/// Admin user management template
+#[derive(Template)]
+#[template(path = "admin/users.html")]
+pub struct AdminUsersTemplate {
+    pub version: String,
+}
+
+/// Admin API keys template
+#[derive(Template)]
+#[template(path = "admin/api_keys.html")]
+pub struct AdminApiKeysTemplate {
+    pub version: String,
+}
+
+/// Admin audit log template
+#[derive(Template)]
+#[template(path = "admin/audit.html")]
+pub struct AdminAuditTemplate {
+    pub version: String,
+}
+
 /// API documentation template
 #[derive(Template)]
 #[template(path = "api_docs.html")]

@@ -118,6 +118,15 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/backup/:name",
             axum::routing::delete(handlers::backup::delete),
         )
+        // Authentication
+        .route("/login", get(handlers::auth::show_login))
+        .route("/login", post(handlers::auth::handle_login))
+        // Admin: User management
+        .route("/admin/users", get(handlers::auth::users))
+        // Admin: API key management
+        .route("/admin/api-keys", get(handlers::auth::api_keys))
+        // Admin: Audit log
+        .route("/admin/audit", get(handlers::auth::audit_log))
         // Static files (CSS, JS, images)
         .nest_service("/static", ServeDir::new(static_dir))
         .with_state(state)

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <style>
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+        .badge-login { background: #d4edda; color: #155724; }
+        .badge-logout { background: #e2e3e5; color: #383d41; }
+        .badge-login_failed { background: #f8d7da; color: #721c24; }
+        .badge-create_user { background: #d1ecf1; color: #0c5460; }
+        .badge-delete_user { background: #f8d7da; color: #721c24; }
+        .badge-change_password { background: #fff3cd; color: #856404; }
+        .badge-create_api_key { background: #d1ecf1; color: #0c5460; }
+        .badge-revoke_api_key { background: #f8d7da; color: #721c24; }
+        .badge-config_change { background: #fff3cd; color: #856404; }
+        .filter-row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-row .form-group { margin: 0; flex: 1; min-width: 160px; }
+        .meta-cell { font-size: 0.85em; color: #6c757d; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/miniserver">Miniserver</a></li>
+            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
+            <li><a href="/plugins">Plugins</a></li>
+            <li><a href="/logs">Logs</a></li>
+            <li><a href="/backup">Backup</a></li>
+            <li><a href="/admin/users">Users</a></li>
+            <li><a href="/admin/api-keys">API Keys</a></li>
+            <li><a href="/admin/audit" class="active">Audit Log</a></li>
+            <li><a href="/settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Audit Log</h1>
+            <button class="btn btn-secondary" onclick="loadAudit()">Refresh</button>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="filter-row">
+                <div class="form-group">
+                    <label>Filter by Action</label>
+                    <select id="filter-action" onchange="loadAudit()">
+                        <option value="">All Actions</option>
+                        <option value="login">Login</option>
+                        <option value="logout">Logout</option>
+                        <option value="login_failed">Login Failed</option>
+                        <option value="create_user">Create User</option>
+                        <option value="delete_user">Delete User</option>
+                        <option value="change_password">Change Password</option>
+                        <option value="create_api_key">Create API Key</option>
+                        <option value="revoke_api_key">Revoke API Key</option>
+                        <option value="config_change">Config Change</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Filter by User</label>
+                    <input type="text" id="filter-user" placeholder="username" oninput="debouncedLoad()">
+                </div>
+                <div class="form-group">
+                    <label>Limit</label>
+                    <select id="filter-limit" onchange="loadAudit()">
+                        <option value="50" selected>50 entries</option>
+                        <option value="100">100 entries</option>
+                        <option value="200">200 entries</option>
+                        <option value="500">500 entries</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 10px; text-align: left;">Timestamp</th>
+                        <th style="padding: 10px; text-align: left;">Action</th>
+                        <th style="padding: 10px; text-align: left;">User</th>
+                        <th style="padding: 10px; text-align: left;">IP Address</th>
+                        <th style="padding: 10px; text-align: left;">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-tbody">
+                    <tr><td colspan="5" style="padding: 20px; text-align: center;">Loading audit log...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    let debounceTimer = null;
+    function debouncedLoad() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(loadAudit, 400);
+    }
+
+    function loadAudit() {
+        const action = document.getElementById('filter-action').value;
+        const user = document.getElementById('filter-user').value.trim();
+        const limit = document.getElementById('filter-limit').value;
+
+        const params = new URLSearchParams({ limit });
+        if (action) params.set('action', action);
+        if (user) params.set('username', user);
+
+        fetch('/api/auth/audit?' + params.toString())
+            .then(r => r.json())
+            .then(entries => {
+                const tbody = document.getElementById('audit-tbody');
+                if (!entries || entries.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center;">No audit entries found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = entries.map(e => {
+                    const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '-';
+                    const action = (e.action || '').toLowerCase().replace(/\s+/g, '_');
+                    const badge = `<span class="badge badge-${action}">${escHtml(e.action || action)}</span>`;
+                    const meta = e.metadata ? JSON.stringify(e.metadata).substring(0, 80) : '';
+                    return `
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 10px; font-size: 0.85em; white-space: nowrap;">${escHtml(ts)}</td>
+                            <td style="padding: 10px;">${badge}</td>
+                            <td style="padding: 10px; font-weight: 600;">${escHtml(e.username || e.user || '-')}</td>
+                            <td style="padding: 10px; font-size: 0.85em; color: #6c757d;">${escHtml(e.ip_address || e.ip || '-')}</td>
+                            <td style="padding: 10px;" class="meta-cell" title="${escHtml(meta)}">${escHtml(meta)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            })
+            .catch(e => {
+                document.getElementById('audit-tbody').innerHTML =
+                    `<tr><td colspan="5" style="color:red; padding:10px;">Error loading audit log: ${escHtml(String(e))}</td></tr>`;
+            });
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    loadAudit();
+    </script>
+</body>
+</html>
