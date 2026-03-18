@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Miniserver Monitor - LoxBerry</title>
+    <title>Miniserver Monitor - RustyLox</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
@@ -223,23 +223,68 @@
         </div>
         <ul class="nav-menu">
             <li><a href="/">Dashboard</a></li>
-            <li><a href="/miniserver" class="active">Miniserver</a></li>
-            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
-            <li><a href="/mqtt/config">MQTT Config</a></li>
-            <li><a href="/plugins">Plugins</a></li>
-            <li><a href="/logs">Logs</a></li>
-            <li><a href="/backup">Backup</a></li>
-            <li><a href="/admin/users">Users</a></li>
-            <li><a href="/admin/api-keys">API Keys</a></li>
-            <li><a href="/settings">Settings</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/monitor">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
         </ul>
     </nav>
 
     <main class="container">
-        <h1>{{ title }}</h1>
-        <p style="color: #666; margin-bottom: 20px;">
-            Real-time monitoring of communication between RustyLox and Miniserver(s)
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <h1>{{ title }}</h1>
+            <a href="/miniserver" class="btn btn-secondary btn-sm">&larr; Back to Miniservers</a>
+        </div>
+        <p style="color: #666; margin-bottom: 10px;">
+            Real-time bidirectional communication monitor: HTTP/UDP sent to Miniserver(s) and UDP data received from them.
         </p>
+        <div class="alert alert-info" style="margin-bottom: 14px; font-size: 0.88rem;">
+            <strong>Incoming UDP:</strong> Configure your Loxone Miniserver "Virtual UDP Output" blocks to send data to this host.
+            The UDP receiver listens on the port configured in <a href="/settings">Settings</a> (default: 7700).
+            Received packets appear below with direction <strong>&larr; RECEIVED (UDP)</strong>.
+        </div>
 
         <div class="miniserver-monitor">
             <!-- Controls -->
@@ -256,8 +301,9 @@
                     <label for="directionFilter">Direction:</label>
                     <select id="directionFilter" onchange="filterMessages()">
                         <option value="">All</option>
-                        <option value="sent">Sent →</option>
-                        <option value="received">← Received</option>
+                        <option value="sent">Sent &rarr; (HTTP/UDP out)</option>
+                        <option value="received">&#8592; Received (HTTP resp.)</option>
+                        <option value="udp_in">&#8592; Received (UDP in)</option>
                         <option value="error">Errors</option>
                     </select>
 
@@ -382,14 +428,18 @@
         }
 
         function formatMessage(msg) {
+            const isUdpIn = msg.direction === 'udp_in';
             const messageClass = msg.direction === 'error' ? 'message-error' :
-                                (msg.direction === 'sent' ? 'message-sent' : 'message-received');
+                                 isUdpIn ? 'message-received' :
+                                 (msg.direction === 'sent' ? 'message-sent' : 'message-received');
 
             const directionClass = msg.direction === 'error' ? 'direction-error' :
-                                  (msg.direction === 'sent' ? 'direction-sent' : 'direction-received');
+                                   isUdpIn ? 'direction-received' :
+                                   (msg.direction === 'sent' ? 'direction-sent' : 'direction-received');
 
             const directionText = msg.direction === 'error' ? '⚠ ERROR' :
-                                 (msg.direction === 'sent' ? '→ SENT' : '← RECEIVED');
+                                  isUdpIn ? '← UDP IN' :
+                                  (msg.direction === 'sent' ? '→ SENT' : '← RECEIVED');
 
             const protocolBadge = msg.protocol === 'http' ?
                 '<span class="badge badge-http">HTTP</span>' :
@@ -400,6 +450,12 @@
                 content = `
                     <div class="message-url"><strong>URL:</strong> ${escapeHtml(msg.url || '')}</div>
                     ${msg.params ? `<div class="message-params"><strong>Parameters:</strong> ${escapeHtml(msg.params)}</div>` : ''}
+                `;
+            } else if (isUdpIn) {
+                content = `
+                    <div class="message-response"><strong>From:</strong> ${escapeHtml(msg.from || 'unknown')}</div>
+                    <div class="message-params"><strong>Payload:</strong> ${escapeHtml(msg.payload || '')}</div>
+                    ${msg.parsed_pairs ? `<div><strong>Parsed:</strong> ${escapeHtml(msg.parsed_pairs)}</div>` : ''}
                 `;
             } else if (msg.direction === 'received') {
                 content = `

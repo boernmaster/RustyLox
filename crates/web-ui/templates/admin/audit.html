@@ -32,15 +32,52 @@
         </div>
         <ul class="nav-menu">
             <li><a href="/">Dashboard</a></li>
-            <li><a href="/miniserver">Miniserver</a></li>
-            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
-            <li><a href="/plugins">Plugins</a></li>
-            <li><a href="/logs">Logs</a></li>
-            <li><a href="/backup">Backup</a></li>
-            <li><a href="/admin/users">Users</a></li>
-            <li><a href="/admin/api-keys">API Keys</a></li>
-            <li><a href="/admin/audit" class="active">Audit Log</a></li>
-            <li><a href="/settings">Settings</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/monitor">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
         </ul>
     </nav>
 
