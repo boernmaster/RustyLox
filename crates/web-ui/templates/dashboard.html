@@ -38,15 +38,52 @@
         </div>
         <ul class="nav-menu">
             <li><a href="/" class="active">Dashboard</a></li>
-            <li><a href="/miniserver">Miniserver</a></li>
-            <li><a href="/mqtt/monitor">MQTT Monitor</a></li>
-            <li><a href="/mqtt/config">MQTT Config</a></li>
-            <li><a href="/plugins">Plugins</a></li>
-            <li><a href="/health">Health</a></li>
-            <li><a href="/logs">Logs</a></li>
-            <li><a href="/backup">Backup</a></li>
-            <li><a href="/admin/users">Users</a></li>
-            <li><a href="/settings">Settings</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/monitor">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
         </ul>
     </nav>
 
@@ -64,7 +101,7 @@
                 <p><strong>Version:</strong> {{ system_status.version }}</p>
                 <p><strong>Uptime:</strong> <span id="uptime-display">{{ system_status.uptime }}</span></p>
                 <div id="resource-mini" style="margin-top: 12px;"></div>
-                <a href="/health" class="btn btn-secondary" style="margin-top: 12px; font-size: 0.85rem; padding: 5px 12px;">Full Health View</a>
+                <a href="/system-health" class="btn btn-secondary" style="margin-top: 12px; font-size: 0.85rem; padding: 5px 12px;">Full Health View</a>
             </div>
 
             <!-- Miniserver -->
@@ -100,7 +137,7 @@
         <div class="card" style="margin-top: 20px; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                 <h2 style="margin: 0;">Component Health</h2>
-                <a href="/health" style="font-size: 0.85rem; color: #007bff;">View Details &rarr;</a>
+                <a href="/system-health" style="font-size: 0.85rem; color: #007bff;">View Details &rarr;</a>
             </div>
             <div id="component-health-list">
                 <em style="color: #888; font-size: 0.9rem;">Loading health data...</em>
