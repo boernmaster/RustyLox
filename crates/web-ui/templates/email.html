@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Notifications - LoxBerry</title>
+    <title>Email Notifications - RustyLox</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
@@ -32,7 +32,13 @@
                     <li><a href="/mqtt/stats">Statistics</a></li>
                 </ul>
             </li>
-            <li><a href="/plugins">Plugins</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
             <li class="nav-group">
                 <a class="nav-group-label active" href="/system-health">System</a>
                 <ul class="nav-dropdown">
@@ -42,6 +48,7 @@
                     <li><a href="/tasks">Tasks</a></li>
                     <li><a href="/network">Network</a></li>
                     <li><a href="/email">Email</a></li>
+                    <li><a href="/settings">Settings</a></li>
                 </ul>
             </li>
             <li class="nav-group">
@@ -55,7 +62,7 @@
                     <li><a href="/api-docs">API Docs</a></li>
                 </ul>
             </li>
-            <li><a href="/settings">Settings</a></li>
+            <li><a href="/profile">Profile</a></li>
         </ul>
     </nav>
 
