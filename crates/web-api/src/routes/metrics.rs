@@ -78,9 +78,48 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
     {
         let config = state.config.read().await;
         if config.miniserver.is_empty() {
-            components.push(ComponentStatus::ok("miniserver"));
+            components.push(ComponentStatus::degraded(
+                "miniserver",
+                "No miniserver configured",
+            ));
         } else {
-            components.push(ComponentStatus::ok("miniserver"));
+            // Check actual connectivity for first miniserver
+            let mut all_healthy = true;
+            let mut error_msg = String::new();
+
+            for (id, _ms) in &config.miniserver {
+                // Parse ID to u8
+                let id_num = match id.parse::<u8>() {
+                    Ok(n) => n,
+                    Err(_) => {
+                        all_healthy = false;
+                        error_msg = format!("MS {}: Invalid ID", id);
+                        break;
+                    }
+                };
+
+                if let Ok(client) = state.get_miniserver_client(id_num).await {
+                    // Try simple call to check connectivity
+                    match client.http().call("/dev/lan/txp").await {
+                        Ok(_) => continue,
+                        Err(e) => {
+                            all_healthy = false;
+                            error_msg = format!("MS {}: {}", id, e);
+                            break;
+                        }
+                    }
+                } else {
+                    all_healthy = false;
+                    error_msg = format!("MS {}: Failed to create client", id);
+                    break;
+                }
+            }
+
+            if all_healthy {
+                components.push(ComponentStatus::ok("miniserver"));
+            } else {
+                components.push(ComponentStatus::degraded("miniserver", error_msg));
+            }
         }
     }
 
