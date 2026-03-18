@@ -191,7 +191,7 @@ impl AuthService {
             user_id: user.id,
             username: user.username,
             roles: user.roles,
-            kind: IdentityKind::ApiKey(api_key.id),
+            kind: IdentityKind::ApiKey(api_key.id, api_key.permissions),
         })
     }
 
