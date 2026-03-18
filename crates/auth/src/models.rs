@@ -205,11 +205,18 @@ pub struct AuthIdentity {
 #[derive(Debug, Clone)]
 pub enum IdentityKind {
     Session(String),
-    ApiKey(Uuid),
+    /// (key_id, key-specific permissions)
+    ApiKey(Uuid, Vec<(Resource, Action)>),
 }
 
 impl AuthIdentity {
     pub fn can(&self, resource: &Resource, action: &Action) -> bool {
+        // API key identities are constrained to their declared permissions
+        // (still bounded by the user's roles)
+        if let IdentityKind::ApiKey(_, permissions) = &self.kind {
+            return permissions.iter().any(|(r, a)| r == resource && a == action)
+                && self.roles.iter().any(|r| r.can(resource, action));
+        }
         self.roles.iter().any(|r| r.can(resource, action))
     }
 

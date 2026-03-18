@@ -64,7 +64,7 @@ impl AuthStore {
         let db = self.load().await?;
         if db.users.is_empty() {
             let default_password =
-                std::env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "admin".to_string());
+                std::env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "abc123".to_string());
             warn!("No users found - creating default admin user. Change the password immediately!");
             let hash = hash_password(&default_password)?;
             let admin = User::new("admin", hash, "admin@localhost", vec![Role::Admin]);
