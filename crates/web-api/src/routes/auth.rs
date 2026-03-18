@@ -1,12 +1,12 @@
 //! Authentication routes: login, logout, user management, API key management
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Json,
 };
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -54,7 +54,17 @@ pub struct ChangePasswordRequest {
 #[derive(Deserialize)]
 pub struct CreateApiKeyRequest {
     pub name: String,
-    pub expires_at: Option<DateTime<Utc>>,
+    /// Number of days until the key expires (0 or None = never expires)
+    pub expires_in_days: Option<u32>,
+    /// Permissions as "resource:action" strings (e.g. "miniserver:read")
+    pub permissions: Option<Vec<String>>,
+}
+
+#[derive(Deserialize)]
+pub struct AuditQuery {
+    pub limit: Option<usize>,
+    pub action: Option<String>,
+    pub username: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -79,6 +89,36 @@ pub struct ApiKeySummary {
 
 fn auth_error(status: StatusCode, msg: &str) -> (StatusCode, Json<serde_json::Value>) {
     (status, Json(serde_json::json!({"error": msg})))
+}
+
+/// Parse "resource:action" permission strings into typed tuples.
+/// Unrecognised strings are silently skipped.
+fn parse_permissions(raw: &[String]) -> Vec<(Resource, Action)> {
+    raw.iter()
+        .filter_map(|s| {
+            let (res_str, act_str) = s.split_once(':')?;
+            let resource = match res_str {
+                "miniserver" => Resource::Miniserver,
+                "mqtt_gateway" => Resource::MqttGateway,
+                "plugins" => Resource::Plugins,
+                "settings" => Resource::Settings,
+                "logs" => Resource::Logs,
+                "backup" => Resource::Backup,
+                "users" => Resource::Users,
+                "api_keys" => Resource::ApiKeys,
+                "system" => Resource::System,
+                _ => return None,
+            };
+            let action = match act_str {
+                "read" => Action::Read,
+                "write" => Action::Write,
+                "delete" => Action::Delete,
+                "execute" => Action::Execute,
+                _ => return None,
+            };
+            Some((resource, action))
+        })
+        .collect()
 }
 
 pub fn extract_ip(headers: &HeaderMap) -> String {
@@ -377,14 +417,34 @@ pub async fn create_api_key(
         Err(e) => return e.into_response(),
     };
     let ip = extract_ip(&headers);
-    // Grant all read permissions by default for new API keys
-    let permissions = vec![
-        (Resource::Plugins, Action::Read),
-        (Resource::Settings, Action::Read),
-        (Resource::Miniserver, Action::Read),
-    ];
+    let permissions = if let Some(raw) = &req.permissions {
+        let parsed = parse_permissions(raw);
+        if parsed.is_empty() {
+            // Fall back to safe defaults when no valid permissions were submitted
+            vec![
+                (Resource::Plugins, Action::Read),
+                (Resource::Settings, Action::Read),
+                (Resource::Miniserver, Action::Read),
+            ]
+        } else {
+            parsed
+        }
+    } else {
+        vec![
+            (Resource::Plugins, Action::Read),
+            (Resource::Settings, Action::Read),
+            (Resource::Miniserver, Action::Read),
+        ]
+    };
+    let expires_at = req.expires_in_days.and_then(|days| {
+        if days == 0 {
+            None
+        } else {
+            Some(Utc::now() + Duration::days(days as i64))
+        }
+    });
     match service
-        .create_api_key(&identity, req.name, permissions, req.expires_at, &ip)
+        .create_api_key(&identity, req.name, permissions, expires_at, &ip)
         .await
     {
         Ok((key, raw_key)) => (
@@ -434,7 +494,11 @@ pub async fn delete_api_key(
 }
 
 /// GET /api/auth/audit
-pub async fn get_audit_log(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+pub async fn get_audit_log(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(query): Query<AuditQuery>,
+) -> impl IntoResponse {
     let Some(service) = &state.auth_service else {
         return auth_error(StatusCode::SERVICE_UNAVAILABLE, "Auth not configured").into_response();
     };
@@ -445,7 +509,16 @@ pub async fn get_audit_log(State(state): State<AppState>, headers: HeaderMap) ->
     if !identity.is_admin() {
         return auth_error(StatusCode::FORBIDDEN, "Admin required").into_response();
     }
-    let entries = service.audit.read_recent(100).await;
+    let limit = query.limit.unwrap_or(100).min(500);
+    let mut entries = service.audit.read_recent(limit).await;
+    if let Some(action_filter) = &query.action {
+        let filter = action_filter.to_lowercase();
+        entries.retain(|e| e.action.to_string().to_lowercase() == filter);
+    }
+    if let Some(user_filter) = &query.username {
+        let filter = user_filter.to_lowercase();
+        entries.retain(|e| e.user.to_lowercase().contains(&filter));
+    }
     (
         StatusCode::OK,
         Json(serde_json::to_value(&entries).unwrap()),

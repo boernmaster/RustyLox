@@ -98,10 +98,10 @@
                         <option value="login_failed">Login Failed</option>
                         <option value="create_user">Create User</option>
                         <option value="delete_user">Delete User</option>
-                        <option value="change_password">Change Password</option>
+                        <option value="password_changed">Change Password</option>
                         <option value="create_api_key">Create API Key</option>
-                        <option value="revoke_api_key">Revoke API Key</option>
-                        <option value="config_change">Config Change</option>
+                        <option value="delete_api_key">Revoke API Key</option>
+                        <option value="update_config">Config Change</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -170,7 +170,7 @@
                     const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : '-';
                     const action = (e.action || '').toLowerCase().replace(/\s+/g, '_');
                     const badge = `<span class="badge badge-${action}">${escHtml(e.action || action)}</span>`;
-                    const meta = e.metadata ? JSON.stringify(e.metadata).substring(0, 80) : '';
+                    const meta = e.details ? String(e.details).substring(0, 80) : '';
                     return `
                         <tr style="border-bottom: 1px solid #dee2e6;">
                             <td style="padding: 10px; font-size: 0.85em; white-space: nowrap;">${escHtml(ts)}</td>
