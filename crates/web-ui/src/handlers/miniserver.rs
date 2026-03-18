@@ -20,17 +20,28 @@ use web_api::AppState;
 pub async fn list(State(state): State<AppState>) -> Html<String> {
     let config = state.config.read().await;
 
-    let miniservers: Vec<MiniserverDisplay> = config
-        .miniserver
-        .iter()
-        .map(|(id, ms)| MiniserverDisplay {
+    let mut miniservers = Vec::new();
+
+    for (id, ms) in &config.miniserver {
+        // Check actual connectivity
+        let connected = if let Ok(id_num) = id.parse::<u8>() {
+            if let Ok(client) = state.get_miniserver_client(id_num).await {
+                client.http().call("/dev/lan/txp").await.is_ok()
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        miniservers.push(MiniserverDisplay {
             id: id.clone(),
             name: ms.name.clone(),
             ipaddress: ms.ipaddress.clone(),
             port: ms.port.clone(),
-            connected: false, // TODO: Check actual connection status
-        })
-        .collect();
+            connected,
+        });
+    }
 
     let template = MiniserverListTemplate {
         miniservers,
