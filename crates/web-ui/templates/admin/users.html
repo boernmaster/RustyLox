@@ -271,14 +271,15 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ new_password: newPassword }),
         })
-        .then(r => r.json())
-        .then(d => {
+        .then(r => {
             const el = document.getElementById('user-result');
-            if (d.success !== false) {
+            if (r.ok) {
                 el.innerHTML = "<div class='alert alert-success'>Password changed successfully.</div>";
                 closePasswordModal();
             } else {
-                el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || 'Failed') + "</div>";
+                return r.json().then(d => {
+                    el.innerHTML = "<div class='alert alert-danger'>" + escHtml(d.error || 'Failed to change password') + "</div>";
+                });
             }
         })
         .catch(e => {
