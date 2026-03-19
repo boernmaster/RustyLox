@@ -6,7 +6,8 @@ use crate::templates::{
 use askama::Template;
 use axum::{
     extract::{Form, Query, State},
-    response::{Html, Redirect},
+    http::{header, HeaderValue},
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use serde::Deserialize;
 use web_api::AppState;
@@ -41,23 +42,50 @@ pub async fn show_login(
 }
 
 /// POST /login - handle login form submission
-pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<LoginForm>) -> Redirect {
+pub async fn handle_login(
+    State(state): State<AppState>,
+    Form(creds): Form<LoginForm>,
+) -> Response {
     // If auth service is not configured, redirect to dashboard
     let Some(auth_service) = &state.auth_service else {
-        return Redirect::to("/");
+        return Redirect::to("/").into_response();
     };
 
     match auth_service
         .login(&creds.username, &creds.password, "web-form")
         .await
     {
-        Ok(_token_response) => Redirect::to("/"),
+        Ok(token_response) => {
+            let cookie = format!(
+                "lb_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age={}",
+                token_response.access_token, token_response.expires_in
+            );
+            let mut response = Redirect::to("/").into_response();
+            if let Ok(cookie_value) = HeaderValue::from_str(&cookie) {
+                response
+                    .headers_mut()
+                    .insert(header::SET_COOKIE, cookie_value);
+            }
+            response
+        }
         Err(e) => {
             let msg = format!("{}", e);
             let encoded = urlencoding_encode(&msg);
-            Redirect::to(&format!("/login?error={}", encoded))
+            Redirect::to(&format!("/login?error={}", encoded)).into_response()
         }
     }
+}
+
+/// POST /logout - clear session cookie and redirect to login
+pub async fn handle_logout() -> Response {
+    let clear_cookie = "lb_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0";
+    let mut response = Redirect::to("/login").into_response();
+    if let Ok(cookie_value) = HeaderValue::from_str(clear_cookie) {
+        response
+            .headers_mut()
+            .insert(header::SET_COOKIE, cookie_value);
+    }
+    response
 }
 
 /// GET /admin/users - user management page

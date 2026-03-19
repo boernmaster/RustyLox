@@ -160,6 +160,23 @@ pub async fn extract_identity(
         }
     }
 
+    // Try cookie-based token (set by web UI login form)
+    if let Some(cookie_header) = headers.get("Cookie") {
+        if let Ok(cookie_str) = cookie_header.to_str() {
+            for part in cookie_str.split(';') {
+                let part = part.trim();
+                if let Some(token) = part.strip_prefix("lb_token=") {
+                    if !token.is_empty() {
+                        return service
+                            .authenticate_token(token)
+                            .await
+                            .map_err(|e| auth_error(StatusCode::UNAUTHORIZED, &e.to_string()));
+                    }
+                }
+            }
+        }
+    }
+
     Err(auth_error(
         StatusCode::UNAUTHORIZED,
         "Authentication required",

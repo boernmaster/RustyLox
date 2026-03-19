@@ -128,6 +128,7 @@ pub fn create_ui_router(state: AppState) -> Router {
         // Authentication
         .route("/login", get(handlers::auth::show_login))
         .route("/login", post(handlers::auth::handle_login))
+        .route("/logout", post(handlers::auth::handle_logout))
         // User profile
         .route("/profile", get(handlers::profile::index))
         // System health dashboard (renamed to avoid conflict with API /health endpoint)
