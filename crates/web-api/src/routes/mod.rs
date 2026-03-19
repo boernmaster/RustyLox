@@ -14,3 +14,4 @@ pub mod network;
 pub mod plugins;
 pub mod system;
 pub mod tasks;
+pub mod weather;

@@ -19,3 +19,4 @@ pub mod profile;
 pub mod security;
 pub mod settings;
 pub mod tasks;
+pub mod weather;

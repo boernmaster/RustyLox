@@ -1,7 +1,9 @@
 //! Askama templates
 
 use askama::Template;
+use loxberry_config::WeatherConfig;
 use serde::{Deserialize, Serialize};
+use web_api::weather::WeatherData;
 
 /// Base layout template
 #[derive(Template)]
@@ -228,6 +230,24 @@ pub struct AdminApiKeysTemplate {
 #[template(path = "admin/audit.html")]
 pub struct AdminAuditTemplate {
     pub version: String,
+}
+
+/// Weather main page template
+#[derive(Template)]
+#[template(path = "weather/index.html")]
+pub struct WeatherIndexTemplate {
+    pub version: String,
+    pub weather: Option<WeatherData>,
+    pub enabled: bool,
+    pub location_name: String,
+}
+
+/// Weather configuration template
+#[derive(Template)]
+#[template(path = "weather/config.html")]
+pub struct WeatherConfigTemplate {
+    pub version: String,
+    pub cfg: WeatherConfig,
 }
 
 /// API documentation template

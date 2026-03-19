@@ -194,32 +194,3 @@ pub async fn config_submit(
     }
 }
 
-/// MQTT Subscriptions page
-pub async fn subscriptions(State(_state): State<AppState>) -> Html<String> {
-    // TODO: Load subscriptions from gateway
-    Html("<div>Subscriptions management page</div>".to_string())
-}
-
-/// Add MQTT subscription
-pub async fn add_subscription(
-    State(_state): State<AppState>,
-    Form(_form): Form<SubscriptionForm>,
-) -> Html<String> {
-    // TODO: Add subscription to gateway and save
-    Html("<div class='success'>Subscription added</div>".to_string())
-}
-
-/// Delete MQTT subscription
-pub async fn delete_subscription(
-    State(_state): State<AppState>,
-    axum::extract::Path(_id): axum::extract::Path<String>,
-) -> Html<String> {
-    // TODO: Delete subscription from gateway
-    Html("<div class='success'>Subscription deleted</div>".to_string())
-}
-
-#[derive(Debug, Deserialize)]
-pub struct SubscriptionForm {
-    pub topic: String,
-    pub name: String,
-}

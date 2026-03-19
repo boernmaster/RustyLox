@@ -26,10 +26,9 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
                     .join("daemon");
                 let has_daemon = daemon_dir.exists();
 
-                // Check daemon status if it exists
+                // Check daemon status via pidfile at run/plugins/{folder}/{folder}.pid
                 let daemon_running = if has_daemon {
-                    // Check if daemon is running via pidfile or process
-                    false // TODO: implement proper daemon status check
+                    is_daemon_running(&state.lbhomedir, &p.folder)
                 } else {
                     false
                 };
@@ -224,7 +223,7 @@ pub async fn details(State(state): State<AppState>, Path(md5): Path<String>) -> 
                 title: p.title.get("en").cloned().unwrap_or_else(|| p.name.clone()),
                 has_web_ui,
                 has_daemon,
-                daemon_running: false,
+                daemon_running: is_daemon_running(&state.lbhomedir, &p.folder),
                 install_date,
             };
 
@@ -243,6 +242,42 @@ pub async fn details(State(state): State<AppState>, Path(md5): Path<String>) -> 
             "<html><body><h1>Plugin not found</h1><a href='/plugins'>Back to plugins</a></body></html>",
         )),
     }
+}
+
+/// Check whether a plugin daemon is running by inspecting its pidfile.
+///
+/// Looks for `$LBHOMEDIR/run/plugins/{folder}/{folder}.pid` and verifies
+/// the recorded PID exists in `/proc`.
+fn is_daemon_running(lbhomedir: &std::path::Path, folder: &str) -> bool {
+    // Primary: pidfile at run/plugins/{folder}/{folder}.pid
+    let pidfile = lbhomedir
+        .join("run/plugins")
+        .join(folder)
+        .join(format!("{}.pid", folder));
+
+    if let Ok(content) = std::fs::read_to_string(&pidfile) {
+        let pid_str = content.trim();
+        if let Ok(pid) = pid_str.parse::<u32>() {
+            // On Linux, check /proc/{pid}
+            return std::path::Path::new(&format!("/proc/{}", pid)).exists();
+        }
+    }
+
+    // Fallback: check for any .pid file in the plugin's bin directory
+    let bin_dir = lbhomedir.join("bin/plugins").join(folder);
+    if let Ok(entries) = std::fs::read_dir(&bin_dir) {
+        for entry in entries.flatten() {
+            if entry.path().extension().and_then(|e| e.to_str()) == Some("pid") {
+                if let Ok(content) = std::fs::read_to_string(entry.path()) {
+                    if let Ok(pid) = content.trim().parse::<u32>() {
+                        return std::path::Path::new(&format!("/proc/{}", pid)).exists();
+                    }
+                }
+            }
+        }
+    }
+
+    false
 }
 
 /// Uninstall plugin

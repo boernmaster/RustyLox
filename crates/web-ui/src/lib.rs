@@ -143,6 +143,11 @@ pub fn create_ui_router(state: AppState) -> Router {
         .route("/admin/security", get(handlers::security::index))
         // Admin: Data management
         .route("/admin/database", get(handlers::database::index))
+        // Weather
+        .route("/weather", get(handlers::weather::index))
+        .route("/weather/config", get(handlers::weather::config))
+        .route("/weather/config", post(handlers::weather::config_submit))
+        .route("/weather/refresh", post(handlers::weather::refresh))
         // Static files (CSS, JS, images)
         .nest_service("/static", ServeDir::new(static_dir))
         .with_state(state)

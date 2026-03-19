@@ -8,6 +8,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
 
+use crate::weather::WeatherService;
+
 /// Current active log level (stored as string for runtime mutation)
 pub type LogLevelHandle = Arc<RwLock<String>>;
 
@@ -55,6 +57,9 @@ pub struct AppState {
 
     /// Authentication service (optional - disabled if not configured)
     pub auth_service: Option<Arc<AuthService>>,
+
+    /// Native weather service (optional - only if enabled in config)
+    pub weather_service: Option<Arc<WeatherService>>,
 }
 
 impl AppState {
@@ -99,12 +104,19 @@ impl AppState {
             miniserver_monitor: monitor_tx,
             log_level: Arc::new(RwLock::new(initial_level)),
             auth_service: None,
+            weather_service: None,
         }
     }
 
     /// Attach an AuthService to the application state
     pub fn with_auth(mut self, auth_service: AuthService) -> Self {
         self.auth_service = Some(Arc::new(auth_service));
+        self
+    }
+
+    /// Attach a WeatherService to the application state
+    pub fn with_weather(mut self, weather_service: Arc<WeatherService>) -> Self {
+        self.weather_service = Some(weather_service);
         self
     }
 

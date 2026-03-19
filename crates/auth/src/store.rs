@@ -1,9 +1,11 @@
 //! Persistent user and API key storage (JSON-backed)
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use tokio::fs;
+use tokio::sync::Mutex;
 use tracing::{info, warn};
 use uuid::Uuid;
 
@@ -17,16 +19,22 @@ struct AuthDatabase {
     api_keys: Vec<ApiKey>,
 }
 
-/// File-backed store for users and API keys
+/// File-backed store for users and API keys.
+///
+/// A Mutex serialises every read-modify-write cycle so concurrent requests
+/// cannot race and overwrite each other's changes.
 #[derive(Debug, Clone)]
 pub struct AuthStore {
     path: PathBuf,
+    /// Serialises all read-modify-save cycles to prevent lost updates.
+    lock: Arc<Mutex<()>>,
 }
 
 impl AuthStore {
     pub fn new(data_dir: &Path) -> Self {
         Self {
             path: data_dir.join("auth.json"),
+            lock: Arc::new(Mutex::new(())),
         }
     }
 
@@ -61,6 +69,7 @@ impl AuthStore {
 
     /// Initialize with a default admin user if no users exist
     pub async fn init_defaults(&self) -> Result<(), AuthError> {
+        let _guard = self.lock.lock().await;
         let db = self.load().await?;
         if db.users.is_empty() {
             let default_password =
@@ -94,6 +103,7 @@ impl AuthStore {
     }
 
     pub async fn create_user(&self, user: User) -> Result<User, AuthError> {
+        let _guard = self.lock.lock().await;
         let mut db = self.load().await?;
         if db.users.iter().any(|u| u.username == user.username) {
             return Err(AuthError::UserAlreadyExists(user.username.clone()));
@@ -104,6 +114,7 @@ impl AuthStore {
     }
 
     pub async fn update_user(&self, user: User) -> Result<User, AuthError> {
+        let _guard = self.lock.lock().await;
         let mut db = self.load().await?;
         let pos = db
             .users
@@ -116,6 +127,7 @@ impl AuthStore {
     }
 
     pub async fn delete_user(&self, id: &Uuid) -> Result<(), AuthError> {
+        let _guard = self.lock.lock().await;
         let mut db = self.load().await?;
         let before = db.users.len();
         db.users.retain(|u| u.id != *id);
@@ -145,6 +157,7 @@ impl AuthStore {
     }
 
     pub async fn create_api_key(&self, key: ApiKey) -> Result<ApiKey, AuthError> {
+        let _guard = self.lock.lock().await;
         let mut db = self.load().await?;
         db.api_keys.push(key.clone());
         self.save(&db).await?;
@@ -152,6 +165,7 @@ impl AuthStore {
     }
 
     pub async fn update_api_key_last_used(&self, id: &Uuid) -> Result<(), AuthError> {
+        let _guard = self.lock.lock().await;
         let mut db = self.load().await?;
         if let Some(key) = db.api_keys.iter_mut().find(|k| k.id == *id) {
             key.last_used = Some(chrono::Utc::now());
@@ -161,6 +175,7 @@ impl AuthStore {
     }
 
     pub async fn delete_api_key(&self, id: &Uuid, user_id: &Uuid) -> Result<(), AuthError> {
+        let _guard = self.lock.lock().await;
         let mut db = self.load().await?;
         let before = db.api_keys.len();
         db.api_keys

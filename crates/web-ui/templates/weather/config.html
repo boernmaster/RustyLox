@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Configuration - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/monitor">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <h1>Weather Configuration</h1>
+            <a href="/weather" class="btn btn-secondary">Back to Weather</a>
+        </div>
+
+        <div id="save-result"></div>
+
+        <form hx-post="/weather/config"
+              hx-target="#save-result"
+              hx-swap="innerHTML">
+
+            <!-- General -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><h2 style="margin:0;">General</h2></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="enabled"
+                                   {% if cfg.enabled %}checked{% endif %}
+                                   value="on">
+                            Enable weather service
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="location_name">Location name</label>
+                        <input type="text" id="location_name" class="form-control" name="location_name"
+                               value="{{ cfg.location_name }}"
+                               placeholder="e.g. Vienna">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+                        <div class="form-group">
+                            <label for="latitude">Latitude (WGS84)</label>
+                            <input type="number" id="latitude" class="form-control" name="latitude"
+                                   step="0.0001" value="{{ cfg.latitude }}"
+                                   placeholder="48.2083">
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Longitude (WGS84)</label>
+                            <input type="number" id="longitude" class="form-control" name="longitude"
+                                   step="0.0001" value="{{ cfg.longitude }}"
+                                   placeholder="16.3731">
+                        </div>
+                        <div class="form-group">
+                            <label for="elevation">Elevation (m asl)</label>
+                            <input type="number" id="elevation" class="form-control" name="elevation"
+                                   step="1" value="{{ cfg.elevation }}"
+                                   placeholder="193">
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="form-group">
+                            <label for="update_interval_minutes">Update interval (minutes)</label>
+                            <input type="number" id="update_interval_minutes" class="form-control"
+                                   name="update_interval_minutes"
+                                   min="5" max="1440"
+                                   value="{{ cfg.update_interval_minutes }}">
+                        </div>
+                        <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:0.25rem;">
+                            <label>
+                                <input type="checkbox" name="metric"
+                                       {% if cfg.metric %}checked{% endif %}
+                                       value="on">
+                                Use metric units (&deg;C / km/h / mm)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loxone UDP push -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><h2 style="margin:0;">Loxone UDP Push</h2></div>
+                <div class="card-body">
+                    <p class="text-muted" style="margin-bottom:1rem;">
+                        Sends weather values to the Miniserver via UDP virtual inputs,
+                        identical to the weather4lox protocol.
+                    </p>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="push_udp"
+                                   {% if cfg.push_udp %}checked{% endif %}
+                                   value="on">
+                            Enable UDP push to Miniserver
+                        </label>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="form-group">
+                            <label for="miniserver_key">Miniserver key (in general.json)</label>
+                            <input type="text" id="miniserver_key" class="form-control"
+                                   name="miniserver_key"
+                                   value="{{ cfg.miniserver_key }}"
+                                   placeholder="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="miniserver_udp_port">UDP port on Miniserver</label>
+                            <input type="number" id="miniserver_udp_port" class="form-control"
+                                   name="miniserver_udp_port"
+                                   value="{{ cfg.miniserver_udp_port }}"
+                                   placeholder="7044">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loxone Cloud Emulator -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><h2 style="margin:0;">Loxone Cloud Emulator</h2></div>
+                <div class="card-body">
+                    <p class="text-muted" style="margin-bottom:1rem;">
+                        Serves the <code>weather.loxone.com:6066</code> REST API format so the
+                        Miniserver can poll RustyLox instead of the real Loxone cloud.
+                        Optionally configure dnsmasq to redirect the DNS name automatically.
+                    </p>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="cloud_emu"
+                                   {% if cfg.cloud_emu %}checked{% endif %}
+                                   value="on">
+                            Enable cloud emulator (listens on port 6066)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="dnsmasq_enabled"
+                                   {% if cfg.dnsmasq_enabled %}checked{% endif %}
+                                   value="on">
+                            Write <code>/etc/dnsmasq.d/rustylox-weather.conf</code> and restart dnsmasq
+                        </label>
+                        <small style="display:block;color:#888;margin-top:0.25rem;">
+                            Requires dnsmasq installed and write permission to /etc/dnsmasq.d/.
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="local_ip">Local IP of this RustyLox host</label>
+                        <input type="text" id="local_ip" class="form-control" name="local_ip"
+                               value="{{ cfg.local_ip }}"
+                               placeholder="192.168.1.10">
+                        <small style="color:#888;">
+                            IP address as seen by the Miniserver. Used in dnsmasq config and UDP push target.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MQTT -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header"><h2 style="margin:0;">MQTT</h2></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="send_mqtt"
+                                   {% if cfg.send_mqtt %}checked{% endif %}
+                                   value="on">
+                            Publish weather data to MQTT after each refresh
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="mqtt_topic">MQTT topic prefix</label>
+                        <input type="text" id="mqtt_topic" class="form-control" name="mqtt_topic"
+                               value="{{ cfg.mqtt_topic }}"
+                               placeholder="weather">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+        </form>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
+    </footer>
+
+    <div id="toast-container"></div>
+    <script>
+    document.body.addEventListener('htmx:afterSwap', function(e) {
+        e.target.querySelectorAll('.alert-success, .alert-danger').forEach(function(el) {
+            const type = el.classList.contains('alert-success') ? 'success' : 'error';
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast toast-' + type;
+            t.textContent = el.textContent.trim();
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        });
+    });
+    </script>
+</body>
+</html>
