@@ -138,8 +138,12 @@ impl PluginConfig {
             .ok_or_else(|| Error::plugin("Missing PLUGIN.VERSION in plugin.cfg"))?
             .clone();
 
-        // Extract titles (TITLE_EN, TITLE_DE, etc.)
+        // Extract titles - support both plain TITLE and TITLE_EN, TITLE_DE etc.
         let mut title = HashMap::new();
+        // Plain TITLE= is treated as English fallback
+        if let Some(plain_title) = plugin_section.get("TITLE") {
+            title.insert("en".to_string(), plain_title.clone());
+        }
         for (key, value) in plugin_section {
             if key.starts_with("TITLE_") {
                 let lang = key.strip_prefix("TITLE_").unwrap().to_lowercase();
@@ -292,5 +296,38 @@ ENABLED=1
         );
         assert!(config.system.is_some());
         assert!(config.daemon.is_some());
+    }
+
+    #[test]
+    fn test_parse_weather4lox_style_cfg() {
+        // weather4lox uses plain TITLE= (no language suffix) and INTERFACE= in SYSTEM section
+        let cfg = r#"
+[AUTHOR]
+NAME=Michael Schlenstedt
+EMAIL=Michael@loxberry.de
+
+[PLUGIN]
+VERSION=5.0.0
+NAME=weather4lox
+FOLDER=weather4lox
+TITLE=Weather 4 Loxone
+
+[AUTOUPDATE]
+
+[SYSTEM]
+INTERFACE=2.0
+"#;
+
+        let config = PluginConfig::parse_from_str(cfg).unwrap();
+
+        assert_eq!(config.author.name, "Michael Schlenstedt");
+        assert_eq!(config.plugin.name, "weather4lox");
+        assert_eq!(config.plugin.folder, "weather4lox");
+        assert_eq!(config.plugin.version, "5.0.0");
+        // Plain TITLE= should be stored as "en"
+        assert_eq!(
+            config.plugin.title.get("en"),
+            Some(&"Weather 4 Loxone".to_string())
+        );
     }
 }

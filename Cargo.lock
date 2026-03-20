@@ -3601,6 +3601,7 @@ dependencies = [
  "miniserver-client",
  "mqtt-gateway",
  "plugin-manager",
+ "reqwest",
  "serde",
  "serde_json",
  "sysinfo",

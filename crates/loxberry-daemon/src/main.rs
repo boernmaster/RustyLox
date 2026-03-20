@@ -11,7 +11,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use web_api::{create_router, AppState};
+use web_api::{create_router, weather::WeatherService, AppState};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -102,6 +102,16 @@ async fn main() -> Result<()> {
         Err(e) => warn!("Auth service init warning: {}", e),
     }
 
+    // Initialize weather service
+    let weather_cfg = {
+        let cfg = config.read().await;
+        cfg.weather.clone()
+    };
+    let weather_service = Arc::new(WeatherService::new(weather_cfg));
+
+    // Spawn background refresh loop (shares the same Arc)
+    Arc::clone(&weather_service).spawn_background_task();
+
     // Create application state
     let state = AppState::new_with_shared_config(
         lbhomedir,
@@ -110,7 +120,8 @@ async fn main() -> Result<()> {
         config,
         mqtt_gateway,
     )
-    .with_auth(auth_service);
+    .with_auth(auth_service)
+    .with_weather(Arc::clone(&weather_service));
 
     // Create API router
     let api_router = create_router(state.clone());
@@ -126,8 +137,25 @@ async fn main() -> Result<()> {
 
     info!("Starting web server on http://{}", bind_addr);
 
-    // Start server
+    // Start main server
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
+
+    // Also start port 6066 for Loxone Cloud Emulator (weather.loxone.com)
+    let emu_addr = "0.0.0.0:6066";
+    match tokio::net::TcpListener::bind(emu_addr).await {
+        Ok(emu_listener) => {
+            info!("Loxone Cloud Emulator listening on port 6066");
+            let app_emu = create_router(state.clone()).merge(web_ui::create_ui_router(state.clone()));
+            tokio::spawn(async move {
+                if let Err(e) = axum::serve(emu_listener, app_emu).await {
+                    error!("Port 6066 server error: {}", e);
+                }
+            });
+        }
+        Err(e) => {
+            warn!("Could not bind port 6066 (Loxone EMU): {} – feature disabled", e);
+        }
+    }
 
     info!("LoxBerry Daemon is running!");
     info!("API available at: http://{}", bind_addr);

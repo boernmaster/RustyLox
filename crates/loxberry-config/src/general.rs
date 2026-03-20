@@ -47,6 +47,108 @@ pub struct GeneralConfig {
 
     #[serde(rename = "Apt")]
     pub apt: AptConfig,
+
+    #[serde(rename = "Weather", default)]
+    pub weather: WeatherConfig,
+}
+
+/// Native weather service configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WeatherConfig {
+    /// Enable background weather fetching
+    #[serde(rename = "Enabled", default)]
+    pub enabled: bool,
+
+    /// Decimal latitude (WGS84)
+    #[serde(rename = "Latitude", default)]
+    pub latitude: f64,
+
+    /// Decimal longitude (WGS84)
+    #[serde(rename = "Longitude", default)]
+    pub longitude: f64,
+
+    /// Human-readable location name shown in the UI
+    #[serde(rename = "LocationName", default)]
+    pub location_name: String,
+
+    /// Elevation above sea level in metres (used for Loxone EMU)
+    #[serde(rename = "Elevation", default)]
+    pub elevation: f64,
+
+    /// How often to refresh weather data (minutes, default 15)
+    #[serde(rename = "UpdateIntervalMinutes", default = "WeatherConfig::default_interval")]
+    pub update_interval_minutes: u32,
+
+    /// true = metric (°C, km/h, mm), false = imperial (°F, mph, in)
+    #[serde(rename = "Metric", default = "WeatherConfig::default_true")]
+    pub metric: bool,
+
+    // ── Loxone UDP push ────────────────────────────────────────────────────
+    /// Push weather values to Miniserver via UDP (same protocol as weather4lox)
+    #[serde(rename = "PushUdp", default)]
+    pub push_udp: bool,
+
+    /// Which Miniserver entry (key in general.json) to push to
+    #[serde(rename = "MiniserverKey", default = "WeatherConfig::default_ms_key")]
+    pub miniserver_key: String,
+
+    /// UDP port on the Miniserver that receives virtual inputs (default 7044)
+    #[serde(rename = "MiniserverUdpPort", default = "WeatherConfig::default_udp_port")]
+    pub miniserver_udp_port: u16,
+
+    // ── Loxone Cloud Emulator ──────────────────────────────────────────────
+    /// Serve the Loxone weather.loxone.com API on port 6066 so the
+    /// Miniserver can use RustyLox as its cloud weather source.
+    #[serde(rename = "CloudEmu", default)]
+    pub cloud_emu: bool,
+
+    /// Write /etc/dnsmasq.d/rustylox-weather.conf to redirect
+    /// weather.loxone.com → this host.  Requires dnsmasq + write permission.
+    #[serde(rename = "DnsmasqEnabled", default)]
+    pub dnsmasq_enabled: bool,
+
+    /// Local IP advertised in the dnsmasq config (e.g. "192.168.1.10")
+    #[serde(rename = "LocalIp", default)]
+    pub local_ip: String,
+
+    // ── MQTT ───────────────────────────────────────────────────────────────
+    /// Publish weather data to MQTT after each refresh
+    #[serde(rename = "SendMqtt", default)]
+    pub send_mqtt: bool,
+
+    /// MQTT topic prefix (default "weather")
+    #[serde(rename = "MqttTopic", default = "WeatherConfig::default_mqtt_topic")]
+    pub mqtt_topic: String,
+}
+
+impl WeatherConfig {
+    fn default_interval() -> u32 { 15 }
+    fn default_true() -> bool { true }
+    fn default_ms_key() -> String { "1".to_string() }
+    fn default_udp_port() -> u16 { 7044 }
+    fn default_mqtt_topic() -> String { "weather".to_string() }
+}
+
+impl Default for WeatherConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            latitude: 0.0,
+            longitude: 0.0,
+            location_name: String::new(),
+            elevation: 0.0,
+            update_interval_minutes: 15,
+            metric: true,
+            push_udp: false,
+            miniserver_key: "1".to_string(),
+            miniserver_udp_port: 7044,
+            cloud_emu: false,
+            dnsmasq_enabled: false,
+            local_ip: String::new(),
+            send_mqtt: false,
+            mqtt_topic: "weather".to_string(),
+        }
+    }
 }
 
 /// Base configuration

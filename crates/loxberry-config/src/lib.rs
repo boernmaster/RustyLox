@@ -7,7 +7,7 @@ pub mod miniserver;
 pub mod mqtt;
 pub mod validation;
 
-pub use general::GeneralConfig;
+pub use general::{GeneralConfig, WeatherConfig};
 pub use miniserver::MiniserverConfig;
 pub use mqtt::MqttConfig;
 

@@ -3,6 +3,7 @@
 pub mod middleware;
 pub mod routes;
 pub mod state;
+pub mod weather;
 
 pub use state::AppState;
 
@@ -146,6 +147,18 @@ pub fn create_router(state: AppState) -> Router {
             post(routes::backup::restore_backup),
         )
         .route("/api/backup/:name", delete(routes::backup::delete_backup))
+        // Weather routes
+        .route("/api/weather/status", get(routes::weather::status))
+        .route("/api/weather/current", get(routes::weather::current))
+        .route("/api/weather/forecast", get(routes::weather::forecast))
+        .route("/api/weather/hourly", get(routes::weather::hourly))
+        .route("/api/weather/all", get(routes::weather::all))
+        .route("/api/weather/config", get(routes::weather::get_config))
+        .route("/api/weather/config", put(routes::weather::update_config))
+        .route("/api/weather/refresh", post(routes::weather::refresh))
+        // Loxone Cloud Emulator (served on main port; daemon also starts port 6066)
+        .route("/forecast/", get(routes::weather::loxone_forecast))
+        .route("/forecast", get(routes::weather::loxone_forecast))
         // Auth routes
         .route("/api/auth/login", post(routes::auth::login))
         .route("/api/auth/logout", post(routes::auth::logout))

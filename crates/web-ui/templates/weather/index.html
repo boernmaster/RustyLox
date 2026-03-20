@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/monitor">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <h1>Weather</h1>
+            <div>
+                <button class="btn btn-primary" onclick="refreshWeather()">Refresh Now</button>
+                <a href="/weather/config" class="btn btn-secondary" style="margin-left:0.5rem;">Configure</a>
+            </div>
+        </div>
+
+        <div id="status-banner"></div>
+
+        {% if !enabled %}
+        <div class="alert alert-warning">
+            Weather service is <strong>disabled</strong>.
+            <a href="/weather/config">Configure it here.</a>
+        </div>
+        {% else %}
+        <div id="weather-content">
+            <div class="alert alert-info">Loading weather data&hellip;</div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    function fmt1(v) { return (Math.round(v * 10) / 10).toFixed(1); }
+    function fmt0(v) { return Math.round(v).toFixed(0); }
+
+    function windDir(deg) {
+        const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+        return dirs[Math.round(deg / 45) % 8];
+    }
+
+    function tsToLocal(ts) {
+        return new Date(ts * 1000).toLocaleString();
+    }
+
+    async function loadWeather() {
+        const resp = await fetch('/api/weather/all');
+        if (resp.status === 204 || resp.status === 503) {
+            document.getElementById('weather-content').innerHTML =
+                "<div class='alert alert-info'>No weather data yet. Click <strong>Refresh Now</strong> to fetch.</div>";
+            return;
+        }
+        if (!resp.ok) {
+            document.getElementById('weather-content').innerHTML =
+                "<div class='alert alert-danger'>Failed to load weather data.</div>";
+            return;
+        }
+        const w = await resp.json();
+        renderWeather(w);
+    }
+
+    function renderWeather(w) {
+        const c = w.current;
+        const loc = w.location;
+        const fetched = tsToLocal(w.fetched_at);
+
+        let html = `
+        <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header">
+                <h2 style="margin:0;">Current &mdash; ${loc.name}</h2>
+                <small style="color:#888;">
+                    ${fmt1(loc.latitude)}&deg;N ${fmt1(loc.longitude)}&deg;E &nbsp;|&nbsp;
+                    ${fmt0(loc.elevation)} m asl &nbsp;|&nbsp;
+                    Updated: ${fetched}
+                </small>
+            </div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:start;">
+                    <div>
+                        <div style="font-size:3rem;font-weight:bold;">${fmt1(c.temperature)}&nbsp;&deg;C</div>
+                        <div style="font-size:1.2rem;color:#555;">${c.weather_description}</div>
+                        <div style="color:#888;">Feels like ${fmt1(c.feels_like)}&deg;C</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem;">
+                        ${detail('Humidity', c.humidity + ' %')}
+                        ${detail('Pressure', fmt0(c.pressure) + ' hPa')}
+                        ${detail('Wind', fmt0(c.wind_speed) + ' km/h ' + windDir(c.wind_direction))}
+                        ${detail('Gusts', fmt0(c.wind_gusts) + ' km/h')}
+                        ${detail('Precip.', fmt1(c.precipitation) + ' mm')}
+                        ${detail('UV Index', fmt1(c.uv_index))}
+                        ${detail('Visibility', fmt1(c.visibility/1000) + ' km')}
+                        ${detail('Sunrise', c.sunrise ? c.sunrise.slice(11,16) : '-')}
+                        ${detail('Sunset', c.sunset ? c.sunset.slice(11,16) : '-')}
+                        ${detail('Loxone code', c.loxone_code)}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // 7-day forecast
+        html += `<div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header"><h2 style="margin:0;">7-Day Forecast</h2></div>
+            <div class="card-body" style="overflow-x:auto;">
+            <table class="data-table"><thead><tr>
+                <th>Date</th><th>Condition</th><th>Max &deg;C</th><th>Min &deg;C</th>
+                <th>Precip. mm</th><th>Precip. %</th><th>Wind km/h</th><th>UV</th><th>Loxone</th>
+            </tr></thead><tbody>`;
+        for (const day of w.daily) {
+            html += `<tr>
+                <td>${day.date}</td>
+                <td>${day.weather_description}</td>
+                <td>${fmt1(day.temp_max)}</td>
+                <td>${fmt1(day.temp_min)}</td>
+                <td>${fmt1(day.precipitation_sum)}</td>
+                <td>${day.precipitation_probability} %</td>
+                <td>${fmt0(day.wind_speed_max)}</td>
+                <td>${fmt1(day.uv_index_max)}</td>
+                <td>${day.loxone_code}</td>
+            </tr>`;
+        }
+        html += `</tbody></table></div></div>`;
+
+        // Hourly (48 h)
+        html += `<div class="card">
+            <div class="card-header"><h2 style="margin:0;">Hourly Forecast (48 h)</h2></div>
+            <div class="card-body" style="overflow-x:auto;">
+            <table class="data-table"><thead><tr>
+                <th>Time</th><th>Temp &deg;C</th><th>Feels &deg;C</th><th>Humid. %</th>
+                <th>Precip. mm</th><th>Precip. %</th><th>Wind km/h</th><th>Dir</th><th>Condition</th>
+            </tr></thead><tbody>`;
+        for (const h of w.hourly.slice(0, 48)) {
+            html += `<tr>
+                <td>${h.datetime.slice(0,16)}</td>
+                <td>${fmt1(h.temperature)}</td>
+                <td>${fmt1(h.feels_like)}</td>
+                <td>${h.humidity}</td>
+                <td>${fmt1(h.precipitation)}</td>
+                <td>${h.precipitation_probability}</td>
+                <td>${fmt0(h.wind_speed)}</td>
+                <td>${windDir(h.wind_direction)}</td>
+                <td>${h.loxone_code}</td>
+            </tr>`;
+        }
+        html += `</tbody></table></div></div>`;
+
+        document.getElementById('weather-content').innerHTML = html;
+    }
+
+    function detail(label, value) {
+        return `<div style="background:var(--bg-secondary,#f5f5f5);padding:0.5rem;border-radius:4px;">
+            <div style="font-size:0.75rem;color:#888;text-transform:uppercase;">${label}</div>
+            <div style="font-weight:bold;">${value}</div>
+        </div>`;
+    }
+
+    async function refreshWeather() {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = 'Refreshing…';
+        try {
+            const resp = await fetch('/api/weather/refresh', {method:'POST'});
+            if (resp.ok) {
+                await loadWeather();
+                showBanner('Weather data refreshed.', 'success');
+            } else {
+                const text = await resp.text();
+                showBanner('Refresh failed: ' + text, 'danger');
+            }
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Refresh Now';
+        }
+    }
+
+    function showBanner(msg, type) {
+        const el = document.getElementById('status-banner');
+        el.innerHTML = `<div class="alert alert-${type}" style="margin-bottom:1rem;">${msg}</div>`;
+        setTimeout(() => el.innerHTML = '', 4000);
+    }
+
+    {% if enabled %}
+    loadWeather();
+    {% endif %}
+    </script>
+</body>
+</html>
