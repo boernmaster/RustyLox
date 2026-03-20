@@ -56,9 +56,10 @@ pub async fn handle_login(
         .await
     {
         Ok(token_response) => {
+            // 6 months = 6 * 30 * 24 * 3600 = 15_552_000 seconds
             let cookie = format!(
-                "lb_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age={}",
-                token_response.access_token, token_response.expires_in
+                "lb_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age=15552000",
+                token_response.access_token
             );
             let mut response = Redirect::to("/").into_response();
             if let Ok(cookie_value) = HeaderValue::from_str(&cookie) {
