@@ -670,7 +670,8 @@ docker compose build
 
 1. Update `CHANGELOG.md` with a summary of changes grouped by type (`feat`, `fix`, `perf`, etc.)
 2. Commit the changelog update
-3. Then create and push the tag
+3. Create and push the tag — use the same release notes as the tag annotation message
+4. The GitHub Release (created by `release.yml`) must also contain the release notes — update the `body:` field in `release.yml` or use `gh release edit` after the fact
 
 ### Pull Request Process
 
