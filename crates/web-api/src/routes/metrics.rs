@@ -87,7 +87,7 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
             let mut all_healthy = true;
             let mut error_msg = String::new();
 
-            for (id, _ms) in &config.miniserver {
+            for id in config.miniserver.keys() {
                 // Parse ID to u8
                 let id_num = match id.parse::<u8>() {
                     Ok(n) => n,

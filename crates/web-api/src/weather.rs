@@ -121,6 +121,7 @@ struct OpenMeteoResponse {
     longitude: f64,
     elevation: f64,
     timezone: String,
+    #[allow(dead_code)]
     timezone_abbreviation: String,
     utc_offset_seconds: i32,
     current: OpenMeteoCurrent,
@@ -358,7 +359,7 @@ impl WeatherService {
                     .get(11..13)
                     .and_then(|h| h.parse::<u8>().ok())
                     .unwrap_or(12);
-                let is_day = hour >= 6 && hour < 21;
+                let is_day = (6..21).contains(&hour);
                 HourlyForecast {
                     datetime: dt.clone(),
                     temperature: raw.hourly.temperature_2m.get(i).copied().unwrap_or(0.0),
@@ -625,13 +626,7 @@ fn build_udp_payload(c: &CurrentWeather) -> String {
 /// Mapping derived from weather4lox datatoloxone.pl.
 pub fn wmo_to_loxone(code: u16, is_day: bool) -> u8 {
     match code {
-        0 => {
-            if is_day {
-                1 // wolkenlos / clear sky
-            } else {
-                1
-            }
-        }
+        0 => 1, // wolkenlos / clear sky
         1 => 2,        // mainly clear
         2 => 5,        // partly cloudy
         3 => 10,       // overcast

@@ -1,7 +1,6 @@
 //! MQTT Gateway statistics API routes
 
 use axum::{extract::State, Json};
-use mqtt_gateway::{RejectedParam, StatsSnapshot};
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 

@@ -256,11 +256,7 @@ pub async fn loxone_forecast(
             match data_guard.as_ref() {
                 None => (StatusCode::NO_CONTENT, "No weather data").into_response(),
                 Some(data) => {
-                    let body = if params.format == Some(1) || params.format.is_none() {
-                        svc.loxone_emu_response(data)
-                    } else {
-                        svc.loxone_emu_response(data) // format=2 not used by current Loxone FW
-                    };
+                    let body = svc.loxone_emu_response(data); // format=2 not used by current Loxone FW
                     axum::response::Response::builder()
                         .status(StatusCode::OK)
                         .header("Content-Type", "text/plain; charset=utf-8")
