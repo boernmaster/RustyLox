@@ -1,9 +1,8 @@
 # Multi-stage Dockerfile for RustyLox
 # Uses cargo-chef for dependency layer caching to speed up builds
 
-# Chef stage - installs cargo-chef
-FROM rust:bookworm AS chef
-RUN cargo install cargo-chef --locked
+# Chef stage - uses prebuilt cargo-chef image (avoids reinstalling on every build)
+FROM lukemathwalker/cargo-chef:latest-rust-bookworm AS chef
 WORKDIR /build
 
 # Planner stage - generates a recipe of dependencies
