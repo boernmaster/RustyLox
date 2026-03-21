@@ -12,7 +12,7 @@ services:
     container_name: rustylox
     restart: unless-stopped
     ports:
-      - "8080:8080"       # Web API
+      - "80:80"           # Web UI / API
       - "11884:11884/udp" # MQTT UDP input
     volumes:
       - ./volumes/config:/opt/loxberry/config
@@ -22,7 +22,6 @@ services:
     environment:
       - RUST_LOG=debug
       - LBHOMEDIR=/opt/loxberry
-      - BIND_ADDR=0.0.0.0:8080
       - MQTT_BROKER=mosquitto
       - MQTT_PORT=1883
     depends_on:
