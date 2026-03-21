@@ -33,6 +33,13 @@
                 </ul>
             </li>
             <li class="nav-group">
+                <a class="nav-group-label" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
                 <a class="nav-group-label" href="/plugins">Plugins</a>
                 <ul class="nav-dropdown">
                     <li><a href="/plugins">Installed</a></li>
@@ -123,6 +130,14 @@
                                {% if let Some(ms) = miniserver %}{% if ms.useclouddns %}checked{% endif %}{% endif %}>
                         Use CloudDNS
                     </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="udpport">UDP Port (MQTT Gateway)</label>
+                    <input type="number" id="udpport" name="udpport"
+                           value="{% if let Some(ms) = miniserver %}{{ ms.udpport.as_deref().unwrap_or("") }}{% endif %}"
+                           min="1" max="65535" placeholder="e.g., 11883">
+                    <small>Optional: send MQTT data via UDP to this Miniserver port (same format as old LoxBerry MQTT Gateway)</small>
                 </div>
 
                 <div class="form-actions">

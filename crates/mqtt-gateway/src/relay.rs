@@ -3,7 +3,7 @@
 use crate::stats::MqttGatewayStats;
 use loxberry_config::GeneralConfig;
 use loxberry_core::{Error, Result};
-use miniserver_client::MiniserverClient;
+use miniserver_client::{MiniserverClient, MonitorCallback};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -15,6 +15,8 @@ pub struct Relay {
     stats: Arc<MqttGatewayStats>,
     /// Cache of Miniserver clients (by Miniserver ID)
     clients: RwLock<HashMap<String, Arc<MiniserverClient>>>,
+    /// Optional monitor callback to attach to newly created clients
+    monitor_callback: RwLock<Option<MonitorCallback>>,
 }
 
 impl Relay {
@@ -24,7 +26,13 @@ impl Relay {
             config,
             stats,
             clients: RwLock::new(HashMap::new()),
+            monitor_callback: RwLock::new(None),
         }
+    }
+
+    /// Set monitor callback so outbound Miniserver calls appear in the monitor UI
+    pub async fn set_monitor_callback(&self, callback: MonitorCallback) {
+        *self.monitor_callback.write().await = Some(callback);
     }
 
     /// Get or create a Miniserver client for the given ID
@@ -42,9 +50,18 @@ impl Relay {
         let ms_config = config
             .miniserver
             .get(ms_id)
-            .ok_or_else(|| Error::miniserver(format!("Miniserver '{}' not found", ms_id)))?;
+            .ok_or_else(|| Error::miniserver(format!("Miniserver '{}' not found", ms_id)))?
+            .clone();
+        drop(config);
 
-        let client = Arc::new(MiniserverClient::new(ms_config.clone())?);
+        let mut client = MiniserverClient::new(ms_config.clone())?;
+
+        // Attach monitor callback so sends appear in the monitor UI
+        if let Some(callback) = self.monitor_callback.read().await.as_ref() {
+            client.http_mut().set_monitor_callback(callback.clone());
+        }
+
+        let client = Arc::new(client);
 
         // Cache the client
         let mut clients = self.clients.write().await;
@@ -120,8 +137,7 @@ impl Relay {
             }
         };
 
-        // Map topic to virtual input parameter
-        // Replace slashes with underscores to create a valid parameter name
+        // Map topic to virtual input parameter name (slashes -> underscores) for HTTP
         let param_name = topic.replace('/', "_");
 
         // Send to Miniserver via HTTP
@@ -146,12 +162,40 @@ impl Relay {
                         );
                     }
                 }
-                Ok(())
             }
             Err(e) => {
-                error!("Failed to send to Miniserver {}: {}", ms_id, e);
-                Err(e)
+                error!("Failed to send to Miniserver {} via HTTP: {}", ms_id, e);
+                return Err(e);
             }
         }
+
+        // Also send via UDP if udpport is configured (old LoxBerry MQTT Gateway format)
+        let udp_target = {
+            let config = self.config.read().await;
+            config.miniserver.get(&ms_id).and_then(|ms| {
+                ms.udpport
+                    .as_ref()
+                    .and_then(|p| p.parse::<u16>().ok())
+                    .map(|port| (ms.ipaddress.clone(), port))
+            })
+        };
+
+        if let Some((ip, port)) = udp_target {
+            // Format: "MQTT: topic=value" — matches old LoxBerry MQTT Gateway UDP format
+            let msg = format!("MQTT: {}={}", topic, value);
+            let target = format!("{}:{}", ip, port);
+            match tokio::net::UdpSocket::bind("0.0.0.0:0").await {
+                Ok(socket) => {
+                    if let Err(e) = socket.send_to(msg.as_bytes(), &target).await {
+                        warn!("UDP send to {} failed: {}", target, e);
+                    } else {
+                        debug!("UDP sent to {}: {}", target, msg);
+                    }
+                }
+                Err(e) => warn!("Failed to bind UDP socket: {}", e),
+            }
+        }
+
+        Ok(())
     }
 }

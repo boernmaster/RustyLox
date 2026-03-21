@@ -106,6 +106,7 @@ pub struct MiniserverForm {
     pub admin: String,
     pub pass: String,
     pub useclouddns: bool,
+    pub udpport: Option<String>,
 }
 
 /// Plugin list template

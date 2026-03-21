@@ -89,11 +89,12 @@ impl RebootDetector {
 
     /// Query the /dev/lan/txp endpoint
     async fn query_txp(&self) -> Result<String> {
-        let url = format!("{}/dev/lan/txp", self.config.build_uri());
+        let url = format!("{}/dev/lan/txp", self.config.build_base_url());
 
         let response = self
             .client
             .get(&url)
+            .basic_auth(&self.config.admin_raw, Some(&self.config.pass_raw))
             .send()
             .await
             .map_err(|e| Error::network(format!("TXP query failed: {}", e)))?;

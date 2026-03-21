@@ -18,12 +18,30 @@ use web_api::AppState;
 
 /// List all Miniservers
 pub async fn list(State(state): State<AppState>) -> Html<String> {
-    let config = state.config.read().await;
+    // Collect all miniserver data first, then release the config lock before
+    // performing any async connectivity checks. Holding the read lock across
+    // get_miniserver_client (which also acquires a read lock) can deadlock
+    // under tokio's write-preferring RwLock when a concurrent writer is waiting.
+    let ms_entries: Vec<(String, String, String, String)> = {
+        let config = state.config.read().await;
+        config
+            .miniserver
+            .iter()
+            .map(|(id, ms)| {
+                (
+                    id.clone(),
+                    ms.name.clone(),
+                    ms.ipaddress.clone(),
+                    ms.port.clone(),
+                )
+            })
+            .collect()
+    };
 
     let mut miniservers = Vec::new();
 
-    for (id, ms) in &config.miniserver {
-        // Check actual connectivity
+    for (id, name, ipaddress, port) in ms_entries {
+        // Check actual connectivity (config lock is NOT held here)
         let connected = if let Ok(id_num) = id.parse::<u8>() {
             if let Ok(client) = state.get_miniserver_client(id_num).await {
                 client.http().call("/dev/lan/txp").await.is_ok()
@@ -35,10 +53,10 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
         };
 
         miniservers.push(MiniserverDisplay {
-            id: id.clone(),
-            name: ms.name.clone(),
-            ipaddress: ms.ipaddress.clone(),
-            port: ms.port.clone(),
+            id,
+            name,
+            ipaddress,
+            port,
             connected,
         });
     }
@@ -78,6 +96,7 @@ pub struct MiniserverFormData {
     pub admin: String,
     pub pass: String,
     pub useclouddns: Option<String>,
+    pub udpport: Option<String>,
 }
 
 /// Submit add Miniserver
@@ -113,6 +132,7 @@ pub async fn add_submit(
         credentials_raw: credentials_raw.clone(),
         transport: transport.clone(),
         useclouddns: useclouddns.clone(),
+        udpport: form.udpport.as_ref().filter(|p| !p.is_empty()).cloned(),
         fulluri: format!(
             "{}://{}@{}:{}",
             transport, credentials_raw, form.ipaddress, port
@@ -164,6 +184,7 @@ pub async fn edit_form(State(state): State<AppState>, Path(id): Path<String>) ->
         admin: ms.admin.clone(),
         pass: ms.pass.clone(),
         useclouddns: ms.useclouddns == "1",
+        udpport: ms.udpport.clone(),
     });
 
     let template = MiniserverEditTemplate {
@@ -212,6 +233,7 @@ pub async fn edit_submit(
         credentials_raw: credentials_raw.clone(),
         transport: transport.clone(),
         useclouddns: useclouddns.clone(),
+        udpport: form.udpport.as_ref().filter(|p| !p.is_empty()).cloned(),
         fulluri: format!(
             "{}://{}@{}:{}",
             transport, credentials_raw, form.ipaddress, port

@@ -352,6 +352,11 @@ impl MqttGateway {
     pub fn subscribe_messages(&self) -> broadcast::Receiver<GatewayMessage> {
         self.message_tx.subscribe()
     }
+
+    /// Attach a monitor callback so Miniserver sends made by the relay appear in the monitor UI
+    pub async fn set_miniserver_monitor(&self, callback: miniserver_client::MonitorCallback) {
+        self.relay.set_monitor_callback(callback).await;
+    }
 }
 
 /// Gateway status information

@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 /// User role
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum Role {
     Admin,
     Operator,
@@ -43,7 +43,7 @@ impl std::fmt::Display for Role {
 
 /// Protected resource
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum Resource {
     Miniserver,
     MqttGateway,
@@ -214,7 +214,9 @@ impl AuthIdentity {
         // API key identities are constrained to their declared permissions
         // (still bounded by the user's roles)
         if let IdentityKind::ApiKey(_, permissions) = &self.kind {
-            return permissions.iter().any(|(r, a)| r == resource && a == action)
+            return permissions
+                .iter()
+                .any(|(r, a)| r == resource && a == action)
                 && self.roles.iter().any(|r| r.can(resource, action));
         }
         self.roles.iter().any(|r| r.can(resource, action))

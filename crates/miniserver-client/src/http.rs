@@ -65,7 +65,7 @@ impl MiniserverHttpClient {
     pub fn new(config: MiniserverConfig) -> Result<Self> {
         // Build HTTP client with SSL verification disabled (for self-signed certs)
         let client = ClientBuilder::new()
-            .timeout(Duration::from_secs(1))
+            .timeout(Duration::from_secs(5))
             .danger_accept_invalid_certs(true) // Accept self-signed certificates
             .danger_accept_invalid_hostnames(true)
             .build()
@@ -287,6 +287,7 @@ impl MiniserverHttpClient {
         let response = self
             .client
             .get(&url)
+            .basic_auth(&self.config.admin_raw, Some(&self.config.pass_raw))
             .send()
             .await
             .map_err(|e| Error::network(format!("HTTP request failed: {}", e)))?;
@@ -309,10 +310,9 @@ impl MiniserverHttpClient {
         Ok((value, code, body))
     }
 
-    /// Build full URL with credentials
+    /// Build URL without credentials (credentials are sent via basic_auth)
     fn build_url(&self, command: &str) -> String {
-        let base_uri = self.config.build_uri();
-        format!("{}{}", base_uri, command)
+        format!("{}{}", self.config.build_base_url(), command)
     }
 
     /// Parse XML response from Miniserver

@@ -11,9 +11,12 @@ path = "src/main.rs"
 auth = { path = "../auth" }
 loxberry-core = { path = "../loxberry-core" }
 loxberry-config = { path = "../loxberry-config" }
+miniserver-client = { path = "../miniserver-client" }
 mqtt-gateway = { path = "../mqtt-gateway" }
 web-api = { path = "../web-api" }
 web-ui = { path = "../web-ui" }
+
+chrono = "0.4"
 
 anyhow = { workspace = true }
 tracing = { workspace = true }

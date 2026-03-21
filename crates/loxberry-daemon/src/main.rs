@@ -11,7 +11,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use web_api::{create_router, weather::WeatherService, AppState};
+use web_api::{create_router, weather::WeatherService, AppState, MiniserverEvent};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -123,6 +123,27 @@ async fn main() -> Result<()> {
     .with_auth(auth_service)
     .with_weather(Arc::clone(&weather_service));
 
+    // Wire MQTT gateway relay to the miniserver monitor so outbound sends appear in the UI
+    if let Some(gw) = &state.mqtt_gateway {
+        let tx = state.miniserver_monitor.clone();
+        let callback: miniserver_client::MonitorCallback =
+            std::sync::Arc::new(move |event: miniserver_client::MonitorEvent| {
+                let _ = tx.send(MiniserverEvent {
+                    miniserver_id: 0,
+                    miniserver_name: "MQTT Gateway".to_string(),
+                    direction: event.direction,
+                    protocol: event.protocol,
+                    url: event.url,
+                    params: event.params,
+                    response: event.response,
+                    code: event.code,
+                    error: event.error,
+                    timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                });
+            });
+        gw.set_miniserver_monitor(callback).await;
+    }
+
     // Create API router
     let api_router = create_router(state.clone());
 
@@ -145,7 +166,8 @@ async fn main() -> Result<()> {
     match tokio::net::TcpListener::bind(emu_addr).await {
         Ok(emu_listener) => {
             info!("Loxone Cloud Emulator listening on port 6066");
-            let app_emu = create_router(state.clone()).merge(web_ui::create_ui_router(state.clone()));
+            let app_emu =
+                create_router(state.clone()).merge(web_ui::create_ui_router(state.clone()));
             tokio::spawn(async move {
                 if let Err(e) = axum::serve(emu_listener, app_emu).await {
                     error!("Port 6066 server error: {}", e);
@@ -153,7 +175,10 @@ async fn main() -> Result<()> {
             });
         }
         Err(e) => {
-            warn!("Could not bind port 6066 (Loxone EMU): {} – feature disabled", e);
+            warn!(
+                "Could not bind port 6066 (Loxone EMU): {} – feature disabled",
+                e
+            );
         }
     }
 

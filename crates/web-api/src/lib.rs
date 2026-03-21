@@ -5,7 +5,7 @@ pub mod routes;
 pub mod state;
 pub mod weather;
 
-pub use state::AppState;
+pub use state::{AppState, MiniserverEvent};
 
 use axum::{
     middleware as axum_middleware,

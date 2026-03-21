@@ -67,6 +67,9 @@ pub struct MiniserverConfig {
 
     #[serde(rename = "Useclouddns")]
     pub useclouddns: String,
+
+    #[serde(rename = "Udpport")]
+    pub udpport: Option<String>,
 }
 
 impl MiniserverConfig {
@@ -92,7 +95,21 @@ impl MiniserverConfig {
         }
     }
 
-    /// Build the full URI with credentials
+    /// Build the base URL without credentials (safe for use with reqwest basic_auth)
+    pub fn build_base_url(&self) -> String {
+        format!(
+            "{}://{}:{}",
+            self.transport,
+            self.ipaddress,
+            self.effective_port()
+        )
+    }
+
+    /// Build the full URI with credentials embedded in the URL.
+    ///
+    /// WARNING: Only use this when the credentials are guaranteed to contain no
+    /// URL-special characters (e.g. `#`, `&`, `?`). Prefer `build_base_url()`
+    /// combined with reqwest's `.basic_auth()` for production HTTP requests.
     pub fn build_uri(&self) -> String {
         if !self.credentials_raw.is_empty() && self.credentials_raw != ":" {
             format!(
@@ -103,12 +120,7 @@ impl MiniserverConfig {
                 self.effective_port()
             )
         } else {
-            format!(
-                "{}://{}:{}",
-                self.transport,
-                self.ipaddress,
-                self.effective_port()
-            )
+            self.build_base_url()
         }
     }
 }
@@ -137,6 +149,7 @@ impl Default for MiniserverConfig {
             securegateway: String::new(),
             transport: "http".to_string(),
             useclouddns: "0".to_string(),
+            udpport: None,
         }
     }
 }
