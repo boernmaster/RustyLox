@@ -140,7 +140,7 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest
 
-      - name: Build and push Docker image (amd64)
+      - name: Build and push multi-platform Docker image
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -149,7 +149,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
 
   security-scan:
     name: Security Scan
