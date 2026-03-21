@@ -44,7 +44,7 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
                 let install_date = p
                     .install_timestamp
                     .map(|ts| {
-                        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+                        use std::time::{Duration, UNIX_EPOCH};
                         let d = UNIX_EPOCH + Duration::from_secs(ts);
                         format!("{:?}", d) // Simple formatting
                     })
@@ -207,7 +207,7 @@ pub async fn details(State(state): State<AppState>, Path(md5): Path<String>) -> 
             let install_date = p
                 .install_timestamp
                 .map(|ts| {
-                    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+                    use std::time::{Duration, UNIX_EPOCH};
                     let d = UNIX_EPOCH + Duration::from_secs(ts);
                     format!("{:?}", d)
                 })

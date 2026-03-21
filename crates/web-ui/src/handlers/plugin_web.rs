@@ -6,12 +6,12 @@
 
 use axum::{
     body::Body,
-    extract::{Path, Query, State},
-    http::{header, HeaderMap, Method, StatusCode, Uri},
+    extract::{Path, State},
+    http::{header, HeaderMap, StatusCode, Uri},
     response::{IntoResponse, Response},
 };
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::process::Command;
 use tracing::{debug, error, warn};
 use web_api::AppState;
@@ -278,6 +278,8 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         .arg("-d")
         .arg(format!("auto_prepend_file={}", bootstrap))
         .arg(path)
+        // Run from script's directory so relative includes (e.g. "./phpMQTT/...") work
+        .current_dir(path.parent().unwrap_or(path))
         // LoxBerry environment
         .env("LBHOMEDIR", "/opt/loxberry")
         .env("LBPPLUGINDIR", plugin_name)
@@ -455,7 +457,7 @@ fn find_header_separator(data: &[u8]) -> Option<(usize, usize)> {
 }
 
 /// Lexical path safety check - ensures the resolved path is within the base directory
-fn resolve_safe_path(base: &PathBuf, path: &PathBuf) -> Option<PathBuf> {
+fn resolve_safe_path(base: &PathBuf, path: &Path) -> Option<PathBuf> {
     let mut normalized = PathBuf::new();
     for component in path.components() {
         use std::path::Component;
