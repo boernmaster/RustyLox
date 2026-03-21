@@ -153,10 +153,21 @@ async fn main() -> Result<()> {
     // Merge routers - UI router serves the root, API router handles /api/*
     let app = ui_router.merge(api_router);
 
-    // Get bind address from environment or use default
+    // Get bind address from environment or use default (0.0.0.0 = all interfaces)
     let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
 
-    info!("Starting web server on http://{}", bind_addr);
+    // Extract the port so we can build a human-readable LAN URL
+    let port = bind_addr.rsplit(':').next().unwrap_or("8080").to_string();
+
+    // Detect LAN IP by connecting a UDP socket (no packet is actually sent)
+    let lan_ip = std::net::UdpSocket::bind("0.0.0.0:0")
+        .ok()
+        .and_then(|s| {
+            s.connect("8.8.8.8:80").ok()?;
+            s.local_addr().ok()
+        })
+        .map(|a| a.ip().to_string())
+        .unwrap_or_else(|| "127.0.0.1".to_string());
 
     // Start main server
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
@@ -183,8 +194,9 @@ async fn main() -> Result<()> {
     }
 
     info!("LoxBerry Daemon is running!");
-    info!("API available at: http://{}", bind_addr);
-    info!("Health check: http://{}/health", bind_addr);
+    info!("Local:   http://localhost:{}", port);
+    info!("Network: http://{}:{}", lan_ip, port);
+    info!("Health:  http://{}:{}/health", lan_ip, port);
 
     axum::serve(listener, app).await?;
 
