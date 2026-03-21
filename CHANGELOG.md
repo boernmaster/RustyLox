@@ -7,8 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Ongoing improvements and bug fixes
+## [0.6.11] - 2026-03-22
+
+### Added
+- Log LAN IP address at startup so network address is discoverable
+- Bind web server port from config (default 80)
+
+### Fixed
+- PHP 8 compatibility and plugin web CWD for Vitoconnect
+- Web UI fetch error handling and API response mismatches
+- Port reverted to 8080 after incorrect config-based change
+
+### Performance
+- CI: remove redundant `cargo build` step after `cargo clippy` (clippy already compiles)
+- Dockerfile: switch to prebuilt `lukemathwalker/cargo-chef` image (~2-3 min saved per build)
+
+### Chore
+- Multiple clippy warning fixes across crates (useless_format, redundant_closure,
+  io_other_error, dead_code, unused_imports, ptr_arg, for_kv_map, if_same_then_else,
+  manual_range_contains, unused_variables)
+- Re-enabled arm64 Docker image builds
 
 ## [1.3.0] - 2026-03-17
 
