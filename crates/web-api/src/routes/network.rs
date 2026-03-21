@@ -88,7 +88,7 @@ pub async fn ping_host(
 /// GET /api/network/interfaces
 pub async fn list_interfaces(State(_state): State<AppState>) -> impl IntoResponse {
     let interfaces = get_network_interfaces().await;
-    Json(serde_json::json!({ "interfaces": interfaces }))
+    Json(serde_json::to_value(interfaces).unwrap_or_default())
 }
 
 /// Test TCP connection to host:port

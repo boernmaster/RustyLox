@@ -298,8 +298,5 @@ pub async fn run_task(
 pub async fn get_history(State(state): State<AppState>) -> impl IntoResponse {
     let scheduler = TaskScheduler::new(&state.lbhomedir);
     let history = scheduler.get_recent_history(50).await;
-    Json(serde_json::json!({
-        "history": history,
-        "count": history.len()
-    }))
+    Json(serde_json::to_value(history).unwrap_or_default())
 }

@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/app.js"></script>
     <style>
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal-overlay.open { display: flex; }
@@ -176,11 +177,11 @@
     }
 
     function loadUsers() {
-        fetch('/api/users')
-            .then(r => r.json())
+        apiFetch('/api/users')
             .then(users => {
+                if (!Array.isArray(users)) throw new TypeError('Unexpected response format');
                 const tbody = document.getElementById('users-tbody');
-                if (!users || users.length === 0) {
+                if (users.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center;">No users found.</td></tr>';
                     return;
                 }

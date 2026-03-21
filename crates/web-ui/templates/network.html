@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/app.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -187,20 +188,21 @@
     }
 
     function loadInterfaces() {
-        fetch('/api/network/interfaces')
-            .then(r => r.json())
+        apiFetch('/api/network/interfaces')
             .then(ifaces => {
+                if (!Array.isArray(ifaces)) throw new TypeError('Unexpected response format');
                 const el = document.getElementById('interfaces-list');
-                if (!ifaces || ifaces.length === 0) {
+                if (ifaces.length === 0) {
                     el.innerHTML = '<em>No interfaces found.</em>';
                     return;
                 }
                 el.innerHTML = ifaces.map(iface => `
                     <div style="padding: 10px; border-bottom: 1px solid #dee2e6; display: flex; gap: 20px;">
                         <strong style="min-width: 120px;">${escHtml(iface.name)}</strong>
-                        <span>${iface.addresses.map(a => escHtml(a)).join(', ') || '<em>no address</em>'}</span>
+                        <span>${(iface.ip_addresses || []).map(a => escHtml(a)).join(', ') || '<em>no address</em>'}</span>
                         <span style="color: #666; font-size: 0.9em;">
-                            ↑ ${formatBytes(iface.bytes_sent)} / ↓ ${formatBytes(iface.bytes_recv)}
+                            ${iface.mac_address ? escHtml(iface.mac_address) : ''} &nbsp;
+                            ${iface.is_up ? '<span style="color:#198754;">up</span>' : '<span style="color:#dc3545;">down</span>'}
                         </span>
                     </div>
                 `).join('');
@@ -233,13 +235,7 @@
         .catch(e => { el.innerHTML = `<div class='alert alert-danger'>${e}</div>`; });
     }
 
-    function formatBytes(b) {
-        if (b == null) return '-';
-        if (b < 1024) return b + ' B';
-        if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
-        if (b < 1073741824) return (b / 1048576).toFixed(1) + ' MB';
-        return (b / 1073741824).toFixed(2) + ' GB';
-    }
+
 
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

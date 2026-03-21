@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/app.js"></script>
     <style>
         .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
         .badge-login { background: #d4edda; color: #155724; }
@@ -165,11 +166,11 @@
         if (action) params.set('action', action);
         if (user) params.set('username', user);
 
-        fetch('/api/auth/audit?' + params.toString())
-            .then(r => r.json())
+        apiFetch('/api/auth/audit?' + params.toString())
             .then(entries => {
+                if (!Array.isArray(entries)) throw new TypeError('Unexpected response format');
                 const tbody = document.getElementById('audit-tbody');
-                if (!entries || entries.length === 0) {
+                if (entries.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center;">No audit entries found.</td></tr>';
                     return;
                 }

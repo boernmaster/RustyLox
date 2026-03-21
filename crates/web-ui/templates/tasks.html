@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/app.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -164,12 +165,12 @@
     let allTasks = [];
 
     function loadTasks() {
-        fetch('/api/tasks')
-            .then(r => r.json())
+        apiFetch('/api/tasks')
             .then(tasks => {
+                if (!Array.isArray(tasks)) throw new TypeError('Unexpected response format');
                 allTasks = tasks;
                 const tbody = document.getElementById('tasks-tbody');
-                if (!tasks || tasks.length === 0) {
+                if (tasks.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center;">No tasks configured.</td></tr>';
                     return;
                 }
@@ -201,11 +202,11 @@
     }
 
     function loadHistory() {
-        fetch('/api/tasks/history')
-            .then(r => r.json())
+        apiFetch('/api/tasks/history')
             .then(history => {
+                if (!Array.isArray(history)) throw new TypeError('Unexpected response format');
                 const tbody = document.getElementById('history-tbody');
-                if (!history || history.length === 0) {
+                if (history.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center;">No history yet.</td></tr>';
                     return;
                 }
