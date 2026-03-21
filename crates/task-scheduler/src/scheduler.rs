@@ -14,7 +14,6 @@ const MAX_HISTORY: usize = 100;
 
 /// The task scheduler
 pub struct TaskScheduler {
-    lbhomedir: PathBuf,
     config_manager: ScheduledTasksConfigManager,
     executor: TaskExecutor,
     /// Recent execution history (in-memory, last MAX_HISTORY entries)
@@ -28,7 +27,6 @@ impl TaskScheduler {
         Self {
             config_manager: ScheduledTasksConfigManager::new(&lbhomedir),
             executor: TaskExecutor::new(&lbhomedir),
-            lbhomedir,
             history: Arc::new(RwLock::new(VecDeque::new())),
         }
     }
