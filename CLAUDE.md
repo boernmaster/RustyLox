@@ -664,6 +664,14 @@ cargo test
 docker compose build
 ```
 
+### Before Tagging a Release
+
+**ALWAYS write release notes before creating a version tag.**
+
+1. Update `CHANGELOG.md` with a summary of changes grouped by type (`feat`, `fix`, `perf`, etc.)
+2. Commit the changelog update
+3. Then create and push the tag
+
 ### Pull Request Process
 
 1. Create feature branch
