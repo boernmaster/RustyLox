@@ -58,11 +58,22 @@ RUN apt-get update && apt-get install -y \
     perl \
     php-cli \
     php-cgi \
+    php-curl \
+    php-sqlite3 \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
 # Create loxberry user
 RUN useradd -m -u 1000 loxberry
+
+# Create /run/shm as symlink to /dev/shm (plugin compatibility, matches Raspberry Pi)
+RUN ln -s /dev/shm /run/shm
+
+# Configure PHP CLI to include LoxBerry SDK libs and auto-prepend bootstrap
+# This ensures plugins calling shell_exec("php ...") also find the SDK
+RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
+    echo "include_path = \".:/opt/loxberry/libs/phplib:/usr/share/php\"" > /etc/php/${PHP_VER}/cli/conf.d/99-loxberry.ini && \
+    echo "auto_prepend_file = /opt/loxberry/libs/phplib/loxberry_bootstrap.php" >> /etc/php/${PHP_VER}/cli/conf.d/99-loxberry.ini
 
 # Set up directory structure
 WORKDIR /opt/loxberry

@@ -519,7 +519,7 @@ class LBSystem
 				'PLUGINDB_VERSION' => $plugindata->version,
 				'PLUGINDB_NAME' => $plugindata->name,
 				'PLUGINDB_FOLDER' => $plugindata->folder,
-				'PLUGINDB_TITLE' => $plugindata->title,
+				'PLUGINDB_TITLE' => is_object($plugindata->title) ? (isset($plugindata->title->en) ? $plugindata->title->en : $plugindata->name) : $plugindata->title,
 				'PLUGINDB_INTERFACE' => isset($plugindata->interface) ? $plugindata->interface : null,
 				'PLUGINDB_AUTOUPDATE' => isset($plugindata->autoupdate) ? $plugindata->autoupdate : null,
 				'PLUGINDB_RELEASECFG' => isset($plugindata->releasecfg) ? $plugindata->releasecfg : null,
