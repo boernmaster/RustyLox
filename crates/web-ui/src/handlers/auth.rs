@@ -42,10 +42,7 @@ pub async fn show_login(
 }
 
 /// POST /login - handle login form submission
-pub async fn handle_login(
-    State(state): State<AppState>,
-    Form(creds): Form<LoginForm>,
-) -> Response {
+pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<LoginForm>) -> Response {
     // If auth service is not configured, redirect to dashboard
     let Some(auth_service) = &state.auth_service else {
         return Redirect::to("/").into_response();

@@ -92,10 +92,7 @@ pub async fn config_submit(
         longitude: form.longitude.parse().unwrap_or(0.0),
         location_name: form.location_name.clone(),
         elevation: form.elevation.parse().unwrap_or(0.0),
-        update_interval_minutes: form
-            .update_interval_minutes
-            .parse()
-            .unwrap_or(15),
+        update_interval_minutes: form.update_interval_minutes.parse().unwrap_or(15),
         metric: form.metric.as_deref() == Some("on"),
         push_udp: form.push_udp.as_deref() == Some("on"),
         miniserver_key: form.miniserver_key.clone(),
@@ -139,9 +136,9 @@ pub async fn config_submit(
 /// POST /weather/refresh – trigger immediate data refresh
 pub async fn refresh(State(state): State<AppState>) -> Html<String> {
     match &state.weather_service {
-        None => Html(
-            "<div class='alert alert-danger'>Weather service not available.</div>".to_string(),
-        ),
+        None => {
+            Html("<div class='alert alert-danger'>Weather service not available.</div>".to_string())
+        }
         Some(svc) => match svc.refresh().await {
             Ok(()) => Html(
                 "<div class='alert alert-success'>Weather data refreshed successfully.</div>"

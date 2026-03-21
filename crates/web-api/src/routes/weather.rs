@@ -55,7 +55,11 @@ pub async fn status(State(state): State<AppState>) -> impl IntoResponse {
 /// GET /api/weather/current – current weather observation
 pub async fn current(State(state): State<AppState>) -> Response {
     match &state.weather_service {
-        None => (StatusCode::SERVICE_UNAVAILABLE, "Weather service not initialised").into_response(),
+        None => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Weather service not initialised",
+        )
+            .into_response(),
         Some(svc) => {
             let data = svc.data.read().await;
             match data.as_ref() {
@@ -69,7 +73,11 @@ pub async fn current(State(state): State<AppState>) -> Response {
 /// GET /api/weather/forecast – 7-day daily forecast
 pub async fn forecast(State(state): State<AppState>) -> Response {
     match &state.weather_service {
-        None => (StatusCode::SERVICE_UNAVAILABLE, "Weather service not initialised").into_response(),
+        None => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Weather service not initialised",
+        )
+            .into_response(),
         Some(svc) => {
             let data = svc.data.read().await;
             match data.as_ref() {
@@ -83,7 +91,11 @@ pub async fn forecast(State(state): State<AppState>) -> Response {
 /// GET /api/weather/hourly – 168-hour hourly forecast
 pub async fn hourly(State(state): State<AppState>) -> Response {
     match &state.weather_service {
-        None => (StatusCode::SERVICE_UNAVAILABLE, "Weather service not initialised").into_response(),
+        None => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Weather service not initialised",
+        )
+            .into_response(),
         Some(svc) => {
             let data = svc.data.read().await;
             match data.as_ref() {
@@ -97,7 +109,11 @@ pub async fn hourly(State(state): State<AppState>) -> Response {
 /// GET /api/weather/all – complete weather dataset
 pub async fn all(State(state): State<AppState>) -> Response {
     match &state.weather_service {
-        None => (StatusCode::SERVICE_UNAVAILABLE, "Weather service not initialised").into_response(),
+        None => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Weather service not initialised",
+        )
+            .into_response(),
         Some(svc) => {
             let data = svc.data.read().await;
             match data.as_ref() {
@@ -156,7 +172,11 @@ pub async fn update_config(
 /// POST /api/weather/refresh – trigger an immediate refresh
 pub async fn refresh(State(state): State<AppState>) -> Response {
     match &state.weather_service {
-        None => (StatusCode::SERVICE_UNAVAILABLE, "Weather service not initialised").into_response(),
+        None => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Weather service not initialised",
+        )
+            .into_response(),
         Some(svc) => match svc.refresh().await {
             Ok(()) => (StatusCode::OK, "Weather data refreshed").into_response(),
             Err(e) => (StatusCode::BAD_GATEWAY, format!("Refresh failed: {}", e)).into_response(),

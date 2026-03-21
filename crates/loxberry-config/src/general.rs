@@ -76,7 +76,10 @@ pub struct WeatherConfig {
     pub elevation: f64,
 
     /// How often to refresh weather data (minutes, default 15)
-    #[serde(rename = "UpdateIntervalMinutes", default = "WeatherConfig::default_interval")]
+    #[serde(
+        rename = "UpdateIntervalMinutes",
+        default = "WeatherConfig::default_interval"
+    )]
     pub update_interval_minutes: u32,
 
     /// true = metric (°C, km/h, mm), false = imperial (°F, mph, in)
@@ -93,7 +96,10 @@ pub struct WeatherConfig {
     pub miniserver_key: String,
 
     /// UDP port on the Miniserver that receives virtual inputs (default 7044)
-    #[serde(rename = "MiniserverUdpPort", default = "WeatherConfig::default_udp_port")]
+    #[serde(
+        rename = "MiniserverUdpPort",
+        default = "WeatherConfig::default_udp_port"
+    )]
     pub miniserver_udp_port: u16,
 
     // ── Loxone Cloud Emulator ──────────────────────────────────────────────
@@ -122,11 +128,21 @@ pub struct WeatherConfig {
 }
 
 impl WeatherConfig {
-    fn default_interval() -> u32 { 15 }
-    fn default_true() -> bool { true }
-    fn default_ms_key() -> String { "1".to_string() }
-    fn default_udp_port() -> u16 { 7044 }
-    fn default_mqtt_topic() -> String { "weather".to_string() }
+    fn default_interval() -> u32 {
+        15
+    }
+    fn default_true() -> bool {
+        true
+    }
+    fn default_ms_key() -> String {
+        "1".to_string()
+    }
+    fn default_udp_port() -> u16 {
+        7044
+    }
+    fn default_mqtt_topic() -> String {
+        "weather".to_string()
+    }
 }
 
 impl Default for WeatherConfig {

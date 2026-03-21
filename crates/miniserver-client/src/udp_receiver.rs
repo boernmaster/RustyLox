@@ -57,9 +57,12 @@ impl MiniserverUdpReceiver {
     /// Spawn the listener task.  Returns immediately; the background task
     /// runs until the process exits or the socket is closed.
     pub async fn spawn(self) -> Result<()> {
-        let socket = UdpSocket::bind(self.bind_addr)
-            .await
-            .map_err(|e| Error::network(format!("UDP receiver bind failed on {}: {}", self.bind_addr, e)))?;
+        let socket = UdpSocket::bind(self.bind_addr).await.map_err(|e| {
+            Error::network(format!(
+                "UDP receiver bind failed on {}: {}",
+                self.bind_addr, e
+            ))
+        })?;
 
         info!("Miniserver UDP receiver listening on {}", self.bind_addr);
 

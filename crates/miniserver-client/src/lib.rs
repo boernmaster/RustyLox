@@ -15,7 +15,7 @@ pub use delta_cache::DeltaCache;
 pub use http::{MiniserverHttpClient, MonitorCallback, MonitorEvent};
 pub use reboot_detector::RebootDetector;
 pub use udp::MiniserverUdpClient;
-pub use udp_receiver::{MiniserverUdpReceiver, UdpMessage, parse_udp_payload};
+pub use udp_receiver::{parse_udp_payload, MiniserverUdpReceiver, UdpMessage};
 
 use loxberry_config::MiniserverConfig;
 use loxberry_core::{Error, Result};

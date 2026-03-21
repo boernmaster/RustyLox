@@ -254,7 +254,10 @@ impl WeatherService {
         // Optional: publish to MQTT
         if cfg.send_mqtt {
             // MQTT publishing happens through the gateway; log intent here
-            info!("Weather MQTT publish would go to topic '{}'", cfg.mqtt_topic);
+            info!(
+                "Weather MQTT publish would go to topic '{}'",
+                cfg.mqtt_topic
+            );
         }
 
         // Optional: dnsmasq config
@@ -316,37 +319,17 @@ impl WeatherService {
                     temp_mean: (tmax + tmin) / 2.0,
                     weather_code: code,
                     weather_description: wmo_description(code, true),
-                    precipitation_sum: raw
-                        .daily
-                        .precipitation_sum
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0.0),
+                    precipitation_sum: raw.daily.precipitation_sum.get(i).copied().unwrap_or(0.0),
                     precipitation_probability: raw
                         .daily
                         .precipitation_probability_max
                         .get(i)
                         .copied()
                         .unwrap_or(0),
-                    wind_speed_max: raw
-                        .daily
-                        .wind_speed_10m_max
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0.0),
+                    wind_speed_max: raw.daily.wind_speed_10m_max.get(i).copied().unwrap_or(0.0),
                     uv_index_max: raw.daily.uv_index_max.get(i).copied().unwrap_or(0.0),
-                    sunrise: raw
-                        .daily
-                        .sunrise
-                        .get(i)
-                        .cloned()
-                        .unwrap_or_default(),
-                    sunset: raw
-                        .daily
-                        .sunset
-                        .get(i)
-                        .cloned()
-                        .unwrap_or_default(),
+                    sunrise: raw.daily.sunrise.get(i).cloned().unwrap_or_default(),
+                    sunset: raw.daily.sunset.get(i).cloned().unwrap_or_default(),
                     loxone_code: wmo_to_loxone(code, true),
                 }
             })
@@ -371,34 +354,22 @@ impl WeatherService {
             .map(|(i, dt)| {
                 let code = raw.hourly.weather_code.get(i).copied().unwrap_or(0);
                 // Approximate is_day from hour
-                let hour = dt.get(11..13).and_then(|h| h.parse::<u8>().ok()).unwrap_or(12);
+                let hour = dt
+                    .get(11..13)
+                    .and_then(|h| h.parse::<u8>().ok())
+                    .unwrap_or(12);
                 let is_day = hour >= 6 && hour < 21;
                 HourlyForecast {
                     datetime: dt.clone(),
-                    temperature: raw
-                        .hourly
-                        .temperature_2m
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0.0),
+                    temperature: raw.hourly.temperature_2m.get(i).copied().unwrap_or(0.0),
                     feels_like: raw
                         .hourly
                         .apparent_temperature
                         .get(i)
                         .copied()
                         .unwrap_or(0.0),
-                    humidity: raw
-                        .hourly
-                        .relative_humidity_2m
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0),
-                    precipitation: raw
-                        .hourly
-                        .precipitation
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0.0),
+                    humidity: raw.hourly.relative_humidity_2m.get(i).copied().unwrap_or(0),
+                    precipitation: raw.hourly.precipitation.get(i).copied().unwrap_or(0.0),
                     precipitation_probability: raw
                         .hourly
                         .precipitation_probability
@@ -406,30 +377,10 @@ impl WeatherService {
                         .copied()
                         .unwrap_or(0),
                     weather_code: code,
-                    wind_speed: raw
-                        .hourly
-                        .wind_speed_10m
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0.0),
-                    wind_direction: raw
-                        .hourly
-                        .wind_direction_10m
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0),
-                    wind_gusts: raw
-                        .hourly
-                        .wind_gusts_10m
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0.0),
-                    pressure: raw
-                        .hourly
-                        .surface_pressure
-                        .get(i)
-                        .copied()
-                        .unwrap_or(0.0),
+                    wind_speed: raw.hourly.wind_speed_10m.get(i).copied().unwrap_or(0.0),
+                    wind_direction: raw.hourly.wind_direction_10m.get(i).copied().unwrap_or(0),
+                    wind_gusts: raw.hourly.wind_gusts_10m.get(i).copied().unwrap_or(0.0),
+                    pressure: raw.hourly.surface_pressure.get(i).copied().unwrap_or(0.0),
                     visibility: raw.hourly.visibility.get(i).copied().unwrap_or(0.0),
                     loxone_code: wmo_to_loxone(code, is_day),
                 }
@@ -475,8 +426,7 @@ impl WeatherService {
         };
 
         let port = cfg.miniserver_udp_port;
-        let socket =
-            UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("UDP bind failed: {}", e))?;
+        let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("UDP bind failed: {}", e))?;
         socket
             .connect(format!("{}:{}", ip, port))
             .map_err(|e| format!("UDP connect failed: {}", e))?;
@@ -487,7 +437,12 @@ impl WeatherService {
             .send(payload.as_bytes())
             .map_err(|e| format!("UDP send failed: {}", e))?;
 
-        info!("Weather UDP push → {}:{} ({} bytes)", ip, port, payload.len());
+        info!(
+            "Weather UDP push → {}:{} ({} bytes)",
+            ip,
+            port,
+            payload.len()
+        );
         Ok(())
     }
 
@@ -528,7 +483,10 @@ impl WeatherService {
         out.push_str("id;name;longitude;latitude;height (m.asl.);country;timezone;utc-timedifference;sunrise;sunset;\n");
         out.push_str("local date;weekday;local time;temperature(C);feeledTemperature(C);windspeed(km/h);winddirection(degr);wind gust(km/h);low clouds(%);medium clouds(%);high clouds(%);precipitation(mm);probability of Precip(%);snowFraction;sea level pressure(hPa);relative humidity(%);CAPE;picto-code;radiation (W/m2);\n");
         out.push_str("</mb_metadata>\n");
-        out.push_str(&format!("<valid_until>{}-12-31</valid_until>\n", valid_year));
+        out.push_str(&format!(
+            "<valid_until>{}-12-31</valid_until>\n",
+            valid_year
+        ));
         out.push_str("<station>\n");
 
         // Station header line
@@ -674,25 +632,25 @@ pub fn wmo_to_loxone(code: u16, is_day: bool) -> u8 {
                 1
             }
         }
-        1 => 2,         // mainly clear
-        2 => 5,         // partly cloudy
-        3 => 10,        // overcast
-        45 | 48 => 19,  // fog
-        51 | 53 => 12,  // drizzle light/moderate
-        55 => 13,       // drizzle heavy
-        56 | 57 => 12,  // freezing drizzle
-        61 | 63 => 13,  // rain light/moderate
-        65 => 14,       // rain heavy
-        66 | 67 => 13,  // freezing rain
-        71 | 73 => 18,  // snow fall light/moderate
-        75 => 18,       // snow fall heavy
-        77 => 18,       // snow grains
-        80 | 81 => 13,  // rain showers slight/moderate
-        82 => 14,       // rain showers violent
-        85 | 86 => 18,  // snow showers
-        95 => 16,       // thunderstorm
-        96 | 99 => 15,  // thunderstorm + hail
-        _ => 7,         // unknown → cloudy
+        1 => 2,        // mainly clear
+        2 => 5,        // partly cloudy
+        3 => 10,       // overcast
+        45 | 48 => 19, // fog
+        51 | 53 => 12, // drizzle light/moderate
+        55 => 13,      // drizzle heavy
+        56 | 57 => 12, // freezing drizzle
+        61 | 63 => 13, // rain light/moderate
+        65 => 14,      // rain heavy
+        66 | 67 => 13, // freezing rain
+        71 | 73 => 18, // snow fall light/moderate
+        75 => 18,      // snow fall heavy
+        77 => 18,      // snow grains
+        80 | 81 => 13, // rain showers slight/moderate
+        82 => 14,      // rain showers violent
+        85 | 86 => 18, // snow showers
+        95 => 16,      // thunderstorm
+        96 | 99 => 15, // thunderstorm + hail
+        _ => 7,        // unknown → cloudy
     }
 }
 
@@ -734,8 +692,20 @@ pub fn wmo_description(code: u16, is_day: bool) -> String {
 /// Short icon key for the web UI.
 pub fn wmo_icon(code: u16, is_day: bool) -> String {
     let s = match code {
-        0 => if is_day { "clear-day" } else { "clear-night" },
-        1 | 2 => if is_day { "partly-cloudy-day" } else { "partly-cloudy-night" },
+        0 => {
+            if is_day {
+                "clear-day"
+            } else {
+                "clear-night"
+            }
+        }
+        1 | 2 => {
+            if is_day {
+                "partly-cloudy-day"
+            } else {
+                "partly-cloudy-night"
+            }
+        }
         3 => "cloudy",
         45 | 48 => "fog",
         51..=57 => "drizzle",
@@ -778,7 +748,8 @@ fn parse_iso_dt(s: &str) -> Option<DateTime<Utc>> {
 
 fn parse_iso_dt_naive(s: &str) -> Option<NaiveDate> {
     // "2024-03-19T14:00" → NaiveDate
-    s.get(..10).and_then(|d| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+    s.get(..10)
+        .and_then(|d| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
 }
 
 /// Extract "HH:MM" from an ISO datetime string like "2024-03-19T06:32".
