@@ -11,7 +11,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tokio::process::Command;
 use tracing::{debug, error, warn};
 use web_api::AppState;
@@ -457,7 +457,7 @@ fn find_header_separator(data: &[u8]) -> Option<(usize, usize)> {
 }
 
 /// Lexical path safety check - ensures the resolved path is within the base directory
-fn resolve_safe_path(base: &PathBuf, path: &Path) -> Option<PathBuf> {
+fn resolve_safe_path(base: &PathBuf, path: &std::path::Path) -> Option<PathBuf> {
     let mut normalized = PathBuf::new();
     for component in path.components() {
         use std::path::Component;
