@@ -626,7 +626,7 @@ fn build_udp_payload(c: &CurrentWeather) -> String {
 /// Mapping derived from weather4lox datatoloxone.pl.
 pub fn wmo_to_loxone(code: u16, is_day: bool) -> u8 {
     match code {
-        0 => 1, // wolkenlos / clear sky
+        0 => 1,        // wolkenlos / clear sky
         1 => 2,        // mainly clear
         2 => 5,        // partly cloudy
         3 => 10,       // overcast
