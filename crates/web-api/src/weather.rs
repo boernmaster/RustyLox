@@ -624,7 +624,7 @@ fn build_udp_payload(c: &CurrentWeather) -> String {
 /// Convert WMO weather code to Loxone picto code (1-25).
 ///
 /// Mapping derived from weather4lox datatoloxone.pl.
-pub fn wmo_to_loxone(code: u16, is_day: bool) -> u8 {
+pub fn wmo_to_loxone(code: u16, _is_day: bool) -> u8 {
     match code {
         0 => 1,        // wolkenlos / clear sky
         1 => 2,        // mainly clear
