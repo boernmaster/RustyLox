@@ -153,18 +153,11 @@ async fn main() -> Result<()> {
     // Merge routers - UI router serves the root, API router handles /api/*
     let app = ui_router.merge(api_router);
 
-    // Determine bind port: BIND_ADDR env > Webserver.Port from config > 80
-    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| {
-        let port = config
-            .try_read()
-            .ok()
-            .and_then(|c| c.webserver.port.parse::<u16>().ok())
-            .unwrap_or(80);
-        format!("0.0.0.0:{}", port)
-    });
+    // Get bind address from environment or use default (0.0.0.0 = all interfaces)
+    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
 
     // Extract the port so we can build a human-readable LAN URL
-    let port = bind_addr.rsplit(':').next().unwrap_or("80").to_string();
+    let port = bind_addr.rsplit(':').next().unwrap_or("8080").to_string();
 
     // Detect LAN IP by connecting a UDP socket (no packet is actually sent)
     let lan_ip = std::net::UdpSocket::bind("0.0.0.0:0")
