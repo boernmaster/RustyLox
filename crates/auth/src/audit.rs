@@ -94,8 +94,7 @@ impl AuditLogger {
             tokio::fs::create_dir_all(parent).await?;
         }
 
-        let mut line = serde_json::to_string(entry)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let mut line = serde_json::to_string(entry).map_err(|e| std::io::Error::other(e))?;
         line.push('\n');
 
         let mut file = OpenOptions::new()

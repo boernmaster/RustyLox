@@ -97,13 +97,13 @@ impl EmailTemplate {
             }
             EmailType::MiniserverDisconnected { miniserver_name } => (
                 format!("[RustyLox] Miniserver disconnected: {}", miniserver_name),
-                format!("Miniserver Disconnected"),
+                "Miniserver Disconnected".to_string(),
                 format!("Miniserver '{}' is no longer reachable.", miniserver_name),
                 "color: #dc3545".to_string(),
             ),
             EmailType::MiniserverReconnected { miniserver_name } => (
                 format!("[RustyLox] Miniserver reconnected: {}", miniserver_name),
-                format!("Miniserver Reconnected"),
+                "Miniserver Reconnected".to_string(),
                 format!("Miniserver '{}' is back online.", miniserver_name),
                 "color: #28a745".to_string(),
             ),
