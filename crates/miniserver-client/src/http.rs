@@ -1,8 +1,8 @@
 //! HTTP/HTTPS client for Miniserver communication
 
+use reqwest::{Client, ClientBuilder};
 use rustylox_config::MiniserverConfig;
 use rustylox_core::{Error, Result};
-use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;

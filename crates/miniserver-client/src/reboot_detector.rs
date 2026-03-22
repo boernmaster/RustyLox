@@ -2,9 +2,9 @@
 //!
 //! Detects when a Miniserver has rebooted by monitoring the /dev/lan/txp endpoint.
 
+use reqwest::Client;
 use rustylox_config::MiniserverConfig;
 use rustylox_core::{Error, Result};
-use reqwest::Client;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Mutex;

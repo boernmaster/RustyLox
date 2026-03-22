@@ -2,8 +2,8 @@
 
 use auth::AuthService;
 use dashmap::DashMap;
-use rustylox_config::{ConfigManager, GeneralConfig};
 use miniserver_client::MiniserverClient;
+use rustylox_config::{ConfigManager, GeneralConfig};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};

@@ -1,9 +1,9 @@
 //! MQTT broker client using rumqttc
 
 use crate::GatewayMessage;
+use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, Packet, QoS};
 use rustylox_config::MqttConfig;
 use rustylox_core::{Error, Result};
-use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, Packet, QoS};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::broadcast;

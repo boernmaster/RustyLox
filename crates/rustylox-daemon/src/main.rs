@@ -4,8 +4,8 @@
 
 use anyhow::Result;
 use auth::{AuditLogger, AuthService, AuthStore};
-use rustylox_config::{ConfigManager, GeneralConfig};
 use mqtt_gateway::MqttGateway;
+use rustylox_config::{ConfigManager, GeneralConfig};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
