@@ -14,4 +14,5 @@ pub mod network;
 pub mod plugins;
 pub mod system;
 pub mod tasks;
+pub mod virtual_input;
 pub mod weather;

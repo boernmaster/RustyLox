@@ -13,6 +13,10 @@ use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use web_api::{create_router, weather::WeatherService, AppState, MiniserverEvent};
 
+/// Default UDP port for receiving Miniserver Virtual UDP Output data.
+/// Users point their Miniserver Virtual Output to `/dev/udp/<RustyLox-IP>/8090`.
+const MINISERVER_UDP_RECV_PORT: u16 = 8090;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing
@@ -142,6 +146,93 @@ async fn main() -> Result<()> {
                 });
             });
         gw.set_miniserver_monitor(callback).await;
+    }
+
+    // Start Miniserver UDP receiver (for Virtual UDP Output from the Miniserver)
+    {
+        let recv_port = std::env::var("MS_UDP_RECV_PORT")
+            .ok()
+            .and_then(|v| v.parse::<u16>().ok())
+            .unwrap_or(MINISERVER_UDP_RECV_PORT);
+
+        if recv_port > 0 {
+            let bind_addr: std::net::SocketAddr = format!("0.0.0.0:{}", recv_port).parse().unwrap();
+            let receiver = miniserver_client::MiniserverUdpReceiver::new(bind_addr, 256);
+            let mut rx = receiver.subscribe();
+
+            // Clone handles we need inside the spawned task
+            let monitor_tx = state.miniserver_monitor.clone();
+            let gateway_tx = state.mqtt_gateway.as_ref().map(|gw| gw.message_sender());
+
+            match receiver.spawn().await {
+                Ok(()) => {
+                    info!(
+                        "Miniserver UDP receiver listening on port {} (for Virtual UDP Output)",
+                        recv_port
+                    );
+
+                    // Bridge received UDP messages → monitor + MQTT gateway
+                    tokio::spawn(async move {
+                        loop {
+                            match rx.recv().await {
+                                Ok(msg) => {
+                                    // Parse payload into key=value pairs
+                                    let (prefix, pairs) =
+                                        miniserver_client::parse_udp_payload(&msg.payload);
+
+                                    // Emit monitor event
+                                    let _ = monitor_tx.send(MiniserverEvent {
+                                        miniserver_id: 0,
+                                        miniserver_name: prefix
+                                            .clone()
+                                            .unwrap_or_else(|| "Miniserver UDP".to_string()),
+                                        direction: "received".to_string(),
+                                        protocol: "udp".to_string(),
+                                        url: Some(msg.from.to_string()),
+                                        params: Some(msg.payload.clone()),
+                                        response: None,
+                                        code: None,
+                                        error: None,
+                                        timestamp: chrono::Utc::now()
+                                            .format("%Y-%m-%d %H:%M:%S")
+                                            .to_string(),
+                                    });
+
+                                    // Forward each pair to the MQTT gateway
+                                    if let Some(ref gw_tx) = gateway_tx {
+                                        for (key, value) in &pairs {
+                                            let topic = if let Some(ref pfx) = prefix {
+                                                format!("{}/{}", pfx, key)
+                                            } else {
+                                                key.clone()
+                                            };
+                                            let gw_msg =
+                                                mqtt_gateway::GatewayMessage::UdpReceived {
+                                                    topic,
+                                                    value: value.clone(),
+                                                };
+                                            let _ = gw_tx.send(gw_msg);
+                                        }
+                                    }
+                                }
+                                Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                                    warn!("Miniserver UDP receiver lagged by {} messages", n);
+                                }
+                                Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }
+                Err(e) => {
+                    warn!(
+                        "Failed to start Miniserver UDP receiver on port {}: {}",
+                        recv_port, e
+                    );
+                }
+            }
+        }
     }
 
     // Create API router
