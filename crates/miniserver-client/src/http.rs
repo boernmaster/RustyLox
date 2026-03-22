@@ -324,6 +324,57 @@ impl MiniserverHttpClient {
         Ok((value, code))
     }
 
+    /// Download binary data from Miniserver (for /dev/cfg/backup etc.)
+    ///
+    /// Returns `(bytes, suggested_filename)`. The filename is taken from the
+    /// Content-Disposition header when present, otherwise derived from the path.
+    pub async fn download_bytes(&self, command: &str) -> Result<(Vec<u8>, String)> {
+        let url = self.build_url(command);
+
+        debug!(
+            "Miniserver download: {}",
+            Self::redact_url_credentials(&url)
+        );
+
+        let response = self
+            .client
+            .get(&url)
+            .basic_auth(&self.config.admin_raw, Some(&self.config.pass_raw))
+            .send()
+            .await
+            .map_err(|e| Error::network(format!("HTTP request failed: {}", e)))?;
+
+        let status = response.status();
+        if !status.is_success() {
+            return Err(Error::network(format!("HTTP error: {}", status)));
+        }
+
+        // Try to extract filename from Content-Disposition header
+        let suggested_filename = response
+            .headers()
+            .get("content-disposition")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| {
+                v.split(';').find_map(|part| {
+                    let part = part.trim();
+                    part.strip_prefix("filename=")
+                        .map(|f| f.trim_matches('"').to_string())
+                })
+            })
+            .unwrap_or_else(|| {
+                // Fall back to last path segment
+                command.rsplit('/').next().unwrap_or("backup").to_string()
+            });
+
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|e| Error::network(format!("Failed to read response body: {}", e)))?
+            .to_vec();
+
+        Ok((bytes, suggested_filename))
+    }
+
     /// Clear the delta cache
     pub fn clear_cache(&mut self) {
         self.delta_cache.clear();

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.13] - 2026-03-22
+
+### Added
+- Miniserver backup: full backup feature downloading `.loxone` project files via Miniserver filesystem API (`/dev/fslist/prog/`, `/dev/fsget/prog/`)
+- Miniserver backup: automatic scheduling per Miniserver (configurable interval: 6h / 12h / 24h / 48h / weekly) with background scheduler
+- Miniserver backup: dedicated log file at `log/system/miniserver-backup.log` visible in the log viewer
+- Miniserver backup: MS Backup page moved from System menu to Miniserver menu
+
+### Fixed
+- Miniserver backup: case-insensitive `.Loxone` extension matching (Miniserver stores files as `.Loxone` not `.loxone`)
+- Miniserver backup: fallback search across multiple filesystem paths (`/prog/`, root, `/sd/`) with diagnostic output on failure
+- Miniserver backup: correct `Content-Type: application/octet-stream` for file downloads
+- CI: consolidated two redundant workflows into one; Docker image now built and pushed only once per tag
+
 ## [0.6.12] - 2026-03-22
 
 ### Added

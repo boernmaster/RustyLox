@@ -9,6 +9,7 @@ pub mod email;
 pub mod health;
 pub mod logs;
 pub mod miniserver;
+pub mod miniserver_backup;
 pub mod mqtt;
 pub mod mqtt_management;
 pub mod mqtt_stats;

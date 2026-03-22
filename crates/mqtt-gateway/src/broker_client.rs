@@ -21,7 +21,7 @@ impl BrokerClient {
     pub fn new(config: &MqttConfig) -> Result<Self> {
         let broker_host = config.broker_host();
         let broker_port = config.broker_port();
-        let client_id = format!("loxberry-gateway-{}", std::process::id());
+        let client_id = format!("rustylox-gateway-{}", std::process::id());
 
         info!("Connecting to MQTT broker: {}:{}", broker_host, broker_port);
 

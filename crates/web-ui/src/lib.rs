@@ -4,6 +4,7 @@ pub mod handlers;
 pub mod templates;
 
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{get, post},
     Router,
 };
@@ -74,7 +75,10 @@ pub fn create_ui_router(state: AppState) -> Router {
         // Plugin management
         .route("/plugins", get(handlers::plugins::list))
         .route("/plugins/install", get(handlers::plugins::install_form))
-        .route("/plugins/install", post(handlers::plugins::install_submit))
+        .route(
+            "/plugins/install",
+            post(handlers::plugins::install_submit).layer(DefaultBodyLimit::max(64 * 1024 * 1024)), // 64 MB for plugin ZIPs
+        )
         .route("/plugins/:md5", get(handlers::plugins::details))
         .route(
             "/plugins/:md5/uninstall",
@@ -122,13 +126,34 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/admin/system/tools/logfile.cgi",
             get(handlers::logs::logfile_compat),
         )
-        // Backup management
+        // Backup management (RustyLox system backup)
         .route("/backup", get(handlers::backup::index))
         .route("/backup/create", post(handlers::backup::create))
         .route("/backup/:name/restore", post(handlers::backup::restore))
         .route(
             "/backup/:name",
             axum::routing::delete(handlers::backup::delete),
+        )
+        // Miniserver backup
+        .route(
+            "/miniserver/backup",
+            get(handlers::miniserver_backup::index),
+        )
+        .route(
+            "/miniserver/backup/:id/run",
+            post(handlers::miniserver_backup::run_backup),
+        )
+        .route(
+            "/miniserver/backup/:id/:filename/download",
+            get(handlers::miniserver_backup::download),
+        )
+        .route(
+            "/miniserver/backup/:id/:filename",
+            axum::routing::delete(handlers::miniserver_backup::delete_backup),
+        )
+        .route(
+            "/miniserver/backup/:id/schedule",
+            post(handlers::miniserver_backup::save_schedule),
         )
         // Authentication
         .route("/login", get(handlers::auth::show_login))

@@ -55,6 +55,15 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     perl \
+    libconfig-simple-perl \
+    liburi-perl \
+    libhtml-template-perl \
+    libjson-perl \
+    libcgi-pm-perl \
+    libwww-perl \
+    libdbi-perl \
+    libdbd-sqlite3-perl \
+    cpanminus \
     php-cli \
     php-cgi \
     php-curl \
@@ -113,6 +122,9 @@ COPY sdk/bashlib /opt/loxberry/libs/bashlib
 COPY sdk/templates/system /opt/loxberry/templates/system
 
 # Set permissions
+# Install Perl modules not available in Debian bookworm repos
+RUN cpanm --notest List::MoreUtils 2>/dev/null
+
 RUN chown -R loxberry:loxberry /opt/loxberry
 
 # Expose ports

@@ -147,6 +147,9 @@ async fn main() -> Result<()> {
     // Create API router
     let api_router = create_router(state.clone());
 
+    // Spawn Miniserver backup scheduler
+    web_ui::handlers::miniserver_backup::spawn_ms_backup_scheduler(state.clone());
+
     // Create UI router
     let ui_router = web_ui::create_ui_router(state.clone());
 

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miniserver Backup - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                    <li><a href="/miniserver/backup" class="active">MS Backup</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/monitor">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Miniserver Backup</h1>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <p>
+                Downloads the Loxone project file from each Miniserver via the file-system HTTP API
+                and stores it locally.
+                The 7 most recent backups per Miniserver are kept automatically.
+            </p>
+        </div>
+
+        <div id="backup-result" style="margin-bottom: 16px;"></div>
+
+        {% if entries.is_empty() %}
+        <div class="card">
+            <p>No Miniservers configured. <a href="/miniserver/add">Add a Miniserver</a> first.</p>
+        </div>
+        {% else %}
+
+        {% for entry in entries %}
+        <div class="card" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <h2 style="margin: 0;">{{ entry.name }}</h2>
+                    <small style="color: #888;">{{ entry.ipaddress }}</small>
+                </div>
+                <button
+                    hx-post="/miniserver/backup/{{ entry.id }}/run"
+                    hx-target="#backup-result"
+                    hx-swap="innerHTML"
+                    hx-indicator="#spinner-{{ entry.id }}"
+                    class="btn btn-primary">
+                    Backup Now
+                </button>
+            </div>
+
+            <div id="spinner-{{ entry.id }}" class="htmx-indicator" style="margin-bottom: 10px;">
+                Downloading backup from Miniserver, please wait&hellip;
+            </div>
+
+            {% if entry.backups.is_empty() %}
+            <p style="color: #888;">No backups yet for this Miniserver.</p>
+            {% else %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Size</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bkp in entry.backups %}
+                        <tr id="ms{{ entry.id }}-row-{{ loop.index }}">
+                            <td>{{ bkp.filename }}</td>
+                            <td>{{ bkp.size_human }}</td>
+                            <td>{{ bkp.created }}</td>
+                            <td style="display: flex; gap: 8px;">
+                                <a href="/miniserver/backup/{{ entry.id }}/{{ bkp.filename }}/download"
+                                   class="btn btn-sm btn-secondary">Download</a>
+                                <button
+                                    hx-delete="/miniserver/backup/{{ entry.id }}/{{ bkp.filename }}"
+                                    hx-target="#ms{{ entry.id }}-row-{{ loop.index }}"
+                                    hx-swap="outerHTML"
+                                    hx-confirm="Delete {{ bkp.filename }}?"
+                                    class="btn btn-sm btn-danger">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <hr style="margin: 20px 0;">
+            <h3 style="margin-bottom: 12px; font-size: 1rem;">Automatic Schedule</h3>
+            <div id="schedule-result-{{ entry.id }}" style="margin-bottom: 8px;"></div>
+            <form hx-post="/miniserver/backup/{{ entry.id }}/schedule"
+                  hx-target="#schedule-result-{{ entry.id }}"
+                  hx-swap="innerHTML"
+                  style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox" name="enabled" value="1"
+                        {% if entry.schedule_enabled %}checked{% endif %}>
+                    Enable automatic backup
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px;">
+                    Interval:
+                    <select name="interval_hours" class="form-control" style="width: auto;">
+                        <option value="6"   {% if entry.schedule_interval_hours == 6   %}selected{% endif %}>Every 6 hours</option>
+                        <option value="12"  {% if entry.schedule_interval_hours == 12  %}selected{% endif %}>Every 12 hours</option>
+                        <option value="24"  {% if entry.schedule_interval_hours == 24  %}selected{% endif %}>Daily (24 h)</option>
+                        <option value="48"  {% if entry.schedule_interval_hours == 48  %}selected{% endif %}>Every 2 days</option>
+                        <option value="168" {% if entry.schedule_interval_hours == 168 %}selected{% endif %}>Weekly</option>
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-sm btn-secondary">Save Schedule</button>
+                <span style="color: #888; font-size: 0.85em;">Last run: {{ entry.schedule_last_run }}</span>
+            </form>
+        </div>
+        {% endfor %}
+
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
+    </footer>
+</body>
+</html>

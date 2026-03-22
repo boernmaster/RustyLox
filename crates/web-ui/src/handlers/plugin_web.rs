@@ -157,9 +157,11 @@ pub async fn serve_plugin_auth_index(
         .join("webfrontend/htmlauth/plugins")
         .join(&plugin_name);
 
-    // Try index.php first (most LoxBerry plugins use PHP), then index.html
+    // Try index.php → index.cgi → index.html
     if base_dir.join("index.php").exists() {
         serve_plugin_file(&base_dir, "index.php", &plugin_name, PhpRequest::get_only()).await
+    } else if base_dir.join("index.cgi").exists() {
+        serve_plugin_file(&base_dir, "index.cgi", &plugin_name, PhpRequest::get_only()).await
     } else {
         serve_plugin_file(
             &base_dir,
@@ -222,6 +224,11 @@ async fn serve_plugin_file(
     // Handle PHP files
     if ext == "php" {
         return serve_php_file(&resolved, plugin_name, php_req).await;
+    }
+
+    // Handle Perl CGI files
+    if ext == "cgi" {
+        return serve_cgi_file(&resolved, plugin_name, php_req).await;
     }
 
     // Find content type for allowed extensions
@@ -383,6 +390,90 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
             error_response(
                 StatusCode::SERVICE_UNAVAILABLE,
                 "PHP runtime not available (php-cgi)",
+            )
+        }
+    }
+}
+
+/// Execute a Perl CGI script and serve the output
+async fn serve_cgi_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) -> Response {
+    debug!(
+        "Executing CGI file: {} (method={}, query={})",
+        path.display(),
+        php_req.method,
+        php_req.query_string
+    );
+
+    let mut cmd = Command::new("perl");
+    cmd.arg(path)
+        .current_dir(path.parent().unwrap_or(path))
+        .env("PERL5LIB", "/opt/loxberry/libs/perllib")
+        .env("LBHOMEDIR", "/opt/loxberry")
+        .env("LBPPLUGINDIR", plugin_name)
+        .env(
+            "LBPHTMLDIR",
+            format!("/opt/loxberry/webfrontend/html/plugins/{}", plugin_name),
+        )
+        .env(
+            "LBPHTMLAUTHDIR",
+            format!("/opt/loxberry/webfrontend/htmlauth/plugins/{}", plugin_name),
+        )
+        .env(
+            "LBPDATADIR",
+            format!("/opt/loxberry/data/plugins/{}", plugin_name),
+        )
+        .env(
+            "LBPLOGDIR",
+            format!("/opt/loxberry/log/plugins/{}", plugin_name),
+        )
+        .env(
+            "LBPCONFIGDIR",
+            format!("/opt/loxberry/config/plugins/{}", plugin_name),
+        )
+        .env("REDIRECT_STATUS", "200")
+        .env("REQUEST_METHOD", &php_req.method)
+        .env("QUERY_STRING", &php_req.query_string)
+        .env("CONTENT_TYPE", &php_req.content_type)
+        .env("CONTENT_LENGTH", php_req.body.len().to_string())
+        .env("SCRIPT_FILENAME", path.to_string_lossy().to_string())
+        .env("SERVER_PROTOCOL", "HTTP/1.1")
+        .env("GATEWAY_INTERFACE", "CGI/1.1")
+        .env("SERVER_SOFTWARE", "RustyLox");
+
+    match cmd.output().await {
+        Ok(out) => {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            if !stderr.is_empty() {
+                debug!("CGI stderr for plugin {}: {}", plugin_name, stderr);
+            }
+
+            let (status_code, headers, body) = parse_php_cgi_output(&out.stdout);
+
+            let content_type = headers
+                .get("content-type")
+                .cloned()
+                .unwrap_or_else(|| "text/html; charset=utf-8".to_string());
+
+            let mut builder = Response::builder().status(status_code);
+            builder = builder.header(header::CONTENT_TYPE, &content_type);
+            for (key, value) in &headers {
+                if key != "content-type" && key != "status" {
+                    builder = builder.header(key.as_str(), value.as_str());
+                }
+            }
+
+            builder.body(Body::from(body)).unwrap_or_else(|_| {
+                error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error")
+            })
+        }
+        Err(e) => {
+            warn!(
+                "Failed to execute CGI for plugin {} (is perl installed?): {}",
+                plugin_name, e
+            );
+            error_response(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Perl runtime not available",
             )
         }
     }

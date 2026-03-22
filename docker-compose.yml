@@ -19,6 +19,8 @@ services:
       - ./volumes/data:/opt/loxberry/data
       - ./volumes/log:/opt/loxberry/log
       - ./volumes/webfrontend:/opt/loxberry/webfrontend
+      - ./volumes/templates:/opt/loxberry/templates/plugins
+      - ./volumes/bin:/opt/loxberry/bin/plugins
     environment:
       - RUST_LOG=debug
       - LBHOMEDIR=/opt/loxberry
