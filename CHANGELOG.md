@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.22] - 2026-03-22
+
+### Fixed
+- MQTT monitor and Miniserver monitor no longer show a blank message list after the DOM refactor in v0.6.21
+  - `wrapper.firstChild` was returning a whitespace text node (leading newline from the template literal) instead of the actual `<div>` element
+  - Fixed by using `wrapper.firstElementChild` which correctly skips text nodes
+
 ## [0.6.21] - 2026-03-22
 
 ### Added

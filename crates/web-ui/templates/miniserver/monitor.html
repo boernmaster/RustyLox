@@ -416,7 +416,7 @@
             // Prepend new element (O(1) DOM work)
             const wrapper = document.createElement('div');
             wrapper.innerHTML = formatMessage(msg);
-            messagesDiv.insertBefore(wrapper.firstChild, messagesDiv.firstChild);
+            messagesDiv.insertBefore(wrapper.firstElementChild, messagesDiv.firstChild);
 
             // Trim oldest DOM entries beyond limit
             while (messagesDiv.children.length > MAX_MESSAGES) {
