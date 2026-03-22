@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.15] - 2026-03-22
+
+### Fixed
+- CI: clippy errors in `miniserver_backup.rs` — `&PathBuf` → `&Path` (ptr_arg), `std::io::Error::other()` (io_other_error)
+- CI: security audit — updated `rustls-webpki` 0.103.9 → 0.103.10 (patches RUSTSEC-2026-0049); 0.102.x series (via rumqttc) acknowledged in `audit.toml`
+
 ## [0.6.14] - 2026-03-22
 
 ### Changed
