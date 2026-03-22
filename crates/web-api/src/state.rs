@@ -2,7 +2,7 @@
 
 use auth::AuthService;
 use dashmap::DashMap;
-use loxberry_config::{ConfigManager, GeneralConfig};
+use rustylox_config::{ConfigManager, GeneralConfig};
 use miniserver_client::MiniserverClient;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -121,7 +121,7 @@ impl AppState {
     }
 
     /// Reload configuration from disk
-    pub async fn reload_config(&self) -> loxberry_core::Result<()> {
+    pub async fn reload_config(&self) -> rustylox_core::Result<()> {
         let new_config = self.config_manager.load_general().await?;
         let mut config = self.config.write().await;
         *config = new_config;
@@ -132,7 +132,7 @@ impl AppState {
     pub async fn get_miniserver_client(
         &self,
         id: u8,
-    ) -> loxberry_core::Result<Arc<MiniserverClient>> {
+    ) -> rustylox_core::Result<Arc<MiniserverClient>> {
         // Check if client exists
         if let Some(client) = self.miniserver_clients.get(&id) {
             return Ok(Arc::clone(client.value()));
@@ -143,7 +143,7 @@ impl AppState {
         let ms_config = config
             .miniserver
             .get(&id.to_string())
-            .ok_or_else(|| loxberry_core::Error::config(format!("Miniserver {} not found", id)))?
+            .ok_or_else(|| rustylox_core::Error::config(format!("Miniserver {} not found", id)))?
             .clone();
 
         let miniserver_name = ms_config.name.clone();

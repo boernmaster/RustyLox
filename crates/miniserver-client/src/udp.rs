@@ -1,7 +1,7 @@
 //! UDP client for Miniserver communication
 
-use loxberry_config::MiniserverConfig;
-use loxberry_core::{Error, Result};
+use rustylox_config::MiniserverConfig;
+use rustylox_core::{Error, Result};
 use std::net::SocketAddr;
 use tokio::net::UdpSocket;
 use tracing::{debug, trace};

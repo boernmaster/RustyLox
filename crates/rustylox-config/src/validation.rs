@@ -1,7 +1,7 @@
 //! Configuration validation for LoxBerry
 
 use crate::{MiniserverConfig, MqttConfig};
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 
 /// Validate Miniserver configuration
 pub fn validate_miniserver_config(config: &MiniserverConfig) -> Result<()> {

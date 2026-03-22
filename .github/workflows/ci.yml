@@ -112,12 +112,12 @@ jobs:
           cache-on-failure: false
 
       - name: Build release binary
-        run: cargo build --release --bin loxberry-daemon
+        run: cargo build --release --bin rustylox-daemon
 
       - name: Package binary
         run: |
           cd target/release
-          tar czf ../../loxberry-daemon-${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz loxberry-daemon
+          tar czf ../../rustylox-daemon-${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz rustylox-daemon
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -137,7 +137,7 @@ jobs:
             ### Docker Compose
             ```yaml
             services:
-              loxberry:
+              rustylox:
                 image: ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
                 ports:
                   - "8080:8080"
@@ -145,4 +145,4 @@ jobs:
             ```
           draft: false
           prerelease: false
-          files: loxberry-daemon-${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz
+          files: rustylox-daemon-${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz

@@ -6,7 +6,7 @@ use crate::config_parser::PluginConfig;
 use crate::database::{calculate_plugin_md5, PluginDatabase, PluginDirectories, PluginEntry};
 use crate::directory_manager::DirectoryManager;
 use crate::lifecycle::{LifecycleHook, LifecycleManager};
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 use tokio::fs;

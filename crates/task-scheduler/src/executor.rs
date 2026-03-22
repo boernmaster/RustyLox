@@ -2,7 +2,7 @@
 
 use crate::config::{ScheduledTask, TaskType};
 use chrono::{DateTime, Utc};
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tracing::{error, info, warn};

@@ -2,8 +2,8 @@
 //!
 //! Detects when a Miniserver has rebooted by monitoring the /dev/lan/txp endpoint.
 
-use loxberry_config::MiniserverConfig;
-use loxberry_core::{Error, Result};
+use rustylox_config::MiniserverConfig;
+use rustylox_core::{Error, Result};
 use reqwest::Client;
 use std::sync::Arc;
 use std::time::{Duration, Instant};

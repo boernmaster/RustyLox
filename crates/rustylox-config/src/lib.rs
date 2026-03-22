@@ -11,7 +11,7 @@ pub use general::{GeneralConfig, WeatherConfig};
 pub use miniserver::MiniserverConfig;
 pub use mqtt::MqttConfig;
 
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use std::path::PathBuf;
 use tokio::fs;
 

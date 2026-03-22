@@ -154,7 +154,7 @@ pub async fn config_submit(
     Form(form): Form<MqttConfigFormData>,
 ) -> Html<String> {
     // Build config for validation before writing
-    let candidate = loxberry_config::MqttConfig {
+    let candidate = rustylox_config::MqttConfig {
         brokerhost: form.brokerhost.clone(),
         brokerport: form.brokerport.clone(),
         brokeruser: form.brokeruser.clone(),
@@ -164,7 +164,7 @@ pub async fn config_submit(
         ..Default::default()
     };
 
-    if let Err(e) = loxberry_config::validation::validate_mqtt_config(&candidate) {
+    if let Err(e) = rustylox_config::validation::validate_mqtt_config(&candidate) {
         return Html(format!(
             "<div class='alert alert-danger'>Validation error: {}</div>",
             e

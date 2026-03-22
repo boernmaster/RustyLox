@@ -306,7 +306,7 @@ pub async fn get_daemon_logs(
 async fn find_plugin_by_folder(
     installer: &PluginInstaller,
     folder: &str,
-) -> loxberry_core::Result<Option<plugin_manager::PluginEntry>> {
+) -> rustylox_core::Result<Option<plugin_manager::PluginEntry>> {
     let plugins = installer.list().await?;
     Ok(plugins.into_iter().find(|p| p.folder == folder))
 }

@@ -15,5 +15,5 @@ flate2 = "1.0"
 tracing = "0.1"
 walkdir = "2.5"
 
-[dependencies.loxberry-core]
-path = "../loxberry-core"
+[dependencies.rustylox-core]
+path = "../rustylox-core"

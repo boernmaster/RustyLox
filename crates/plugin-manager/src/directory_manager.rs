@@ -2,7 +2,7 @@
 //!
 //! Creates and manages isolated directory structures for plugins
 
-use loxberry_core::{Error, PluginPaths, Result};
+use rustylox_core::{Error, PluginPaths, Result};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 use tracing::{debug, info};

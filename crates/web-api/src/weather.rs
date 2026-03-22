@@ -15,7 +15,7 @@ use std::net::UdpSocket;
 use std::sync::Arc;
 
 use chrono::{DateTime, NaiveDate, Utc};
-use loxberry_config::WeatherConfig;
+use rustylox_config::WeatherConfig;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};

@@ -86,7 +86,7 @@ pub async fn config_submit(
     State(state): State<AppState>,
     Form(form): Form<WeatherConfigForm>,
 ) -> impl IntoResponse {
-    let new_cfg = loxberry_config::WeatherConfig {
+    let new_cfg = rustylox_config::WeatherConfig {
         enabled: form.enabled.as_deref() == Some("on"),
         latitude: form.latitude.parse().unwrap_or(0.0),
         longitude: form.longitude.parse().unwrap_or(0.0),

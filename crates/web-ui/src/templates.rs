@@ -1,7 +1,7 @@
 //! Askama templates
 
 use askama::Template;
-use loxberry_config::WeatherConfig;
+use rustylox_config::WeatherConfig;
 use serde::{Deserialize, Serialize};
 use web_api::weather::WeatherData;
 

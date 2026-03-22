@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-loxberry-core = { path = "../loxberry-core" }
-loxberry-config = { path = "../loxberry-config" }
+rustylox-core = { path = "../rustylox-core" }
+rustylox-config = { path = "../rustylox-config" }
 miniserver-client = { path = "../miniserver-client" }
 
 serde = { workspace = true }

@@ -142,7 +142,7 @@ pub async fn get_config(State(state): State<AppState>) -> Response {
 /// PUT /api/weather/config – update weather configuration
 pub async fn update_config(
     State(state): State<AppState>,
-    Json(new_cfg): Json<loxberry_config::WeatherConfig>,
+    Json(new_cfg): Json<rustylox_config::WeatherConfig>,
 ) -> Response {
     // Save to GeneralConfig
     {

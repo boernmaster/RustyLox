@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "crates/auth",
-    "crates/loxberry-core",
-    "crates/loxberry-config",
-    "crates/loxberry-logging",
+    "crates/rustylox-core",
+    "crates/rustylox-config",
+    "crates/rustylox-logging",
     "crates/backup-manager",
     "crates/miniserver-client",
     "crates/plugin-manager",
@@ -13,7 +13,7 @@ members = [
     "crates/task-scheduler",
     "crates/web-api",
     "crates/web-ui",
-    "crates/loxberry-daemon",
+    "crates/rustylox-daemon",
 ]
 resolver = "2"
 

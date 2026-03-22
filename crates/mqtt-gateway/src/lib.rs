@@ -21,8 +21,8 @@ pub use subscription::{Subscription, SubscriptionManager};
 pub use transformer::{TransformResult, Transformer, TransformerRegistry};
 pub use udp_listener::UdpListener;
 
-use loxberry_config::GeneralConfig;
-use loxberry_core::Result;
+use rustylox_config::GeneralConfig;
+use rustylox_core::Result;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
@@ -166,22 +166,22 @@ impl MqttGateway {
             async {
                 broker_handle
                     .await
-                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+                    .map_err(|e| rustylox_core::Error::gateway(e.to_string()))
             },
             async {
                 udp_handle
                     .await
-                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+                    .map_err(|e| rustylox_core::Error::gateway(e.to_string()))
             },
             async {
                 processor_handle
                     .await
-                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+                    .map_err(|e| rustylox_core::Error::gateway(e.to_string()))
             },
             async {
                 stats_logger_handle
                     .await
-                    .map_err(|e| loxberry_core::Error::gateway(e.to_string()))
+                    .map_err(|e| rustylox_core::Error::gateway(e.to_string()))
             },
         )?;
 

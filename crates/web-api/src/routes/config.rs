@@ -1,7 +1,7 @@
 //! Configuration routes
 
 use axum::{extract::State, http::StatusCode, Json};
-use loxberry_config::GeneralConfig;
+use rustylox_config::GeneralConfig;
 use serde_json::{json, Value};
 
 use crate::state::AppState;

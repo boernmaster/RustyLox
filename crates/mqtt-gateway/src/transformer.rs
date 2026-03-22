@@ -1,6 +1,6 @@
 //! Message transformer system
 
-use loxberry_core::Result;
+use rustylox_core::Result;
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::RwLock;

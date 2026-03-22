@@ -6,7 +6,7 @@
 //! received messages so they can be processed or displayed in the
 //! communication monitor.
 
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use std::net::SocketAddr;
 use tokio::net::UdpSocket;
 use tokio::sync::broadcast;

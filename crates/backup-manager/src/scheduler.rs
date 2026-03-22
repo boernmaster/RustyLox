@@ -1,6 +1,6 @@
 //! Scheduled backup functionality
 
-use loxberry_core::Result;
+use rustylox_core::Result;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tokio::time::{interval, Duration};

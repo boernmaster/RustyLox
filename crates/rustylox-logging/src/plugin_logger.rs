@@ -1,6 +1,6 @@
 //! Plugin-specific logging
 
-use loxberry_core::Result;
+use rustylox_core::Result;
 use std::path::PathBuf;
 
 /// Create a logger for a specific plugin

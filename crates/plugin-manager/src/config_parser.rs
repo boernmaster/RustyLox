@@ -2,7 +2,7 @@
 //!
 //! Parses plugin.cfg files in INI format
 
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;

@@ -1,16 +1,16 @@
 [package]
-name = "loxberry-daemon"
+name = "rustylox-daemon"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "loxberry-daemon"
+name = "rustylox-daemon"
 path = "src/main.rs"
 
 [dependencies]
 auth = { path = "../auth" }
-loxberry-core = { path = "../loxberry-core" }
-loxberry-config = { path = "../loxberry-config" }
+rustylox-core = { path = "../rustylox-core" }
+rustylox-config = { path = "../rustylox-config" }
 miniserver-client = { path = "../miniserver-client" }
 mqtt-gateway = { path = "../mqtt-gateway" }
 web-api = { path = "../web-api" }

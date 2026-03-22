@@ -2,7 +2,7 @@
 //!
 //! Executes lifecycle hooks during plugin installation and removal
 
-use loxberry_core::{Error, PluginPaths, Result};
+use rustylox_core::{Error, PluginPaths, Result};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;

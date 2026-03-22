@@ -1,6 +1,6 @@
 //! Email configuration management
 
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 

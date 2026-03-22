@@ -1,7 +1,7 @@
 //! UDP listener for local MQTT input on port 11884
 
 use crate::GatewayMessage;
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use tokio::net::UdpSocket;
 use tokio::sync::broadcast;
 use tracing::{debug, info, warn};

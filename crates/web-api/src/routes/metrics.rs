@@ -7,7 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use loxberry_metrics::{
+use rustylox_metrics::{
     collector::MetricsCollector,
     health::{ComponentStatus, HealthCheck, HealthMetrics},
 };
@@ -22,7 +22,7 @@ pub async fn prometheus_metrics(State(_state): State<AppState>) -> Response {
     let app = collector.collect_app();
     let uptime = collector.daemon_uptime_seconds();
 
-    let output = loxberry_metrics::PrometheusExporter::export(&system, &app, uptime);
+    let output = rustylox_metrics::PrometheusExporter::export(&system, &app, uptime);
 
     (
         StatusCode::OK,
@@ -205,9 +205,9 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
     );
 
     let status_code = match &health.status {
-        loxberry_metrics::HealthStatus::Healthy => StatusCode::OK,
-        loxberry_metrics::HealthStatus::Degraded => StatusCode::OK,
-        loxberry_metrics::HealthStatus::Unhealthy => StatusCode::SERVICE_UNAVAILABLE,
+        rustylox_metrics::HealthStatus::Healthy => StatusCode::OK,
+        rustylox_metrics::HealthStatus::Degraded => StatusCode::OK,
+        rustylox_metrics::HealthStatus::Unhealthy => StatusCode::SERVICE_UNAVAILABLE,
     };
 
     (status_code, Json(health)).into_response()

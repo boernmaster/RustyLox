@@ -120,7 +120,7 @@ pub async fn add_submit(
     let useclouddns = if form.useclouddns.is_some() { "1" } else { "0" }.to_string();
 
     // Create new Miniserver config
-    let ms_config = loxberry_config::MiniserverConfig {
+    let ms_config = rustylox_config::MiniserverConfig {
         name: form.name.clone(),
         ipaddress: form.ipaddress.clone(),
         port: port.clone(),
@@ -145,7 +145,7 @@ pub async fn add_submit(
     };
 
     // Validate before saving
-    if let Err(e) = loxberry_config::validation::validate_miniserver_config(&ms_config) {
+    if let Err(e) = rustylox_config::validation::validate_miniserver_config(&ms_config) {
         return Html(format!(
             "<div class='alert alert-danger'>Validation error: {}</div>",
             e
@@ -221,7 +221,7 @@ pub async fn edit_submit(
     let useclouddns = if form.useclouddns.is_some() { "1" } else { "0" }.to_string();
 
     // Update Miniserver config
-    let ms_config = loxberry_config::MiniserverConfig {
+    let ms_config = rustylox_config::MiniserverConfig {
         name: form.name.clone(),
         ipaddress: form.ipaddress.clone(),
         port: port.clone(),
@@ -246,7 +246,7 @@ pub async fn edit_submit(
     };
 
     // Validate before saving
-    if let Err(e) = loxberry_config::validation::validate_miniserver_config(&ms_config) {
+    if let Err(e) = rustylox_config::validation::validate_miniserver_config(&ms_config) {
         return Html(format!(
             "<div class='alert alert-danger'>Validation error: {}</div>",
             e

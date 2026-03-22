@@ -2,7 +2,7 @@
 
 use crate::config::{ScheduledTask, ScheduledTasksConfig, ScheduledTasksConfigManager};
 use crate::executor::{TaskExecution, TaskExecutor};
-use loxberry_core::Result;
+use rustylox_core::Result;
 use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -69,7 +69,7 @@ impl TaskScheduler {
             .tasks
             .iter()
             .find(|t| t.id == task_id)
-            .ok_or_else(|| loxberry_core::Error::config(format!("Task '{}' not found", task_id)))?
+            .ok_or_else(|| rustylox_core::Error::config(format!("Task '{}' not found", task_id)))?
             .clone();
 
         Ok(self.run_task(&task).await)

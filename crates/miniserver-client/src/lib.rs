@@ -17,8 +17,8 @@ pub use reboot_detector::RebootDetector;
 pub use udp::MiniserverUdpClient;
 pub use udp_receiver::{parse_udp_payload, MiniserverUdpReceiver, UdpMessage};
 
-use loxberry_config::MiniserverConfig;
-use loxberry_core::{Error, Result};
+use rustylox_config::MiniserverConfig;
+use rustylox_core::{Error, Result};
 use std::collections::HashMap;
 
 /// Miniserver client combining all protocols

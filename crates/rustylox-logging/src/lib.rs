@@ -10,7 +10,7 @@ pub mod config;
 pub mod plugin_logger;
 pub mod rotation;
 
-use loxberry_core::Result;
+use rustylox_core::Result;
 use std::path::PathBuf;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 

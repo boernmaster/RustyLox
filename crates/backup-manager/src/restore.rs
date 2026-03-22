@@ -1,13 +1,13 @@
 //! Backup restoration
 
-use loxberry_core::Result;
+use rustylox_core::Result;
 use std::fs::File;
 use std::path::PathBuf;
 
 /// Restore from a backup file
 pub async fn restore_backup(lbhomedir: PathBuf, backup_path: PathBuf) -> Result<()> {
     if !backup_path.exists() {
-        return Err(loxberry_core::Error::backup(
+        return Err(rustylox_core::Error::backup(
             "Backup file not found".to_string(),
         ));
     }

@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use auth::{AuditLogger, AuthService, AuthStore};
-use loxberry_config::{ConfigManager, GeneralConfig};
+use rustylox_config::{ConfigManager, GeneralConfig};
 use mqtt_gateway::MqttGateway;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                "loxberry_daemon=info,web_api=info,miniserver_client=info".into()
+                "rustylox_daemon=info,web_api=info,miniserver_client=info".into()
             }),
         )
         .with(tracing_subscriber::fmt::layer())

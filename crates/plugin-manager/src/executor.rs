@@ -2,7 +2,7 @@
 
 use crate::database::PluginEntry;
 use crate::environment::build_plugin_env;
-use loxberry_core::Result;
+use rustylox_core::Result;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 use tokio::process::Command;
@@ -32,7 +32,7 @@ impl PluginExecutor {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             tracing::error!("Perl script failed: {}", stderr);
-            return Err(loxberry_core::Error::plugin(format!(
+            return Err(rustylox_core::Error::plugin(format!(
                 "Script execution failed: {}",
                 stderr
             )));
@@ -60,7 +60,7 @@ impl PluginExecutor {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             tracing::error!("PHP script failed: {}", stderr);
-            return Err(loxberry_core::Error::plugin(format!(
+            return Err(rustylox_core::Error::plugin(format!(
                 "Script execution failed: {}",
                 stderr
             )));
@@ -88,7 +88,7 @@ impl PluginExecutor {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
             tracing::error!("Bash script failed: {}", stderr);
-            return Err(loxberry_core::Error::plugin(format!(
+            return Err(rustylox_core::Error::plugin(format!(
                 "Script execution failed: {}",
                 stderr
             )));

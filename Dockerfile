@@ -38,7 +38,7 @@ ENV GIT_HASH=${GIT_HASH}
 ENV GIT_TAG=${GIT_TAG}
 ENV GIT_DIRTY=${GIT_DIRTY}
 
-RUN cargo build --release --bin loxberry-daemon
+RUN cargo build --release --bin rustylox-daemon
 
 # Runtime stage
 FROM debian:bookworm-slim
@@ -108,7 +108,7 @@ RUN mkdir -p \
     /opt/loxberry/libs/bashlib
 
 # Copy binary from builder
-COPY --from=builder /build/target/release/loxberry-daemon /usr/local/bin/
+COPY --from=builder /build/target/release/rustylox-daemon /usr/local/bin/
 
 # Copy static files (CSS, JS)
 COPY static /opt/loxberry/static
@@ -136,4 +136,4 @@ ENV RUST_LOG=info
 
 USER loxberry
 
-ENTRYPOINT ["/usr/local/bin/loxberry-daemon"]
+ENTRYPOINT ["/usr/local/bin/rustylox-daemon"]

@@ -1,7 +1,7 @@
 //! Log rotation and cleanup
 
 use chrono::{DateTime, Duration, Utc};
-use loxberry_core::Result;
+use rustylox_core::Result;
 use std::path::PathBuf;
 
 /// Rotation policy for log files

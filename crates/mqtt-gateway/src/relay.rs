@@ -1,8 +1,8 @@
 //! Relay messages to Miniserver
 
 use crate::stats::MqttGatewayStats;
-use loxberry_config::GeneralConfig;
-use loxberry_core::{Error, Result};
+use rustylox_config::GeneralConfig;
+use rustylox_core::{Error, Result};
 use miniserver_client::{MiniserverClient, MonitorCallback};
 use std::collections::HashMap;
 use std::sync::Arc;

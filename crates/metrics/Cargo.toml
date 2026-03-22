@@ -1,10 +1,10 @@
 [package]
-name = "loxberry-metrics"
+name = "rustylox-metrics"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-loxberry-core = { path = "../loxberry-core" }
+rustylox-core = { path = "../rustylox-core" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }

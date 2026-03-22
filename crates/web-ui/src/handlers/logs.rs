@@ -5,7 +5,7 @@ use axum::{
     extract::{Query, State},
     response::Html,
 };
-use loxberry_logging::get_log_files;
+use rustylox_logging::get_log_files;
 use serde::Deserialize;
 use web_api::AppState;
 

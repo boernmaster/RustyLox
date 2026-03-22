@@ -1,7 +1,7 @@
 //! Backup creation
 
 use chrono::{DateTime, Utc};
-use loxberry_core::Result;
+use rustylox_core::Result;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::PathBuf;
@@ -142,7 +142,7 @@ impl BackupManager {
             }
         }
 
-        Err(loxberry_core::Error::backup(
+        Err(rustylox_core::Error::backup(
             "Metadata not found in backup".to_string(),
         ))
     }
@@ -153,7 +153,7 @@ impl BackupManager {
         let backup_path = backup_dir.join(backup_name);
 
         if !backup_path.exists() {
-            return Err(loxberry_core::Error::backup(format!(
+            return Err(rustylox_core::Error::backup(format!(
                 "Backup not found: {}",
                 backup_name
             )));

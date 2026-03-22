@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 auth = { path = "../auth" }
-loxberry-core = { path = "../loxberry-core" }
-loxberry-config = { path = "../loxberry-config" }
-loxberry-metrics = { path = "../metrics" }
+rustylox-core = { path = "../rustylox-core" }
+rustylox-config = { path = "../rustylox-config" }
+rustylox-metrics = { path = "../metrics" }
 email-manager = { path = "../email-manager" }
 task-scheduler = { path = "../task-scheduler" }
 miniserver-client = { path = "../miniserver-client" }

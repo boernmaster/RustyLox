@@ -1,6 +1,6 @@
 //! MQTT subscription management
 
-use loxberry_core::{Error, Result};
+use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::RwLock;

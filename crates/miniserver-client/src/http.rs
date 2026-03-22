@@ -1,7 +1,7 @@
 //! HTTP/HTTPS client for Miniserver communication
 
-use loxberry_config::MiniserverConfig;
-use loxberry_core::{Error, Result};
+use rustylox_config::MiniserverConfig;
+use rustylox_core::{Error, Result};
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
