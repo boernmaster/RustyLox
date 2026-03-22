@@ -1,7 +1,7 @@
 //! Relay messages to Miniserver
 
 use crate::stats::MqttGatewayStats;
-use miniserver_client::{MiniserverClient, MonitorCallback};
+use miniserver_client::{MiniserverClient, MonitorCallback, MonitorEvent};
 use rustylox_config::GeneralConfig;
 use rustylox_core::{Error, Result};
 use std::collections::HashMap;
@@ -188,8 +188,30 @@ impl Relay {
                 Ok(socket) => {
                     if let Err(e) = socket.send_to(msg.as_bytes(), &target).await {
                         warn!("UDP send to {} failed: {}", target, e);
+                        if let Some(cb) = self.monitor_callback.read().await.as_ref() {
+                            cb(MonitorEvent {
+                                direction: "sent".to_string(),
+                                protocol: "udp".to_string(),
+                                url: Some(target.clone()),
+                                params: Some(msg.clone()),
+                                response: None,
+                                code: None,
+                                error: Some(e.to_string()),
+                            });
+                        }
                     } else {
                         debug!("UDP sent to {}: {}", target, msg);
+                        if let Some(cb) = self.monitor_callback.read().await.as_ref() {
+                            cb(MonitorEvent {
+                                direction: "sent".to_string(),
+                                protocol: "udp".to_string(),
+                                url: Some(target.clone()),
+                                params: Some(msg.clone()),
+                                response: None,
+                                code: Some("OK".to_string()),
+                                error: None,
+                            });
+                        }
                     }
                 }
                 Err(e) => warn!("Failed to bind UDP socket: {}", e),
