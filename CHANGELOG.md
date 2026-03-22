@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.16] - 2026-03-22
+
+### Changed
+- Miniserver backup now performs a **full recursive backup** of all data directories: `log`, `prog`, `sys`, `stats`, `temp`, `update`, `web`, `user`
+- Filesystem is walked via BFS using `/dev/fslist/<dir>/` — subdirectories are followed automatically
+- `/sys/internal/` is skipped (causes errors on many Miniserver firmware versions)
+- All files are packed into a single ZIP with directory structure preserved (`prog/Default.Loxone`, `log/2024-01-01.log`, etc.)
+
 ## [0.6.15] - 2026-03-22
 
 ### Fixed

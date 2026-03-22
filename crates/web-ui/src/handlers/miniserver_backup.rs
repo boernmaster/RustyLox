@@ -1,9 +1,11 @@
 //! Miniserver backup handlers
 //!
-//! Downloads the Loxone project file from the Miniserver using its file-system API:
-//!   GET /dev/fslist/prog/   — list files in the /prog directory
-//!   GET /dev/fsget/prog/<f> — download a specific file
+//! Performs a full backup of the Miniserver filesystem via its HTTP API:
+//!   GET /dev/fslist/<dir>/  — list a directory (recursive BFS walk)
+//!   GET /dev/fsget/<path>   — download a file
 //!
+//! All standard directories (log, prog, sys, stats, temp, update, web, user)
+//! are walked recursively and packed into a timestamped ZIP archive.
 //! Backups are stored under `$LBHOMEDIR/data/system/miniserver-backups/<id>-<name>/`.
 
 use askama::Template;
@@ -15,15 +17,21 @@ use axum::{
     Form,
 };
 use chrono::{Local, TimeZone, Utc};
+use miniserver_client::MiniserverClient;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::io::{Cursor, Write};
-use std::path::{Path, PathBuf};
+use std::path::{Path as StdPath, PathBuf};
 use tokio::fs;
 use tracing::{debug, error, info, warn};
 use web_api::AppState;
 
 const BACKUPS_TO_KEEP: usize = 7;
+
+/// Miniserver filesystem directories included in a full backup.
+const BACKUP_DIRS: &[&str] = &[
+    "log", "prog", "sys", "stats", "temp", "update", "web", "user",
+];
 
 // ---------------------------------------------------------------------------
 // Schedule config
@@ -57,7 +65,7 @@ pub struct MsBackupSchedules {
 // Dedicated log file: log/system/miniserver-backup.log
 // ---------------------------------------------------------------------------
 
-async fn log_backup(lbhomedir: &Path, level: &str, message: &str) {
+async fn log_backup(lbhomedir: &StdPath, level: &str, message: &str) {
     use tokio::io::AsyncWriteExt;
 
     let log_path = lbhomedir.join("log/system/miniserver-backup.log");
@@ -82,7 +90,7 @@ async fn log_backup(lbhomedir: &Path, level: &str, message: &str) {
     }
 }
 
-async fn load_ms_schedules(lbhomedir: &Path) -> MsBackupSchedules {
+async fn load_ms_schedules(lbhomedir: &StdPath) -> MsBackupSchedules {
     let path = lbhomedir.join("config/system/ms_backup_schedule.json");
     let Ok(content) = fs::read_to_string(&path).await else {
         return MsBackupSchedules::default();
@@ -90,7 +98,10 @@ async fn load_ms_schedules(lbhomedir: &Path) -> MsBackupSchedules {
     serde_json::from_str(&content).unwrap_or_default()
 }
 
-async fn save_ms_schedules(lbhomedir: &Path, schedules: &MsBackupSchedules) -> std::io::Result<()> {
+async fn save_ms_schedules(
+    lbhomedir: &StdPath,
+    schedules: &MsBackupSchedules,
+) -> std::io::Result<()> {
     let path = lbhomedir.join("config/system/ms_backup_schedule.json");
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).await?;
@@ -143,7 +154,7 @@ fn format_size(bytes: u64) -> String {
 }
 
 /// Directory for a specific Miniserver's backups: `<base>/<id>-<safe-name>/`
-fn ms_backup_dir(base: &Path, id: &str, name: &str) -> PathBuf {
+fn ms_backup_dir(base: &StdPath, id: &str, name: &str) -> PathBuf {
     let safe_name: String = name
         .chars()
         .map(|c| {
@@ -158,7 +169,7 @@ fn ms_backup_dir(base: &Path, id: &str, name: &str) -> PathBuf {
 }
 
 /// Read existing backups for one Miniserver, newest first.
-async fn list_backups_for(dir: &Path) -> Vec<BackupFileDisplay> {
+async fn list_backups_for(dir: &StdPath) -> Vec<BackupFileDisplay> {
     let mut entries = Vec::new();
 
     let Ok(mut rd) = fs::read_dir(dir).await else {
@@ -205,7 +216,7 @@ async fn list_backups_for(dir: &Path) -> Vec<BackupFileDisplay> {
 }
 
 /// Delete oldest backups, keeping only `BACKUPS_TO_KEEP` most recent.
-async fn rotate_backups(dir: &Path) {
+async fn rotate_backups(dir: &StdPath) {
     let mut files: Vec<PathBuf> = Vec::new();
 
     let Ok(mut rd) = fs::read_dir(dir).await else {
@@ -286,62 +297,49 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
     )
 }
 
-/// Parse the /dev/fslist response to find .loxone project filenames.
+/// Walk a Miniserver filesystem directory recursively (BFS).
 ///
-/// Accepts various line formats:
-///   `- SIZE Mon DD HH:MM filename`  (standard format)
-///   `d SIZE Mon DD HH:MM dirname`   (directory – skipped)
-///   `filename.loxone`               (bare name format)
-/// The last whitespace-separated token on each non-directory line is checked.
-fn parse_loxone_files(listing: &str) -> Vec<String> {
-    listing
-        .lines()
-        .filter_map(|line| {
-            let line = line.trim();
-            if line.is_empty() {
-                return None;
-            }
-            if line.starts_with("d ") {
-                return None;
-            }
-            let name = line.split_whitespace().last()?;
-            if name.to_lowercase().ends_with(".loxone") {
-                Some(name.to_string())
-            } else {
-                None
-            }
-        })
-        .collect()
-}
+/// Returns full paths like `/prog/Default.Loxone`, `/log/2024-01-01.log`, etc.
+/// Sub-directories are discovered via `d` lines and queued automatically.
+/// `/sys/internal/` is skipped — it errors on many Miniserver firmware versions.
+async fn walk_ms_dir(client: &MiniserverClient, root: &str) -> Vec<String> {
+    let mut all_files = Vec::new();
+    let mut queue: VecDeque<String> = VecDeque::new();
+    queue.push_back(root.to_string());
 
-/// Parse the /dev/fslist response to return ALL filenames (any extension).
-///
-/// Used for full binary backups: collects every file in the directory,
-/// including `.Loxone` project files and `permissions.bin`.
-/// Directory entries (lines starting with `d `) are skipped.
-fn parse_all_files(listing: &str) -> Vec<String> {
-    listing
-        .lines()
-        .filter_map(|line| {
+    while let Some(dir) = queue.pop_front() {
+        if dir == "/sys/internal/" {
+            continue; // known to error on many firmware versions
+        }
+        let url = format!("/dev/fslist{}", dir);
+        let listing = match client.http().download_bytes(&url).await {
+            Ok((bytes, _)) => String::from_utf8_lossy(&bytes).into_owned(),
+            Err(e) => {
+                debug!("Cannot list {}: {}", url, e);
+                continue;
+            }
+        };
+        for line in listing.lines() {
             let line = line.trim();
             if line.is_empty() {
-                return None;
+                continue;
             }
-            // Skip directory entries
-            if line.starts_with("d ") {
-                return None;
+            if let Some(name) = line.split_whitespace().last() {
+                if line.starts_with("d ") {
+                    queue.push_back(format!("{}{}/", dir, name));
+                } else {
+                    all_files.push(format!("{}{}", dir, name));
+                }
             }
-            // The filename is the last whitespace-separated token
-            line.split_whitespace().last().map(|s| s.to_string())
-        })
-        .collect()
+        }
+    }
+    all_files
 }
 
 /// Trigger a backup for one Miniserver (HTMX endpoint).
 ///
-/// Uses the Miniserver file-system HTTP API:
-///   GET /dev/fslist/prog/   → list project files
-///   GET /dev/fsget/prog/<f> → download the project file
+/// Walks all Miniserver data directories (log, prog, sys, stats, temp, update,
+/// web, user) recursively and packs every file into a ZIP archive.
 pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -> Html<String> {
     let ms_id: u8 = match id.parse() {
         Ok(n) => n,
@@ -381,71 +379,41 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
     )
     .await;
 
-    // Step 1: list all files from the Miniserver's /prog/ directory.
-    // We search multiple paths and collect diagnostics for the error message.
-    let (all_files, fsget_prefix) = {
-        let search_paths: &[(&str, &str)] = &[
-            ("/dev/fslist/prog/", "/dev/fsget/prog/"),
-            ("/dev/fslist/", "/dev/fsget/"),
-            ("/dev/fslist/sd/", "/dev/fsget/sd/"),
-        ];
-        let mut found: Option<(Vec<String>, String)> = None;
-        let mut diagnostics: Vec<String> = Vec::new();
+    // Step 1: walk all backup directories to collect the full file list
+    let mut all_files: Vec<String> = Vec::new();
+    for dir in BACKUP_DIRS {
+        let dir_path = format!("/{}/", dir);
+        let files = walk_ms_dir(&client, &dir_path).await;
+        info!(
+            "Listed {} file(s) in {} on '{}'",
+            files.len(),
+            dir_path,
+            ms_name
+        );
+        all_files.extend(files);
+    }
 
-        for (fslist, fsget) in search_paths {
-            match client.http().download_bytes(fslist).await {
-                Ok((bytes, _)) => {
-                    let listing = String::from_utf8_lossy(&bytes);
-                    debug!("Listing from {} on '{}':\n{}", fslist, ms_name, listing);
-                    let files = parse_all_files(&listing);
-                    if !files.is_empty() {
-                        info!(
-                            "Found {} file(s) in {} on '{}'",
-                            files.len(),
-                            fslist,
-                            ms_name
-                        );
-                        found = Some((files, fsget.to_string()));
-                        break;
-                    }
-                    // Collect first 200 chars for diagnostics
-                    let preview = listing.chars().take(200).collect::<String>();
-                    diagnostics.push(format!(
-                        "{}: OK but no files — preview: {:?}",
-                        fslist, preview
-                    ));
-                }
-                Err(e) => {
-                    diagnostics.push(format!("{}: {}", fslist, e));
-                }
-            }
-        }
+    if all_files.is_empty() {
+        log_backup(
+            &state.lbhomedir,
+            "ERROR",
+            &format!("No files found on '{}'", ms_name),
+        )
+        .await;
+        return Html(format!(
+            "<div class='alert alert-danger'>No files found on '{}'.</div>",
+            ms_name
+        ));
+    }
 
-        match found {
-            Some(p) => p,
-            None => {
-                let diag_text = diagnostics.join("; ");
-                log_backup(
-                    &state.lbhomedir,
-                    "ERROR",
-                    &format!("No files found for '{}': {}", ms_name, diag_text),
-                )
-                .await;
-                let diag = diagnostics.join("<br>");
-                return Html(format!(
-                    "<div class='alert alert-danger'>\
-                     <strong>No files found on '{}'.</strong><br>\
-                     <small>Paths checked:<br>{}</small>\
-                     </div>",
-                    ms_name, diag
-                ));
-            }
-        }
-    };
+    info!(
+        "Total: {} file(s) to back up from '{}'",
+        all_files.len(),
+        ms_name
+    );
 
-    info!("Found {} file(s) on '{}'", all_files.len(), ms_name);
-
-    // Step 2: download every file and pack into a ZIP archive in memory
+    // Step 2: download every file and pack into a ZIP archive in memory.
+    // File paths like `/prog/Default.Loxone` are stored as `prog/Default.Loxone`.
     let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
     let safe_name: String = ms_name
         .chars()
@@ -467,14 +435,15 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
             .compression_method(zip::CompressionMethod::Stored);
 
         for file in &all_files {
-            let download_path = format!("{}{}", fsget_prefix, file);
-            match client.http().download_bytes(&download_path).await {
+            let download_url = format!("/dev/fsget{}", file);
+            let zip_entry = file.trim_start_matches('/');
+            match client.http().download_bytes(&download_url).await {
                 Ok((bytes, _)) => {
-                    if zip.start_file(file, options).is_ok() {
+                    if zip.start_file(zip_entry, options).is_ok() {
                         if let Err(e) = zip.write_all(&bytes) {
-                            warn!("Failed to write '{}' into ZIP: {}", file, e);
+                            warn!("Failed to write '{}' into ZIP: {}", zip_entry, e);
                         } else {
-                            info!("  Packed '{}' ({} bytes)", file, bytes.len());
+                            debug!("  Packed '{}' ({} bytes)", zip_entry, bytes.len());
                             downloaded += 1;
                         }
                     }
@@ -719,24 +688,23 @@ async fn do_backup_for(state: &AppState, id: &str) -> Result<String, String> {
     )
     .await;
 
-    let search_paths: &[(&str, &str)] = &[
-        ("/dev/fslist/prog/", "/dev/fsget/prog/"),
-        ("/dev/fslist/", "/dev/fsget/"),
-    ];
-    let mut found: Option<(Vec<String>, String)> = None;
-    for (fslist, fsget) in search_paths {
-        if let Ok((bytes, _)) = client.http().download_bytes(fslist).await {
-            let listing = String::from_utf8_lossy(&bytes);
-            let files = parse_all_files(&listing);
-            if !files.is_empty() {
-                found = Some((files, fsget.to_string()));
-                break;
-            }
-        }
+    // Walk all backup directories recursively
+    let mut all_files: Vec<String> = Vec::new();
+    for dir in BACKUP_DIRS {
+        let dir_path = format!("/{}/", dir);
+        let files = walk_ms_dir(&client, &dir_path).await;
+        info!(
+            "Listed {} file(s) in {} on '{}'",
+            files.len(),
+            dir_path,
+            ms_name
+        );
+        all_files.extend(files);
     }
 
-    let (all_files, fsget_prefix) =
-        found.ok_or_else(|| format!("No files found on '{}'", ms_name))?;
+    if all_files.is_empty() {
+        return Err(format!("No files found on '{}'", ms_name));
+    }
 
     let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
     let safe_name: String = ms_name
@@ -760,13 +728,12 @@ async fn do_backup_for(state: &AppState, id: &str) -> Result<String, String> {
             .compression_method(zip::CompressionMethod::Stored);
 
         for file in &all_files {
-            let download_path = format!("{}{}", fsget_prefix, file);
-            match client.http().download_bytes(&download_path).await {
+            let download_url = format!("/dev/fsget{}", file);
+            let zip_entry = file.trim_start_matches('/');
+            match client.http().download_bytes(&download_url).await {
                 Ok((bytes, _)) => {
-                    if zip.start_file(file, options).is_ok() {
-                        if zip.write_all(&bytes).is_ok() {
-                            downloaded += 1;
-                        }
+                    if zip.start_file(zip_entry, options).is_ok() && zip.write_all(&bytes).is_ok() {
+                        downloaded += 1;
                     }
                 }
                 Err(e) => {
