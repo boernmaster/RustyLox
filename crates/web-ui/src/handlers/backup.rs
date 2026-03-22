@@ -36,7 +36,7 @@ fn format_size(bytes: u64) -> String {
 
 /// Show backup management page
 pub async fn index(State(state): State<AppState>) -> Html<String> {
-    let manager = BackupManager::new(state.lbhomedir.clone());
+    let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     let backups = match manager.list_backups().await {
         Ok(list) => list
@@ -79,7 +79,7 @@ pub async fn create(
     State(state): State<AppState>,
     Query(query): Query<CreateBackupQuery>,
 ) -> Html<String> {
-    let manager = BackupManager::new(state.lbhomedir.clone());
+    let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     match manager.create_backup(query.include_plugins).await {
         Ok(path) => {
@@ -131,7 +131,7 @@ pub async fn delete(State(state): State<AppState>, Path(name): Path<String>) -> 
         return Html("<div class='error'>Invalid backup name</div>".to_string());
     }
 
-    let manager = BackupManager::new(state.lbhomedir.clone());
+    let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     match manager.delete_backup(&name).await {
         Ok(()) => Html(String::new()), // Empty response removes the row via hx-swap outerHTML

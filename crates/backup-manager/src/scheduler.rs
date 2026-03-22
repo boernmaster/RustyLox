@@ -26,13 +26,15 @@ impl Default for BackupSchedule {
 
 pub struct BackupScheduler {
     lbhomedir: PathBuf,
+    version: String,
     schedule: BackupSchedule,
 }
 
 impl BackupScheduler {
-    pub fn new(lbhomedir: PathBuf, schedule: BackupSchedule) -> Self {
+    pub fn new(lbhomedir: PathBuf, version: String, schedule: BackupSchedule) -> Self {
         Self {
             lbhomedir,
+            version,
             schedule,
         }
     }
@@ -58,6 +60,7 @@ impl BackupScheduler {
 
             match crate::backup::create_backup(
                 self.lbhomedir.clone(),
+                self.version.clone(),
                 self.schedule.include_plugins,
             )
             .await
@@ -79,7 +82,7 @@ impl BackupScheduler {
 
     /// Remove old backups keeping only max_backups
     async fn cleanup_old_backups(&self) -> Result<()> {
-        let manager = crate::backup::BackupManager::new(self.lbhomedir.clone());
+        let manager = crate::backup::BackupManager::new(self.lbhomedir.clone(), self.version.clone());
         let mut backups = manager.list_backups().await?;
 
         if backups.len() <= self.schedule.max_backups {

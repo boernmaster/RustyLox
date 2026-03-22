@@ -10,24 +10,25 @@ use std::path::PathBuf;
 pub struct BackupMetadata {
     pub version: String,
     pub timestamp: DateTime<Utc>,
-    pub loxberry_version: String,
+    pub rustylox_version: String,
     pub includes: Vec<String>,
     pub size_bytes: u64,
 }
 
 pub struct BackupManager {
     lbhomedir: PathBuf,
+    version: String,
 }
 
 impl BackupManager {
-    pub fn new(lbhomedir: PathBuf) -> Self {
-        Self { lbhomedir }
+    pub fn new(lbhomedir: PathBuf, version: String) -> Self {
+        Self { lbhomedir, version }
     }
 
     /// Create a new backup
     pub async fn create_backup(&self, include_plugins: bool) -> Result<PathBuf> {
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S").to_string();
-        let backup_name = format!("loxberry_backup_{}.tar.gz", timestamp);
+        let backup_name = format!("rustylox_backup_{}.tar.gz", timestamp);
         let backup_dir = crate::backup_dir(&self.lbhomedir);
 
         tokio::fs::create_dir_all(&backup_dir).await?;
@@ -47,7 +48,7 @@ impl BackupManager {
         let metadata = BackupMetadata {
             version: crate::BACKUP_VERSION.to_string(),
             timestamp: Utc::now(),
-            loxberry_version: "4.0.0.0".to_string(),
+            rustylox_version: self.version.clone(),
             includes: includes.clone(),
             size_bytes: 0, // Will be updated after creation
         };
@@ -176,7 +177,7 @@ pub struct BackupInfo {
 }
 
 /// Create a backup (convenience function)
-pub async fn create_backup(lbhomedir: PathBuf, include_plugins: bool) -> Result<PathBuf> {
-    let manager = BackupManager::new(lbhomedir);
+pub async fn create_backup(lbhomedir: PathBuf, version: String, include_plugins: bool) -> Result<PathBuf> {
+    let manager = BackupManager::new(lbhomedir, version);
     manager.create_backup(include_plugins).await
 }

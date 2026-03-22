@@ -89,7 +89,7 @@ fn default_true() -> bool {
 
 /// List all backups
 pub async fn list_backups(State(state): State<AppState>) -> Json<Vec<BackupResponse>> {
-    let manager = BackupManager::new(state.lbhomedir.clone());
+    let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     let backups = match manager.list_backups().await {
         Ok(b) => b
@@ -115,7 +115,7 @@ pub async fn create_backup(
     State(state): State<AppState>,
     Query(query): Query<CreateBackupQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
-    let manager = BackupManager::new(state.lbhomedir.clone());
+    let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     match manager.create_backup(query.include_plugins).await {
         Ok(path) => {
@@ -240,7 +240,7 @@ pub async fn delete_backup(
         ));
     }
 
-    let manager = BackupManager::new(state.lbhomedir.clone());
+    let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     match manager.delete_backup(&name).await {
         Ok(()) => Ok(Json(serde_json::json!({
