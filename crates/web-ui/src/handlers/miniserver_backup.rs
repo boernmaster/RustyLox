@@ -17,6 +17,7 @@ use axum::{
 use chrono::{Local, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use tokio::fs;
 use tracing::{debug, error, info, warn};
@@ -304,17 +305,38 @@ fn parse_loxone_files(listing: &str) -> Vec<String> {
             if line.is_empty() {
                 return None;
             }
-            // Skip directory entries (lines starting with 'd ')
             if line.starts_with("d ") {
                 return None;
             }
-            // The filename is the last whitespace-separated token
             let name = line.split_whitespace().last()?;
             if name.to_lowercase().ends_with(".loxone") {
                 Some(name.to_string())
             } else {
                 None
             }
+        })
+        .collect()
+}
+
+/// Parse the /dev/fslist response to return ALL filenames (any extension).
+///
+/// Used for full binary backups: collects every file in the directory,
+/// including `.Loxone` project files and `permissions.bin`.
+/// Directory entries (lines starting with `d `) are skipped.
+fn parse_all_files(listing: &str) -> Vec<String> {
+    listing
+        .lines()
+        .filter_map(|line| {
+            let line = line.trim();
+            if line.is_empty() {
+                return None;
+            }
+            // Skip directory entries
+            if line.starts_with("d ") {
+                return None;
+            }
+            // The filename is the last whitespace-separated token
+            line.split_whitespace().last().map(|s| s.to_string())
         })
         .collect()
 }
@@ -363,16 +385,15 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
     )
     .await;
 
-    // Step 1: list filesystem paths to find the project file.
-    // The Miniserver typically stores the .loxone project file in /prog/.
+    // Step 1: list all files from the Miniserver's /prog/ directory.
     // We search multiple paths and collect diagnostics for the error message.
-    let (project_file, fsget_prefix) = {
+    let (all_files, fsget_prefix) = {
         let search_paths: &[(&str, &str)] = &[
             ("/dev/fslist/prog/", "/dev/fsget/prog/"),
             ("/dev/fslist/", "/dev/fsget/"),
             ("/dev/fslist/sd/", "/dev/fsget/sd/"),
         ];
-        let mut found: Option<(String, String)> = None;
+        let mut found: Option<(Vec<String>, String)> = None;
         let mut diagnostics: Vec<String> = Vec::new();
 
         for (fslist, fsget) in search_paths {
@@ -380,15 +401,21 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
                 Ok((bytes, _)) => {
                     let listing = String::from_utf8_lossy(&bytes);
                     debug!("Listing from {} on '{}':\n{}", fslist, ms_name, listing);
-                    let files = parse_loxone_files(&listing);
+                    let files = parse_all_files(&listing);
                     if !files.is_empty() {
-                        found = Some((files[0].clone(), fsget.to_string()));
+                        info!(
+                            "Found {} file(s) in {} on '{}'",
+                            files.len(),
+                            fslist,
+                            ms_name
+                        );
+                        found = Some((files, fsget.to_string()));
                         break;
                     }
                     // Collect first 200 chars for diagnostics
                     let preview = listing.chars().take(200).collect::<String>();
                     diagnostics.push(format!(
-                        "{}: OK but no .loxone — preview: {:?}",
+                        "{}: OK but no files — preview: {:?}",
                         fslist, preview
                     ));
                 }
@@ -405,13 +432,13 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
                 log_backup(
                     &state.lbhomedir,
                     "ERROR",
-                    &format!("No .loxone found for '{}': {}", ms_name, diag_text),
+                    &format!("No files found for '{}': {}", ms_name, diag_text),
                 )
                 .await;
                 let diag = diagnostics.join("<br>");
                 return Html(format!(
                     "<div class='alert alert-danger'>\
-                     <strong>No .loxone project file found on '{}'.</strong><br>\
+                     <strong>No files found on '{}'.</strong><br>\
                      <small>Paths checked:<br>{}</small>\
                      </div>",
                     ms_name, diag
@@ -420,31 +447,9 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
         }
     };
 
-    info!("Found project file: {} on '{}'", project_file, ms_name);
+    info!("Found {} file(s) on '{}'", all_files.len(), ms_name);
 
-    // Step 2: download the project file
-    let download_path = format!("{}{}", fsget_prefix, project_file);
-    let (bytes, _) = match client.http().download_bytes(&download_path).await {
-        Ok(data) => data,
-        Err(e) => {
-            error!(
-                "Failed to download '{}' from '{}': {}",
-                project_file, ms_name, e
-            );
-            log_backup(
-                &state.lbhomedir,
-                "ERROR",
-                &format!("Download failed for '{}': {}", ms_name, e),
-            )
-            .await;
-            return Html(format!(
-                "<div class='alert alert-danger'>Failed to download project file from '{}': {}</div>",
-                ms_name, e
-            ));
-        }
-    };
-
-    // Build timestamped filename
+    // Step 2: download every file and pack into a ZIP archive in memory
     let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
     let safe_name: String = ms_name
         .chars()
@@ -456,7 +461,62 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
             }
         })
         .collect();
-    let filename = format!("Backup_{}_{}.loxone", safe_name, timestamp);
+    let filename = format!("Backup_{}_{}.zip", safe_name, timestamp);
+
+    let mut cursor = Cursor::new(Vec::<u8>::new());
+    let mut downloaded = 0usize;
+    {
+        let mut zip = zip::ZipWriter::new(&mut cursor);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+
+        for file in &all_files {
+            let download_path = format!("{}{}", fsget_prefix, file);
+            match client.http().download_bytes(&download_path).await {
+                Ok((bytes, _)) => {
+                    if zip.start_file(file, options).is_ok() {
+                        if let Err(e) = zip.write_all(&bytes) {
+                            warn!("Failed to write '{}' into ZIP: {}", file, e);
+                        } else {
+                            info!("  Packed '{}' ({} bytes)", file, bytes.len());
+                            downloaded += 1;
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!("Skipping '{}' — download failed: {}", file, e);
+                }
+            }
+        }
+
+        if let Err(e) = zip.finish() {
+            error!("Failed to finalise ZIP for '{}': {}", ms_name, e);
+            log_backup(
+                &state.lbhomedir,
+                "ERROR",
+                &format!("ZIP finalise failed for '{}': {}", ms_name, e),
+            )
+            .await;
+            return Html(format!(
+                "<div class='alert alert-danger'>Failed to create ZIP archive for '{}': {}</div>",
+                ms_name, e
+            ));
+        }
+    }
+    let zip_bytes = cursor.into_inner();
+
+    if downloaded == 0 {
+        log_backup(
+            &state.lbhomedir,
+            "ERROR",
+            &format!("No files could be downloaded from '{}'", ms_name),
+        )
+        .await;
+        return Html(format!(
+            "<div class='alert alert-danger'>No files could be downloaded from '{}'.</div>",
+            ms_name
+        ));
+    }
 
     // Ensure target directory exists
     let base_dir = state.lbhomedir.join("data/system/miniserver-backups");
@@ -469,9 +529,9 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
         ));
     }
 
-    // Write backup file
+    // Write ZIP file
     let backup_path = dir.join(&filename);
-    if let Err(e) = fs::write(&backup_path, &bytes).await {
+    if let Err(e) = fs::write(&backup_path, &zip_bytes).await {
         error!("Failed to write backup file {:?}: {}", backup_path, e);
         return Html(format!(
             "<div class='alert alert-danger'>Failed to save backup: {}</div>",
@@ -479,15 +539,21 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
         ));
     }
 
-    info!("Backup saved: {:?} ({} bytes)", backup_path, bytes.len());
+    info!(
+        "Backup saved: {:?} ({} files, {} bytes)",
+        backup_path,
+        downloaded,
+        zip_bytes.len()
+    );
     log_backup(
         &state.lbhomedir,
         "INFO",
         &format!(
-            "Manual backup completed for '{}': {} ({})",
+            "Manual backup completed for '{}': {} files → {} ({})",
             ms_name,
+            downloaded,
             filename,
-            format_size(bytes.len() as u64)
+            format_size(zip_bytes.len() as u64)
         ),
     )
     .await;
@@ -496,11 +562,13 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
     rotate_backups(&dir).await;
 
     Html(format!(
-        "<div class='alert alert-success'>Backup of <strong>{}</strong> completed: {} ({}) \
+        "<div class='alert alert-success'>Backup of <strong>{}</strong> completed: \
+         {} file(s) → {} ({}) \
          &mdash; <a href='/miniserver/backup'>Refresh</a> to see the updated list.</div>",
         ms_name,
+        downloaded,
         filename,
-        format_size(bytes.len() as u64),
+        format_size(zip_bytes.len() as u64),
     ))
 }
 
@@ -659,32 +727,20 @@ async fn do_backup_for(state: &AppState, id: &str) -> Result<String, String> {
         ("/dev/fslist/prog/", "/dev/fsget/prog/"),
         ("/dev/fslist/", "/dev/fsget/"),
     ];
-    let mut found: Option<(String, String)> = None;
+    let mut found: Option<(Vec<String>, String)> = None;
     for (fslist, fsget) in search_paths {
         if let Ok((bytes, _)) = client.http().download_bytes(fslist).await {
             let listing = String::from_utf8_lossy(&bytes);
-            let files = parse_loxone_files(&listing);
+            let files = parse_all_files(&listing);
             if !files.is_empty() {
-                found = Some((files[0].clone(), fsget.to_string()));
+                found = Some((files, fsget.to_string()));
                 break;
             }
         }
     }
 
-    let (project_file, fsget_prefix) =
-        found.ok_or_else(|| format!("No .loxone file found on '{}'", ms_name))?;
-
-    let download_path = format!("{}{}", fsget_prefix, project_file);
-    let (bytes, _) = client
-        .http()
-        .download_bytes(&download_path)
-        .await
-        .map_err(|e| {
-            format!(
-                "Failed to download '{}' from '{}': {}",
-                project_file, ms_name, e
-            )
-        })?;
+    let (all_files, fsget_prefix) =
+        found.ok_or_else(|| format!("No files found on '{}'", ms_name))?;
 
     let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
     let safe_name: String = ms_name
@@ -697,7 +753,40 @@ async fn do_backup_for(state: &AppState, id: &str) -> Result<String, String> {
             }
         })
         .collect();
-    let filename = format!("Backup_{}_{}.loxone", safe_name, timestamp);
+    let filename = format!("Backup_{}_{}.zip", safe_name, timestamp);
+
+    // Download all files and pack into a ZIP archive
+    let mut cursor = Cursor::new(Vec::<u8>::new());
+    let mut downloaded = 0usize;
+    {
+        let mut zip = zip::ZipWriter::new(&mut cursor);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+
+        for file in &all_files {
+            let download_path = format!("{}{}", fsget_prefix, file);
+            match client.http().download_bytes(&download_path).await {
+                Ok((bytes, _)) => {
+                    if zip.start_file(file, options).is_ok() {
+                        if zip.write_all(&bytes).is_ok() {
+                            downloaded += 1;
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!("Skipping '{}' in scheduled backup: {}", file, e);
+                }
+            }
+        }
+
+        zip.finish()
+            .map_err(|e| format!("Failed to finalise ZIP for '{}': {}", ms_name, e))?;
+    }
+    let zip_bytes = cursor.into_inner();
+
+    if downloaded == 0 {
+        return Err(format!("No files could be downloaded from '{}'", ms_name));
+    }
 
     let base_dir = state.lbhomedir.join("data/system/miniserver-backups");
     let dir = ms_backup_dir(&base_dir, id, &ms_name);
@@ -706,23 +795,25 @@ async fn do_backup_for(state: &AppState, id: &str) -> Result<String, String> {
         .map_err(|e| format!("Failed to create backup dir: {}", e))?;
 
     let backup_path = dir.join(&filename);
-    fs::write(&backup_path, &bytes)
+    fs::write(&backup_path, &zip_bytes)
         .await
         .map_err(|e| format!("Failed to write backup: {}", e))?;
 
     info!(
-        "Scheduled backup saved: {:?} ({} bytes)",
+        "Scheduled backup saved: {:?} ({} files, {} bytes)",
         backup_path,
-        bytes.len()
+        downloaded,
+        zip_bytes.len()
     );
     log_backup(
         &state.lbhomedir,
         "INFO",
         &format!(
-            "Scheduled backup completed for '{}': {} ({})",
+            "Scheduled backup completed for '{}': {} files → {} ({})",
             ms_name,
+            downloaded,
             filename,
-            format_size(bytes.len() as u64)
+            format_size(zip_bytes.len() as u64)
         ),
     )
     .await;

@@ -40,3 +40,6 @@ async-stream = "0.3"
 
 # Time handling for timestamps
 chrono = "0.4"
+
+# ZIP archive creation (full Miniserver binary backup)
+zip = "2.1"

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.14] - 2026-03-22
+
+### Changed
+- Miniserver backup now downloads **all files** from the `/prog/` directory (`.Loxone` project files, `permissions.bin`, and any other binaries) and packages them into a single `.zip` archive instead of saving only the first `.loxone` file
+- Backup filenames now use `.zip` extension (`Backup_<name>_<timestamp>.zip`)
+- Log messages report the number of files packed and the total archive size
+
 ## [0.6.13] - 2026-03-22
 
 ### Added
