@@ -263,17 +263,16 @@ impl MqttGateway {
                 }
             }
             GatewayMessage::UdpReceived { topic, value } => {
-                // Apply transformers
+                // Apply transformers (may rewrite topic/value)
                 let result = self.transformer_registry.transform(&topic, &value).await?;
 
-                // Publish to MQTT if configured
-                if result.relay_to_mqtt {
-                    self.broker_client
-                        .publish(&result.topic, &result.value)
-                        .await?;
-                }
+                // UDP input always publishes to MQTT — that is the purpose of the UDP gateway
+                // (equivalent to original LoxBerry MQTT Gateway UDP interface on port 11884)
+                self.broker_client
+                    .publish(&result.topic, &result.value)
+                    .await?;
 
-                // Relay to Miniserver if configured
+                // Also relay to Miniserver if configured
                 if result.relay_to_miniserver {
                     self.relay
                         .send_to_miniserver(&result.topic, &result.value)
