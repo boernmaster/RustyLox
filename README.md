@@ -210,69 +210,40 @@ loxberry-rust/
 
 ## Quick Start
 
-> 📖 **Detailed Build Instructions:** See [BUILD.md](BUILD.md) for comprehensive local build guide
-
 ### Prerequisites
 - Docker and Docker Compose
-- (Optional) Rust 1.80+ for local development
 
-### Option 1: Docker Hub (Recommended)
+### Option 1: Deploy from pre-built image (recommended)
 
-Pull and run the latest release:
+No build required — pulls the latest image from the GitHub Container Registry.
 
 ```bash
-# Pull the image
-docker pull ghcr.io/boernmaster/rustylox:1.0.0
+# Download the example compose file
+curl -fsSL https://raw.githubusercontent.com/boernmaster/RustyLox/main/docker-compose.example.yml \
+  -o docker-compose.yml
 
-# Create docker-compose.yml
-cat > docker-compose.yml << 'EOF'
-version: '3.8'
-services:
-  rustylox:
-    image: ghcr.io/boernmaster/rustylox:1.0.0
-    container_name: rustylox
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-      - "11884:11884/udp"
-    volumes:
-      - ./config:/opt/loxberry/config
-      - ./data:/opt/loxberry/data
-      - ./log:/opt/loxberry/log
-    environment:
-      - RUST_LOG=info
-      - MQTT_BROKER=mosquitto
-    depends_on:
-      - mosquitto
-    networks:
-      - loxberry-net
-
-  mosquitto:
-    image: eclipse-mosquitto:2.0
-    container_name: mosquitto
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-    networks:
-      - loxberry-net
-
-networks:
-  loxberry-net:
-    driver: bridge
-EOF
-
-# Create config directory and start
-mkdir -p config/system
+# Start RustyLox
 docker compose up -d
+
+# View logs
+docker compose logs -f rustylox
 ```
 
-### Option 2: Build from Source
+**With the built-in Mosquitto broker** (if you don't have an external MQTT broker):
 
-Clone and build locally:
+```bash
+docker compose --profile mqtt up -d
+```
+
+**With an external MQTT broker** — edit `MQTT_BROKER` and `MQTT_PORT` in the compose file before starting:
+
+```yaml
+environment:
+  - MQTT_BROKER=192.168.1.10   # your broker IP
+  - MQTT_PORT=1883
+```
+
+### Option 2: Build from source
 
 ```bash
 git clone https://github.com/boernmaster/RustyLox.git
@@ -281,25 +252,16 @@ cd RustyLox
 # Create volume directories
 mkdir -p volumes/config/system volumes/data/system volumes/log/system
 
-# Copy default configuration (or create your own)
-cp volumes/config/system/general.json.example volumes/config/system/general.json
-# Edit volumes/config/system/general.json with your Miniserver details
-```
-
-### 2. Build and Start
-```bash
-# Build and start all containers
+# Build and start
 docker compose up -d
 
 # View logs
 docker compose logs -f rustylox
-
-# Check status
-docker compose ps
 ```
 
-### 3. Access Web UI
-Open your browser to **http://localhost:8080/**
+### Access the Web UI
+
+Open **http://localhost:8080/** in your browser.
 
 - Dashboard: http://localhost:8080/
 - MQTT Monitor: http://localhost:8080/mqtt/monitor
@@ -430,7 +392,7 @@ cargo build
 cargo test
 
 # Run daemon locally
-LBHOMEDIR=/tmp/loxberry cargo run --bin loxberry-daemon
+LBHOMEDIR=/tmp/loxberry cargo run --bin rustylox-daemon
 ```
 
 ### Docker Build
@@ -445,14 +407,14 @@ docker compose down && docker compose up -d
 ### Project Structure
 Each crate is independent with its own Cargo.toml:
 
-- **loxberry-core**: Common types, errors, results
-- **loxberry-config**: JSON config parsing and management
+- **rustylox-core**: Common types, errors, results
+- **rustylox-config**: JSON config parsing and management
 - **miniserver-client**: HTTP/UDP client for Loxone Miniserver
 - **mqtt-gateway**: MQTT broker client, UDP listener, transformers
 - **plugin-manager**: ZIP extraction, database, lifecycle hooks
 - **web-api**: REST API routes and handlers (Axum)
 - **web-ui**: Server-rendered templates and UI handlers (Askama)
-- **loxberry-daemon**: Main binary that orchestrates all services
+- **rustylox-daemon**: Main binary that orchestrates all services
 
 ## Differences from Original LoxBerry
 
