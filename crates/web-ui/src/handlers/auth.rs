@@ -23,6 +23,8 @@ pub struct LoginForm {
     pub username: String,
     pub password: String,
     pub remember_me: Option<String>,
+    /// Hidden field - original URL to redirect to after login
+    pub redirect: Option<String>,
 }
 
 /// GET /login - show login form
@@ -32,6 +34,7 @@ pub async fn show_login(
 ) -> Html<String> {
     let template = LoginTemplate {
         error: params.error,
+        redirect: params.redirect,
         version: state.version.clone(),
     };
     Html(
@@ -53,12 +56,29 @@ pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<Login
         .await
     {
         Ok(token_response) => {
-            // 6 months = 6 * 30 * 24 * 3600 = 15_552_000 seconds
-            let cookie = format!(
-                "lb_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age=15552000",
-                token_response.access_token
-            );
-            let mut response = Redirect::to("/").into_response();
+            // Build cookie: persistent (30 days) if remember_me checked, session cookie otherwise
+            let cookie = if creds.remember_me.is_some() {
+                // 30 days = 30 * 24 * 3600 = 2_592_000 seconds
+                format!(
+                    "lb_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000",
+                    token_response.access_token
+                )
+            } else {
+                // Session cookie - no Max-Age/Expires, cleared when browser closes
+                format!(
+                    "lb_token={}; Path=/; HttpOnly; SameSite=Strict",
+                    token_response.access_token
+                )
+            };
+
+            // Redirect to original destination or dashboard
+            let destination = creds
+                .redirect
+                .as_deref()
+                .filter(|r| !r.is_empty() && r.starts_with('/'))
+                .unwrap_or("/");
+
+            let mut response = Redirect::to(destination).into_response();
             if let Ok(cookie_value) = HeaderValue::from_str(&cookie) {
                 response
                     .headers_mut()
@@ -68,8 +88,15 @@ pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<Login
         }
         Err(e) => {
             let msg = format!("{}", e);
-            let encoded = urlencoding_encode(&msg);
-            Redirect::to(&format!("/login?error={}", encoded)).into_response()
+            let encoded_msg = urlencoding_encode(&msg);
+            let redirect_param = creds
+                .redirect
+                .as_deref()
+                .filter(|r| !r.is_empty())
+                .map(|r| format!("&redirect={}", urlencoding_encode(r)))
+                .unwrap_or_default();
+            Redirect::to(&format!("/login?error={}{}", encoded_msg, redirect_param))
+                .into_response()
         }
     }
 }
