@@ -177,7 +177,11 @@ pub struct BackupInfo {
 }
 
 /// Create a backup (convenience function)
-pub async fn create_backup(lbhomedir: PathBuf, version: String, include_plugins: bool) -> Result<PathBuf> {
+pub async fn create_backup(
+    lbhomedir: PathBuf,
+    version: String,
+    include_plugins: bool,
+) -> Result<PathBuf> {
     let manager = BackupManager::new(lbhomedir, version);
     manager.create_backup(include_plugins).await
 }

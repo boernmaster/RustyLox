@@ -82,7 +82,8 @@ impl BackupScheduler {
 
     /// Remove old backups keeping only max_backups
     async fn cleanup_old_backups(&self) -> Result<()> {
-        let manager = crate::backup::BackupManager::new(self.lbhomedir.clone(), self.version.clone());
+        let manager =
+            crate::backup::BackupManager::new(self.lbhomedir.clone(), self.version.clone());
         let mut backups = manager.list_backups().await?;
 
         if backups.len() <= self.schedule.max_backups {

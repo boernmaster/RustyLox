@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.18] - 2026-03-22
+
+### Changed
+- **Breaking**: Renamed all `loxberry-*` crates to `rustylox-*` (`rustylox-core`, `rustylox-config`, `rustylox-logging`, `rustylox-daemon`, `rustylox-metrics`)
+- **Breaking**: Prometheus metrics prefix changed from `loxberry_` to `rustylox_`
+- Backup format switched from tar.gz to ZIP (Deflate compression)
+- Dockerfile and CI binary name updated to `rustylox-daemon`
+
+### Fixed
+- Backup metadata now uses the actual build version instead of hardcoded "4.0.0.0"
+
 ## [0.6.17] - 2026-03-22
 
 ### Added
