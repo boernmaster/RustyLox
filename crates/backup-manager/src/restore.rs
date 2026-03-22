@@ -14,13 +14,10 @@ pub async fn restore_backup(lbhomedir: PathBuf, backup_path: PathBuf) -> Result<
 
     tracing::info!("Restoring from backup: {}", backup_path.display());
 
-    // Extract tar.gz
-    let tar_file = File::open(&backup_path)?;
-    let dec = flate2::read::GzDecoder::new(tar_file);
-    let mut archive = tar::Archive::new(dec);
+    let file = File::open(&backup_path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
 
-    // Extract to lbhomedir
-    archive.unpack(&lbhomedir)?;
+    archive.extract(&lbhomedir)?;
 
     tracing::info!("Backup restored successfully");
 

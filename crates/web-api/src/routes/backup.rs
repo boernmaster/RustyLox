@@ -177,7 +177,7 @@ pub async fn download_backup(
     let body = Body::from_stream(stream);
 
     Ok(Response::builder()
-        .header(header::CONTENT_TYPE, "application/gzip")
+        .header(header::CONTENT_TYPE, "application/zip")
         .header(
             header::CONTENT_DISPOSITION,
             format!("attachment; filename=\"{}\"", name),

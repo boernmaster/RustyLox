@@ -3,8 +3,9 @@
 use chrono::{DateTime, Utc};
 use rustylox_core::Result;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
+use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BackupMetadata {
@@ -28,7 +29,7 @@ impl BackupManager {
     /// Create a new backup
     pub async fn create_backup(&self, include_plugins: bool) -> Result<PathBuf> {
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S").to_string();
-        let backup_name = format!("rustylox_backup_{}.tar.gz", timestamp);
+        let backup_name = format!("rustylox_backup_{}.zip", timestamp);
         let backup_dir = crate::backup_dir(&self.lbhomedir);
 
         tokio::fs::create_dir_all(&backup_dir).await?;
@@ -50,37 +51,45 @@ impl BackupManager {
             timestamp: Utc::now(),
             rustylox_version: self.version.clone(),
             includes: includes.clone(),
-            size_bytes: 0, // Will be updated after creation
+            size_bytes: 0,
         };
 
-        // Create tar.gz
-        let tar_file = File::create(&backup_path)?;
-        let enc = flate2::write::GzEncoder::new(tar_file, flate2::Compression::default());
-        let mut tar = tar::Builder::new(enc);
+        // Create ZIP
+        let zip_file = std::fs::File::create(&backup_path)?;
+        let mut zip = zip::ZipWriter::new(zip_file);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
 
         // Add metadata.json
         let metadata_json = serde_json::to_string_pretty(&metadata)?;
-        let mut header = tar::Header::new_gnu();
-        header.set_path("metadata.json")?;
-        header.set_size(metadata_json.len() as u64);
-        header.set_mode(0o644);
-        header.set_cksum();
-        tar.append(&header, metadata_json.as_bytes())?;
+        zip.start_file("metadata.json", options)?;
+        zip.write_all(metadata_json.as_bytes())?;
 
         // Add directories
         for include in &includes {
             let source = self.lbhomedir.join(include);
             if source.exists() {
                 tracing::info!("Adding to backup: {}", include);
-                tar.append_dir_all(include, &source)?;
+                for entry in WalkDir::new(&source).into_iter().filter_map(|e| e.ok()) {
+                    let path = entry.path();
+                    let rel_path = path.strip_prefix(&self.lbhomedir).unwrap_or(path);
+                    let name = rel_path.to_string_lossy();
+
+                    if path.is_dir() {
+                        zip.add_directory(format!("{}/", name), options)?;
+                    } else if path.is_file() {
+                        zip.start_file(name.to_string(), options)?;
+                        let data = std::fs::read(path)?;
+                        zip.write_all(&data)?;
+                    }
+                }
             } else {
                 tracing::warn!("Backup source not found: {}", include);
             }
         }
 
-        tar.finish()?;
+        zip.finish()?;
 
-        // Update metadata with actual size
         let file_size = tokio::fs::metadata(&backup_path).await?.len();
         tracing::info!(
             "Backup created successfully: {} ({} bytes)",
@@ -105,11 +114,10 @@ impl BackupManager {
         while let Some(entry) = entries.next_entry().await? {
             let path = entry.path();
 
-            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("gz") {
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("zip") {
                 let metadata = tokio::fs::metadata(&path).await?;
                 let name = path.file_name().unwrap().to_string_lossy().to_string();
 
-                // Try to extract metadata from backup
                 let backup_metadata = self.read_backup_metadata(&path).ok();
 
                 backups.push(BackupInfo {
@@ -128,24 +136,16 @@ impl BackupManager {
 
     /// Read metadata from backup file
     fn read_backup_metadata(&self, backup_path: &PathBuf) -> Result<BackupMetadata> {
-        let tar_file = File::open(backup_path)?;
-        let dec = flate2::read::GzDecoder::new(tar_file);
-        let mut archive = tar::Archive::new(dec);
+        let file = std::fs::File::open(backup_path)?;
+        let mut archive = zip::ZipArchive::new(file)?;
 
-        for entry in archive.entries()? {
-            let mut entry = entry?;
-            let path = entry.path()?;
+        let mut entry = archive.by_name("metadata.json").map_err(|e| {
+            rustylox_core::Error::backup(format!("Metadata not found in backup: {}", e))
+        })?;
 
-            if path == PathBuf::from("metadata.json") {
-                let mut contents = String::new();
-                std::io::Read::read_to_string(&mut entry, &mut contents)?;
-                return Ok(serde_json::from_str(&contents)?);
-            }
-        }
-
-        Err(rustylox_core::Error::backup(
-            "Metadata not found in backup".to_string(),
-        ))
+        let mut contents = String::new();
+        std::io::Read::read_to_string(&mut entry, &mut contents)?;
+        Ok(serde_json::from_str(&contents)?)
     }
 
     /// Delete a backup
