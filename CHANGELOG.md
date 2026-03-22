@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.21] - 2026-03-22
+
+### Added
+- Documentation for Vitoconnect plugin integration (`docs/vitoconnect-integration.md`)
+  - Data flow from Viessmann API to Miniserver (MQTT and HTTP)
+  - Sending commands from Miniserver to Viessmann via HTTP Virtual Outputs
+  - Complete reference of all supported `setvalue` parameters
+  - Plugin configuration, troubleshooting, and prerequisites
+
 ## [0.6.20] - 2026-03-22
 
 ### Added
