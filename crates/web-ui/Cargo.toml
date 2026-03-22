@@ -28,7 +28,7 @@ axum = { workspace = true }
 
 # Templates
 askama = { version = "0.12", features = ["with-axum"] }
-askama_axum = "0.4"
+askama_axum = "0.5"
 
 # Static files
 tower-http = { workspace = true, features = ["fs"] }
@@ -42,4 +42,4 @@ async-stream = "0.3"
 chrono = "0.4"
 
 # ZIP archive creation (full Miniserver binary backup)
-zip = "2.1"
+zip = "8.3"
