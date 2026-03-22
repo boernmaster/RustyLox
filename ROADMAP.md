@@ -3,8 +3,8 @@
 <div align="center">
 
 ![Project Status](https://img.shields.io/badge/Project-Active-brightgreen)
-![Current Phase](https://img.shields.io/badge/Current%20Phase-5%20(Planning)-blue)
-![Completion](https://img.shields.io/badge/Completion-57%25-yellow)
+![Current Phase](https://img.shields.io/badge/Current%20Phase-7a%20(In%20Progress)-blue)
+![Completion](https://img.shields.io/badge/Completion-85%25-yellow)
 
 </div>
 
@@ -19,9 +19,11 @@ Transform LoxBerry into a modern, secure, and scalable smart home platform built
 2024 Q2  ████████████████████  Phase 2: Plugin System ✅
 2024 Q3  ████████████████████  Phase 3: MQTT Gateway ✅
 2024 Q4  ████████████████████  Phase 4: Web UI ✅
-2025 Q1  ██████░░░░░░░░░░░░░  Phase 5: SDK & Logging (In Progress)
-2025 Q2  ░░░░░░░░░░░░░░░░░░░  Phase 6: Updates & Monitoring
-2025 Q3  ░░░░░░░░░░░░░░░░░░░  Phase 7: Production Hardening
+2025 Q1  ████████████████████  Phase 5: SDK & Logging ✅
+2025 Q2  ████████████████████  Phase 6: Performance & Monitoring ✅
+2025 Q3  ████████████████████  Phase 7: Security Hardening ✅
+2026 Q1  ██████████████░░░░░  Phase 7a: Web UI for Backend Features (In Progress)
+2026 Q2  ░░░░░░░░░░░░░░░░░░░  Phase 8: Advanced Features & Ecosystem
 ```
 
 ---
@@ -152,128 +154,164 @@ Create a modern server-rendered web interface with real-time capabilities.
 
 ---
 
-## 🚧 Phase 5: SDK Compatibility & Logging (IN PLANNING)
+## ✅ Phase 5: SDK Compatibility & Logging (COMPLETE)
 
 **Duration**: 6 weeks (Q1 2025)
-**Status**: 🚧 Planning
-**Completion**: 0%
-**Priority**: HIGH
+**Status**: ✅ Complete
+**Completion**: 100%
+**Released**: v1.2.0
 
 ### Objectives
 Enable full compatibility with existing LoxBerry plugins and implement production-grade logging.
 
-### Planned Deliverables
-- [ ] SDK compatibility layer (Perl/PHP/Bash)
-- [ ] Environment variable injection for plugins
-- [ ] Plugin execution wrapper
-- [ ] Structured logging with tracing
-- [ ] Log rotation with tracing-appender
-- [ ] Per-component log levels
-- [ ] Plugin-specific log files
-- [ ] Web UI log viewer
-- [ ] Backup & restore functionality
-- [ ] Configuration validation
+### Deliverables
+- ✅ SDK compatibility layer (Perl/PHP/Bash)
+- ✅ Environment variable injection for plugins
+- ✅ Plugin execution wrapper
+- ✅ Structured logging with tracing
+- ✅ Log rotation with tracing-appender
+- ✅ Per-component log levels
+- ✅ Plugin-specific log files
+- ✅ Web UI log viewer
+- ✅ Backup & restore functionality
+- ✅ Configuration validation
 
-### Target Metrics
-- **Plugins Compatible**: 5+ real LoxBerry plugins
-- **Log Retention**: Configurable (default 30 days)
-- **Backup Size**: <100MB compressed
-- **SDK Coverage**: 80% of original functionality
+### Key Metrics
+- **Plugins Compatible**: 3+ real LoxBerry plugins tested (incl. Vitoconnect)
+- **SDK Coverage**: Perl, PHP, Bash layers complete
 
-**[📋 View Plan](PHASE5_PLAN.md)**
+**[📄 Full Details](PHASE5_COMPLETE.md)**
 
 ---
 
-## 📅 Phase 6: System Updates & Monitoring (FUTURE)
+## ✅ Phase 6: Performance & Monitoring (COMPLETE)
 
 **Duration**: 6 weeks (Q2 2025)
-**Status**: 📅 Future
-**Completion**: 0%
+**Status**: ✅ Complete
+**Completion**: 100%
+**Released**: v1.3.0
+
+### Objectives
+Make the system production-ready with monitoring, observability, and operational tooling.
+
+### Deliverables
+- ✅ Database abstraction layer (PostgreSQL / SQLite)
+- ✅ Email notification system (SMTP + HTML templates)
+- ✅ Task scheduler with cron expression support
+- ✅ Network diagnostics (ping, port scan, connectivity tests)
+- ✅ System health monitoring (CPU, memory, disk usage)
+- ✅ Backup and restore functionality
+- ✅ Enhanced health check endpoint with detailed metrics
+
+**[📄 Full Details](PHASE6_COMPLETE.md)**
+
+---
+
+## ✅ Phase 7: Security Hardening (COMPLETE)
+
+**Duration**: 8 weeks (Q3 2025)
+**Status**: ✅ Complete
+**Completion**: 100%
+**Released**: v1.3.0
+
+### Objectives
+Production-grade security for the RustyLox platform.
+
+### Deliverables
+
+#### Authentication & Authorization
+- ✅ JWT authentication (HS256)
+- ✅ Role-Based Access Control (RBAC) — Admin, Operator, Viewer, PluginManager
+- ✅ API key management (`lbx_` prefix, SHA-256 hashing)
+- ✅ Argon2id password hashing
+- ✅ Account lockout after 5 failed login attempts
+- ✅ In-memory session management with auto-expiry
+- ✅ Default admin user created on first run
+
+#### Security Infrastructure
+- ✅ Security headers middleware (CSP, X-Frame-Options, etc.)
+- ✅ Comprehensive audit logging for all security-sensitive operations
+- ✅ Auth REST API (`/api/auth/*`, `/api/users/*`)
+
+### Key Metrics
+- **Auth endpoints**: JWT + API key dual-mode
+- **Password hashing**: Argon2id (industry best practice)
+- **Audit log**: Full trail for compliance
+
+**[📄 Full Details](PHASE7_COMPLETE.md)**
+
+---
+
+## 🚧 Phase 7a: Complete Web UI for Backend Features (IN PROGRESS)
+
+**Duration**: 6 weeks (Q1 2026)
+**Status**: 🚧 In Progress
+**Completion**: ~70%
 **Priority**: HIGH
 
 ### Objectives
-Make the system production-ready with updates, monitoring, and observability.
+Build a full web UI for all backend functionality introduced in phases 5–7, and expand Miniserver backup capabilities.
 
-### Planned Deliverables
-- [ ] System update mechanism (GitHub releases)
-- [ ] Docker image updates
-- [ ] Update rollback capability
-- [ ] Prometheus metrics exporter
-- [ ] Enhanced health checks
-- [ ] Alerting system
-- [ ] Email notifications (SMTP)
-- [ ] Scheduled tasks (cron)
-- [ ] Network diagnostics
-- [ ] Time server (NTP) configuration
-- [ ] Advanced log viewer
-- [ ] Performance profiling
+### Deliverables
+- ✅ Login/logout with JWT cookie authentication
+- ✅ User management UI (`/admin/users`)
+- ✅ API key management UI (`/admin/api-keys`)
+- ✅ Audit log viewer (`/admin/audit`)
+- ✅ Security settings UI (`/admin/security`)
+- ✅ Database management UI (`/admin/database`)
+- ✅ System health dashboard (`/system-health`)
+- ✅ Email configuration UI (`/email`) — loads real config
+- ✅ Task scheduler UI (`/tasks`)
+- ✅ Network diagnostics UI (`/network`)
+- ✅ Backup & restore UI (`/backup`)
+- ✅ Miniserver backup — full recursive backup of all data directories via SSE progress bar
+- ✅ LoxBerry-compatible log viewer route (`/admin/system/tools/logfile.cgi`)
+- ✅ Weather widget + API docs (bonus pages)
+- [ ] System update UI (check + apply GitHub releases)
+- [ ] Email test + send history UI
+- [ ] Task execution history viewer
+- [ ] CSS/responsive polish, integration tests, accessibility
 
-### Target Metrics
-- **Update Success Rate**: >99%
-- **Metrics Exported**: 50+
-- **Alert Response Time**: <1 minute
-- **Email Delivery**: >95%
-
-**[📋 View Plan](PHASE6_PLAN.md)**
+**[📋 View Plan](PHASE7A_PLAN.md)**
 
 ---
 
-## 📅 Phase 7: Production Hardening (FUTURE)
+## 📅 Phase 8: Advanced Features & Ecosystem (FUTURE)
 
-**Duration**: 12 weeks (Q3 2025)
+**Duration**: 12 weeks (Q2–Q3 2026)
 **Status**: 📅 Future
 **Completion**: 0%
-**Priority**: CRITICAL (for enterprise)
+**Priority**: MEDIUM
 
 ### Objectives
-Enterprise-grade security, high availability, and cloud deployment support.
+Expand the platform with advanced integrations, developer tooling, and cloud-ready deployment options.
 
 ### Planned Deliverables
 
-#### Security
-- [ ] Role-based access control (RBAC)
-- [ ] JWT authentication
-- [ ] Multi-factor authentication (MFA)
-- [ ] OAuth2 integration (Google, GitHub, Azure AD)
-- [ ] API key system
-- [ ] TLS/SSL with Let's Encrypt
-- [ ] Security audit logging
-- [ ] Input validation framework
-
-#### High Availability
-- [ ] Database abstraction layer
-- [ ] PostgreSQL/SQLite support
-- [ ] Redis session storage
+#### Cloud & High Availability
+- [ ] Kubernetes manifests
+- [ ] Redis session storage + caching layer
 - [ ] Load balancing (nginx)
-- [ ] Message queue (RabbitMQ)
 - [ ] Multi-instance support
 
-#### Cloud & DevOps
-- [ ] Kubernetes manifests
-- [ ] Terraform configurations
-- [ ] AWS/Azure/GCP integration
-- [ ] Distributed tracing (Jaeger)
-- [ ] APM integration
-- [ ] CI/CD for cloud deployments
+#### Integrations
+- [ ] OAuth2 (Google, GitHub, Azure AD)
+- [ ] Home Assistant bridge
+- [ ] Voice assistant integration (Alexa, Google Home)
+- [ ] Prometheus metrics exporter (50+ metrics)
 
-#### Performance
-- [ ] Caching layer (Redis)
-- [ ] Connection pooling
-- [ ] Asset optimization
-- [ ] Performance benchmarks
+#### Developer Experience
+- [ ] Plugin development CLI
+- [ ] API playground (Swagger UI)
+- [ ] Plugin documentation generator
+- [ ] Testing framework for plugins
+- [ ] Rust SDK for new plugins
 
-### Target Metrics
-- **Throughput**: >1,000 req/s
-- **Availability**: 99.9%
-- **Security Score**: A+
-- **Multi-instance**: 3+ nodes
-- **Cloud Deployments**: 3 providers
-
-**[📋 View Plan](PHASE7_PLAN.md)**
+**[📋 View Plan](PHASE8_PLAN.md)**
 
 ---
 
-## Beyond Phase 7: Future Ideas
+## Beyond Phase 8: Future Ideas
 
 ### Plugin Ecosystem
 - Plugin marketplace integration
@@ -347,9 +385,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 |---------|------|-------|----------------|
 | 0.1.0 | 2024-01 | 1 | Initial scaffolding |
 | 1.0.0 | 2024-09 | 1-4 | Complete core system |
-| 1.1.0 | 2025-03 | 5 | SDK compatibility |
-| 2.0.0 | 2025-06 | 6 | Production features |
-| 3.0.0 | 2025-09 | 7 | Enterprise ready |
+| 1.2.0 | 2025-03 | 5 | SDK compatibility, logging, MQTT UI |
+| 1.3.0 | 2026-03 | 6-7 | Monitoring, security hardening, JWT/RBAC |
+| 0.6.x | 2026-03 | 7a | Miniserver backup, log viewer, CI improvements |
+| 1.4.0 | 2026-Q2 | 7a | Web UI for all backend features (planned) |
+| 2.0.0 | 2026-Q3 | 8 | Advanced features & ecosystem (planned) |
 
 ---
 
@@ -365,9 +405,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - ✅ **[Phase 2](PHASE2_COMPLETE.md)** - Plugin System
 - ✅ **[Phase 3](PHASE3_COMPLETE.md)** - MQTT Gateway
 - ✅ **[Phase 4](PHASE4_COMPLETE.md)** - Web UI
-- 🚧 **[Phase 5](PHASE5_PLAN.md)** - SDK & Logging
-- 📅 **[Phase 6](PHASE6_PLAN.md)** - Updates & Monitoring
-- 📅 **[Phase 7](PHASE7_PLAN.md)** - Production Hardening
+- ✅ **[Phase 5](PHASE5_COMPLETE.md)** - SDK & Logging
+- ✅ **[Phase 6](PHASE6_COMPLETE.md)** - Performance & Monitoring
+- ✅ **[Phase 7](PHASE7_COMPLETE.md)** - Security Hardening
+- 🚧 **[Phase 7a](PHASE7A_PLAN.md)** - Web UI for Backend Features
+- 📅 **[Phase 8](PHASE8_PLAN.md)** - Advanced Features & Ecosystem
 
 ---
 

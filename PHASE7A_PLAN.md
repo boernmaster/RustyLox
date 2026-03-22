@@ -2,9 +2,10 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/Status-Planning-yellow)
+![Status](https://img.shields.io/badge/Status-In%20Progress-blue)
 ![Phase](https://img.shields.io/badge/Phase-7a-blue)
 ![Priority](https://img.shields.io/badge/Priority-High-orange)
+![Completion](https://img.shields.io/badge/Completion-70%25-yellow)
 
 </div>
 
@@ -22,22 +23,32 @@ Phase 7a focuses on building comprehensive web UI for all backend features imple
 
 ### ✅ Existing UI Pages
 - `/` - Dashboard
-- `/miniservers` - Miniserver management
-- `/mqtt` - MQTT monitor and configuration
+- `/miniserver` - Miniserver management + monitor
+- `/mqtt` - MQTT monitor, configuration, stats
 - `/plugins` - Plugin management
 - `/settings` - Basic system settings
+- `/logs` - Log viewer (incl. LoxBerry-compatible `/admin/system/tools/logfile.cgi`)
+- `/weather` - Weather widget + config *(bonus)*
+- `/api-docs` - API documentation *(bonus)*
 
-### ❌ Missing UI for Backend Features
-- Authentication (login, user management, API keys)
-- Email configuration and test
-- Task scheduler management
-- Network diagnostics tools
-- System health dashboard
-- Backup/restore interface
-- Audit log viewer
-- Database management
-- Security settings
-- User profile management
+### ✅ Implemented in Phase 7a (UI shell + HTMX)
+- `/login`, `/logout` - Authentication (full JWT cookie flow)
+- `/profile` - User profile page
+- `/admin/users` - User management
+- `/admin/api-keys` - API key management
+- `/admin/audit` - Audit log viewer
+- `/admin/security` - Security settings
+- `/admin/database` - Database management
+- `/system-health` - System health dashboard
+- `/email` - Email configuration (loads real config)
+- `/tasks` - Task scheduler
+- `/network` - Network diagnostics
+- `/backup` - Backup & restore
+- `/miniserver/backup` - Miniserver backup with SSE progress bar
+
+### ❌ Not Yet Implemented
+- System update UI (check + apply GitHub releases)
+- Week 7 polish: CSS hardening, responsive design, integration tests, accessibility
 
 ---
 
@@ -1213,38 +1224,44 @@ pub async fn health_dashboard(
 ## Implementation Plan
 
 ### Week 1-2: Authentication UI
-- [ ] Login page with error handling
-- [ ] User management page (list, create, edit, delete)
-- [ ] API key management page
-- [ ] User profile page
+- [x] Login page with error handling
+- [x] User management page (list, create, edit, delete)
+- [x] API key management page
+- [x] User profile page
 
 ### Week 3: Health & Monitoring UI
-- [ ] System health dashboard with gauges
-- [ ] Real-time metrics updates
-- [ ] Service status indicators
+- [x] System health dashboard with gauges
+- [x] Real-time metrics updates (HTMX polling → `/api/health`)
+- [x] Service status indicators
 - [ ] Performance graphs (Chart.js or similar)
 
 ### Week 4: Email & Tasks UI
-- [ ] Email configuration page
+- [x] Email configuration page (loads real config)
 - [ ] Email testing and history
-- [ ] Task scheduler page (list, create, edit)
+- [x] Task scheduler page (list, create, edit via HTMX)
 - [ ] Task execution history viewer
 
 ### Week 5: Diagnostics & Backup UI
-- [ ] Network diagnostics tools
-- [ ] Backup creation and listing
-- [ ] Restore interface with confirmation
-- [ ] Backup scheduling configuration
+- [x] Network diagnostics tools (HTMX → `/api/network/*`)
+- [x] Backup creation and listing
+- [x] Restore interface with confirmation
+- [ ] Backup scheduling configuration UI
+
+### Week 5b: Miniserver Backup (added)
+- [x] Download all `/prog/` binaries as ZIP
+- [x] Full recursive backup of all MS data directories
+- [x] Real-time SSE progress bar during download
 
 ### Week 6: Admin UI
-- [ ] Audit log viewer with filters
-- [ ] Database management page
-- [ ] Security settings page
-- [ ] Enhanced dashboard
+- [x] Audit log viewer with filters
+- [x] Database management page
+- [x] Security settings page
+- [x] Enhanced dashboard
 
 ### Week 7: Polish & Testing
-- [ ] CSS styling and theming
-- [ ] Responsive design
+- [ ] System update UI (check + apply GitHub releases)
+- [ ] CSS styling and theming audit
+- [ ] Responsive design review
 - [ ] Error handling and validation
 - [ ] Integration testing
 - [ ] Accessibility improvements
