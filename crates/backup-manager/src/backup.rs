@@ -80,7 +80,8 @@ impl BackupManager {
                     let name = rel_path.to_string_lossy();
 
                     if path.is_dir() {
-                        zip.add_directory(format!("{}/", name), options).map_err(zip_err)?;
+                        zip.add_directory(format!("{}/", name), options)
+                            .map_err(zip_err)?;
                     } else if path.is_file() {
                         zip.start_file(name.to_string(), options).map_err(zip_err)?;
                         let data = std::fs::read(path)?;

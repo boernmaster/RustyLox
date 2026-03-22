@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.19] - 2026-03-22
+
+### Fixed
+- Backup ZIP operations now correctly convert `ZipError` to `rustylox_core::Error`
+- Fixed Docker build failure caused by missing `From<ZipError>` trait implementation
+
 ## [0.6.18] - 2026-03-22
 
 ### Changed
