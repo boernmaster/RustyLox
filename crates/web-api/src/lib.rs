@@ -156,6 +156,16 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/weather/config", get(routes::weather::get_config))
         .route("/api/weather/config", put(routes::weather::update_config))
         .route("/api/weather/refresh", post(routes::weather::refresh))
+        // Virtual Input endpoint – receives data from Miniserver Virtual HTTP Outputs
+        // The Miniserver calls: http://<RustyLox>:8080/dev/sps/io/<name>/<value>
+        .route(
+            "/dev/sps/io/:name/:value",
+            get(routes::virtual_input::receive_value),
+        )
+        .route(
+            "/dev/sps/io/:name",
+            get(routes::virtual_input::receive_name_only),
+        )
         // Loxone Cloud Emulator (served on main port; daemon also starts port 6066)
         .route("/forecast/", get(routes::weather::loxone_forecast))
         .route("/forecast", get(routes::weather::loxone_forecast))

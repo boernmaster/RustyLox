@@ -57,6 +57,61 @@ impl UdpListener {
         }
     }
 
+    /// Process a Miniserver-format UDP message: "prefix: key=value key2=value2"
+    ///
+    /// Each key=value pair is emitted as a separate GatewayMessage.
+    /// The MQTT topic is built as `<prefix>/<key>` (lowercased prefix).
+    fn process_miniserver_format(
+        &self,
+        content: &str,
+        tx: &broadcast::Sender<GatewayMessage>,
+    ) -> Result<()> {
+        let content = content.trim();
+        let (prefix, kv_part) = if let Some(colon) = content.find(": ") {
+            (&content[..colon], &content[colon + 2..])
+        } else {
+            ("", content)
+        };
+
+        let mut count = 0;
+        for token in kv_part.split_whitespace() {
+            if let Some((key, value)) = token.split_once('=') {
+                // Build an MQTT-style topic: prefix/key
+                let topic = if prefix.is_empty() {
+                    key.to_string()
+                } else {
+                    format!("{}/{}", prefix, key)
+                };
+
+                debug!("UDP Miniserver format: {} = {}", topic, value);
+
+                let msg = GatewayMessage::UdpReceived {
+                    topic,
+                    value: value.to_string(),
+                };
+
+                if let Err(e) = tx.send(msg) {
+                    warn!("Failed to send Miniserver UDP message: {}", e);
+                }
+                count += 1;
+            }
+        }
+
+        if count == 0 {
+            warn!(
+                "Miniserver UDP message had prefix but no key=value pairs: {}",
+                content
+            );
+        } else {
+            debug!(
+                "Processed {} key=value pairs from Miniserver UDP message",
+                count
+            );
+        }
+
+        Ok(())
+    }
+
     /// Process a UDP message
     fn process_udp_message(
         &self,
@@ -90,6 +145,13 @@ impl UdpListener {
 
         // Try simple format: topic=value
         if let Some((topic, value)) = content.split_once('=') {
+            // Check for Miniserver "prefix: key=value key2=value2" format.
+            // If the topic part contains ": " it means the whole payload uses the
+            // Loxone Virtual UDP Output pattern.
+            if topic.contains(": ") {
+                return self.process_miniserver_format(content, tx);
+            }
+
             debug!("UDP message (simple): {} = {}", topic, value);
 
             let msg = GatewayMessage::UdpReceived {
@@ -103,8 +165,17 @@ impl UdpListener {
             return Ok(());
         }
 
-        warn!("Invalid UDP message format: {}", content);
-        Err(Error::gateway("Invalid UDP message format"))
+        // Try bare value (Miniserver might send just a string for pulse outputs)
+        debug!("UDP message (bare): {}", content);
+        let msg = GatewayMessage::UdpReceived {
+            topic: content.to_string(),
+            value: String::new(),
+        };
+
+        tx.send(msg)
+            .map_err(|e| Error::gateway(format!("Failed to send UDP message: {}", e)))?;
+
+        Ok(())
     }
 }
 
@@ -128,5 +199,51 @@ mod tests {
 
         let simple = b"home/humidity=65";
         listener.process_udp_message(simple, &tx).unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_udp_miniserver_format_with_prefix() {
+        let listener = UdpListener::new(0).unwrap();
+        let (tx, mut rx) = broadcast::channel(10);
+
+        let data = b"Weather: Temp=23.5 Humidity=65";
+        listener.process_udp_message(data, &tx).unwrap();
+
+        // Should produce two messages
+        let msg1 = rx.recv().await.unwrap();
+        let msg2 = rx.recv().await.unwrap();
+
+        match msg1 {
+            GatewayMessage::UdpReceived { topic, value } => {
+                assert_eq!(topic, "Weather/Temp");
+                assert_eq!(value, "23.5");
+            }
+            _ => panic!("Expected UdpReceived"),
+        }
+        match msg2 {
+            GatewayMessage::UdpReceived { topic, value } => {
+                assert_eq!(topic, "Weather/Humidity");
+                assert_eq!(value, "65");
+            }
+            _ => panic!("Expected UdpReceived"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_udp_bare_message() {
+        let listener = UdpListener::new(0).unwrap();
+        let (tx, mut rx) = broadcast::channel(10);
+
+        let data = b"PULSE";
+        listener.process_udp_message(data, &tx).unwrap();
+
+        let msg = rx.recv().await.unwrap();
+        match msg {
+            GatewayMessage::UdpReceived { topic, value } => {
+                assert_eq!(topic, "PULSE");
+                assert_eq!(value, "");
+            }
+            _ => panic!("Expected UdpReceived"),
+        }
     }
 }

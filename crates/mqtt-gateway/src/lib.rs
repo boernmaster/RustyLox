@@ -356,6 +356,15 @@ impl MqttGateway {
     pub async fn set_miniserver_monitor(&self, callback: miniserver_client::MonitorCallback) {
         self.relay.set_monitor_callback(callback).await;
     }
+
+    /// Get a clone of the internal message sender.
+    ///
+    /// External components (e.g. HTTP virtual-input endpoint, Miniserver UDP
+    /// receiver) can use this to inject messages into the gateway pipeline so
+    /// they are processed exactly like MQTT or UDP-originated messages.
+    pub fn message_sender(&self) -> broadcast::Sender<GatewayMessage> {
+        self.message_tx.clone()
+    }
 }
 
 /// Gateway status information
