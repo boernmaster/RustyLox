@@ -209,6 +209,7 @@ pub struct NetworkTemplate {
 #[template(path = "login.html")]
 pub struct LoginTemplate {
     pub error: Option<String>,
+    pub redirect: Option<String>,
     pub version: String,
 }
 

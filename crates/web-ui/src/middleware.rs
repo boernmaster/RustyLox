@@ -1,0 +1,90 @@
+//! Auth middleware - redirects unauthenticated requests to /login
+
+use axum::{
+    extract::{Request, State},
+    middleware::Next,
+    response::{IntoResponse, Redirect, Response},
+};
+use web_api::AppState;
+
+/// Paths that are accessible without authentication
+fn is_public_path(path: &str) -> bool {
+    path == "/login"
+        || path == "/logout"
+        || path.starts_with("/static/")
+        || path == "/health"
+        || path == "/api/health"
+}
+
+/// Extract the lb_token cookie value from the Cookie header
+fn extract_lb_token(cookie_header: &str) -> Option<&str> {
+    for part in cookie_header.split(';') {
+        let part = part.trim();
+        if let Some(token) = part.strip_prefix("lb_token=") {
+            if !token.is_empty() {
+                return Some(token);
+            }
+        }
+    }
+    None
+}
+
+/// Middleware that enforces authentication for all non-public routes.
+/// Redirects unauthenticated users to /login?redirect=<original_path>.
+pub async fn require_auth(
+    State(state): State<AppState>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let path = request.uri().path();
+
+    // Allow public paths through without auth check
+    if is_public_path(path) {
+        return next.run(request).await;
+    }
+
+    // If no auth service is configured, allow all requests
+    let Some(auth_service) = &state.auth_service else {
+        return next.run(request).await;
+    };
+
+    // Try to extract and validate the lb_token cookie
+    let authenticated = if let Some(cookie_header) = request.headers().get("Cookie") {
+        if let Ok(cookie_str) = cookie_header.to_str() {
+            if let Some(token) = extract_lb_token(cookie_str) {
+                auth_service.authenticate_token(token).await.is_ok()
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    if authenticated {
+        return next.run(request).await;
+    }
+
+    // Not authenticated - redirect to login with the original path as redirect param
+    let redirect_path = {
+        let uri = request.uri();
+        match uri.query() {
+            Some(q) => format!("{}?{}", uri.path(), q),
+            None => uri.path().to_string(),
+        }
+    };
+    let encoded = percent_encode(&redirect_path);
+    Redirect::to(&format!("/login?redirect={}", encoded)).into_response()
+}
+
+/// Minimal percent-encoding for use in query parameter values
+fn percent_encode(s: &str) -> String {
+    s.chars()
+        .flat_map(|c| match c {
+            'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' | '/' => vec![c],
+            c => format!("%{:02X}", c as u32).chars().collect(),
+        })
+        .collect()
+}
