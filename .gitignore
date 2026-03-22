@@ -25,3 +25,7 @@ Thumbs.db
 
 # Test files
 *.zip
+
+# Loxone Configurations
+*.Loxone
+kaltenegger-loxone-config.md
