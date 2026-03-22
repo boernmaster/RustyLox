@@ -31,11 +31,7 @@ fn extract_lb_token(cookie_header: &str) -> Option<&str> {
 
 /// Middleware that enforces authentication for all non-public routes.
 /// Redirects unauthenticated users to /login?redirect=<original_path>.
-pub async fn require_auth(
-    State(state): State<AppState>,
-    request: Request,
-    next: Next,
-) -> Response {
+pub async fn require_auth(State(state): State<AppState>, request: Request, next: Next) -> Response {
     let path = request.uri().path();
 
     // Allow public paths through without auth check

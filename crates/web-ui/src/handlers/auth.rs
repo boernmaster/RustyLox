@@ -95,8 +95,7 @@ pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<Login
                 .filter(|r| !r.is_empty())
                 .map(|r| format!("&redirect={}", urlencoding_encode(r)))
                 .unwrap_or_default();
-            Redirect::to(&format!("/login?error={}{}", encoded_msg, redirect_param))
-                .into_response()
+            Redirect::to(&format!("/login?error={}{}", encoded_msg, redirect_param)).into_response()
         }
     }
 }
