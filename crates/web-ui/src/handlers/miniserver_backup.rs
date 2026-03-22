@@ -18,7 +18,7 @@ use chrono::{Local, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{Cursor, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 use tracing::{debug, error, info, warn};
 use web_api::AppState;
@@ -57,7 +57,7 @@ pub struct MsBackupSchedules {
 // Dedicated log file: log/system/miniserver-backup.log
 // ---------------------------------------------------------------------------
 
-async fn log_backup(lbhomedir: &PathBuf, level: &str, message: &str) {
+async fn log_backup(lbhomedir: &Path, level: &str, message: &str) {
     use tokio::io::AsyncWriteExt;
 
     let log_path = lbhomedir.join("log/system/miniserver-backup.log");
@@ -82,7 +82,7 @@ async fn log_backup(lbhomedir: &PathBuf, level: &str, message: &str) {
     }
 }
 
-async fn load_ms_schedules(lbhomedir: &PathBuf) -> MsBackupSchedules {
+async fn load_ms_schedules(lbhomedir: &Path) -> MsBackupSchedules {
     let path = lbhomedir.join("config/system/ms_backup_schedule.json");
     let Ok(content) = fs::read_to_string(&path).await else {
         return MsBackupSchedules::default();
@@ -90,16 +90,12 @@ async fn load_ms_schedules(lbhomedir: &PathBuf) -> MsBackupSchedules {
     serde_json::from_str(&content).unwrap_or_default()
 }
 
-async fn save_ms_schedules(
-    lbhomedir: &PathBuf,
-    schedules: &MsBackupSchedules,
-) -> std::io::Result<()> {
+async fn save_ms_schedules(lbhomedir: &Path, schedules: &MsBackupSchedules) -> std::io::Result<()> {
     let path = lbhomedir.join("config/system/ms_backup_schedule.json");
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).await?;
     }
-    let content = serde_json::to_string_pretty(schedules)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let content = serde_json::to_string_pretty(schedules).map_err(std::io::Error::other)?;
     fs::write(&path, content).await
 }
 
@@ -147,7 +143,7 @@ fn format_size(bytes: u64) -> String {
 }
 
 /// Directory for a specific Miniserver's backups: `<base>/<id>-<safe-name>/`
-fn ms_backup_dir(base: &PathBuf, id: &str, name: &str) -> PathBuf {
+fn ms_backup_dir(base: &Path, id: &str, name: &str) -> PathBuf {
     let safe_name: String = name
         .chars()
         .map(|c| {
@@ -162,7 +158,7 @@ fn ms_backup_dir(base: &PathBuf, id: &str, name: &str) -> PathBuf {
 }
 
 /// Read existing backups for one Miniserver, newest first.
-async fn list_backups_for(dir: &PathBuf) -> Vec<BackupFileDisplay> {
+async fn list_backups_for(dir: &Path) -> Vec<BackupFileDisplay> {
     let mut entries = Vec::new();
 
     let Ok(mut rd) = fs::read_dir(dir).await else {
@@ -209,7 +205,7 @@ async fn list_backups_for(dir: &PathBuf) -> Vec<BackupFileDisplay> {
 }
 
 /// Delete oldest backups, keeping only `BACKUPS_TO_KEEP` most recent.
-async fn rotate_backups(dir: &PathBuf) {
+async fn rotate_backups(dir: &Path) {
     let mut files: Vec<PathBuf> = Vec::new();
 
     let Ok(mut rd) = fs::read_dir(dir).await else {

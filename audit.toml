@@ -1,0 +1,5 @@
+[advisories]
+# RUSTSEC-2026-0049: rustls-webpki CRL distribution point matching bug.
+# The 0.102.x series (pulled in by rumqttc v0.24.0) has no patched release.
+# Impact is limited: requires a compromised trusted CA to exploit.
+ignore = ["RUSTSEC-2026-0049"]
