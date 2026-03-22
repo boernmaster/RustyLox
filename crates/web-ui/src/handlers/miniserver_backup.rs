@@ -9,22 +9,41 @@
 //! Backups are stored under `$LBHOMEDIR/data/system/miniserver-backups/<id>-<name>/`.
 
 use askama::Template;
+use axum::response::sse::{Event, KeepAlive};
 use axum::{
     body::Body,
     extract::{Path, State},
     http::{header, StatusCode},
-    response::{Html, IntoResponse, Response},
+    response::{Html, IntoResponse, Response, Sse},
     Form,
 };
 use chrono::{Local, TimeZone, Utc};
+use futures::stream::Stream;
 use miniserver_client::MiniserverClient;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
+use std::convert::Infallible;
 use std::io::{Cursor, Write};
 use std::path::{Path as StdPath, PathBuf};
+use std::sync::LazyLock;
 use tokio::fs;
 use tracing::{debug, error, info, warn};
 use web_api::AppState;
+
+// ---------------------------------------------------------------------------
+// SSE progress tracking for in-flight backup jobs
+// ---------------------------------------------------------------------------
+
+/// Each progress event is (event_name, json_data).
+type ProgressPayload = (String, String);
+
+static BACKUP_JOBS: LazyLock<
+    std::sync::Mutex<HashMap<String, tokio::sync::mpsc::UnboundedReceiver<ProgressPayload>>>,
+> = LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+fn new_job_id() -> String {
+    format!("{}", Local::now().timestamp_micros())
+}
 
 const BACKUPS_TO_KEEP: usize = 7;
 
@@ -338,8 +357,9 @@ async fn walk_ms_dir(client: &MiniserverClient, root: &str) -> Vec<String> {
 
 /// Trigger a backup for one Miniserver (HTMX endpoint).
 ///
-/// Walks all Miniserver data directories (log, prog, sys, stats, temp, update,
-/// web, user) recursively and packs every file into a ZIP archive.
+/// Quickly validates the Miniserver is reachable, then spawns a background
+/// task and returns a job-trigger span. The browser connects to the SSE
+/// endpoint to receive real-time progress events.
 pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -> Html<String> {
     let ms_id: u8 = match id.parse() {
         Ok(n) => n,
@@ -360,18 +380,26 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
         }
     };
 
-    let client = match state.get_miniserver_client(ms_id).await {
-        Ok(c) => c,
-        Err(e) => {
-            error!("Failed to get Miniserver client for {}: {}", ms_name, e);
-            return Html(format!(
-                "<div class='alert alert-danger'>Cannot reach Miniserver '{}' ({}): {}</div>",
-                ms_name, ms_ip, e
-            ));
-        }
-    };
+    // Fast connectivity check before spawning
+    if let Err(e) = state.get_miniserver_client(ms_id).await {
+        error!("Failed to get Miniserver client for {}: {}", ms_name, e);
+        return Html(format!(
+            "<div class='alert alert-danger'>Cannot reach Miniserver '{}' ({}): {}</div>",
+            ms_name, ms_ip, e
+        ));
+    }
 
-    info!("Starting backup of Miniserver '{}' ({})", ms_name, ms_ip);
+    let job_id = new_job_id();
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<ProgressPayload>();
+    {
+        let mut jobs = BACKUP_JOBS.lock().unwrap();
+        jobs.insert(job_id.clone(), rx);
+    }
+
+    info!(
+        "Spawning backup task for '{}' ({}) — job {}",
+        ms_name, ms_ip, job_id
+    );
     log_backup(
         &state.lbhomedir,
         "INFO",
@@ -379,7 +407,66 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
     )
     .await;
 
-    // Step 1: walk all backup directories to collect the full file list
+    tokio::spawn(run_backup_task(state, id.clone(), job_id.clone(), tx));
+
+    // Return a sentinel span; JS will pick up the data attributes and open SSE.
+    Html(format!(
+        r#"<span data-backup-job="{}" data-ms-id="{}"></span>"#,
+        job_id, id
+    ))
+}
+
+/// Background task: walk all Miniserver directories, download files, build ZIP,
+/// emit SSE progress events throughout.
+async fn run_backup_task(
+    state: AppState,
+    id: String,
+    job_id: String,
+    tx: tokio::sync::mpsc::UnboundedSender<ProgressPayload>,
+) {
+    // Helper: send an SSE event (best-effort; receiver may have disconnected)
+    let send = |name: &str, data: String| {
+        let _ = tx.send((name.to_string(), data));
+    };
+
+    let ms_id: u8 = match id.parse() {
+        Ok(n) => n,
+        Err(_) => {
+            send(
+                "backup_error",
+                r#"{"message":"Invalid Miniserver ID"}"#.to_string(),
+            );
+            return;
+        }
+    };
+
+    let (ms_name, ms_ip) = {
+        let config = state.config.read().await;
+        match config.miniserver.get(&id) {
+            Some(ms) => (ms.name.clone(), ms.ipaddress.clone()),
+            None => {
+                send(
+                    "backup_error",
+                    r#"{"message":"Miniserver not found in config"}"#.to_string(),
+                );
+                return;
+            }
+        }
+    };
+
+    let client = match state.get_miniserver_client(ms_id).await {
+        Ok(c) => c,
+        Err(e) => {
+            let msg = serde_json::json!({
+                "message": format!("Cannot reach Miniserver '{}' ({}): {}", ms_name, ms_ip, e)
+            })
+            .to_string();
+            send("backup_error", msg);
+            return;
+        }
+    };
+
+    // --- Walk all directories to build the file list ---
     let mut all_files: Vec<String> = Vec::new();
     for dir in BACKUP_DIRS {
         let dir_path = format!("/{}/", dir);
@@ -400,20 +487,18 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
             &format!("No files found on '{}'", ms_name),
         )
         .await;
-        return Html(format!(
-            "<div class='alert alert-danger'>No files found on '{}'.</div>",
-            ms_name
-        ));
+        send(
+            "backup_error",
+            serde_json::json!({"message": format!("No files found on '{}'", ms_name)}).to_string(),
+        );
+        return;
     }
 
-    info!(
-        "Total: {} file(s) to back up from '{}'",
-        all_files.len(),
-        ms_name
-    );
+    let total = all_files.len();
+    info!("Total: {} file(s) to back up from '{}'", total, ms_name);
+    send("start", serde_json::json!({"total": total}).to_string());
 
-    // Step 2: download every file and pack into a ZIP archive in memory.
-    // File paths like `/prog/Default.Loxone` are stored as `prog/Default.Loxone`.
+    // --- Download every file and pack into a ZIP ---
     let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
     let safe_name: String = ms_name
         .chars()
@@ -434,7 +519,7 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
         let options = zip::write::SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Stored);
 
-        for file in &all_files {
+        for (i, file) in all_files.iter().enumerate() {
             let download_url = format!("/dev/fsget{}", file);
             let zip_entry = file.trim_start_matches('/');
             match client.http().download_bytes(&download_url).await {
@@ -452,6 +537,16 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
                     warn!("Skipping '{}' — download failed: {}", file, e);
                 }
             }
+            // Emit progress after each file attempt (success or skip)
+            send(
+                "file",
+                serde_json::json!({
+                    "done": i + 1,
+                    "total": total,
+                    "file": zip_entry,
+                })
+                .to_string(),
+            );
         }
 
         if let Err(e) = zip.finish() {
@@ -462,10 +557,12 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
                 &format!("ZIP finalise failed for '{}': {}", ms_name, e),
             )
             .await;
-            return Html(format!(
-                "<div class='alert alert-danger'>Failed to create ZIP archive for '{}': {}</div>",
-                ms_name, e
-            ));
+            send(
+                "backup_error",
+                serde_json::json!({"message": format!("Failed to finalise ZIP: {}", e)})
+                    .to_string(),
+            );
+            return;
         }
     }
     let zip_bytes = cursor.into_inner();
@@ -477,33 +574,39 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
             &format!("No files could be downloaded from '{}'", ms_name),
         )
         .await;
-        return Html(format!(
-            "<div class='alert alert-danger'>No files could be downloaded from '{}'.</div>",
-            ms_name
-        ));
+        send(
+            "backup_error",
+            serde_json::json!({"message": format!("No files could be downloaded from '{}'", ms_name)})
+                .to_string(),
+        );
+        return;
     }
 
-    // Ensure target directory exists
+    // --- Save to disk ---
     let base_dir = state.lbhomedir.join("data/system/miniserver-backups");
     let dir = ms_backup_dir(&base_dir, &id, &ms_name);
     if let Err(e) = fs::create_dir_all(&dir).await {
         error!("Failed to create backup dir {:?}: {}", dir, e);
-        return Html(format!(
-            "<div class='alert alert-danger'>Failed to create backup directory: {}</div>",
-            e
-        ));
+        send(
+            "backup_error",
+            serde_json::json!({"message": format!("Failed to create backup directory: {}", e)})
+                .to_string(),
+        );
+        return;
     }
 
-    // Write ZIP file
     let backup_path = dir.join(&filename);
     if let Err(e) = fs::write(&backup_path, &zip_bytes).await {
         error!("Failed to write backup file {:?}: {}", backup_path, e);
-        return Html(format!(
-            "<div class='alert alert-danger'>Failed to save backup: {}</div>",
-            e
-        ));
+        send(
+            "backup_error",
+            serde_json::json!({"message": format!("Failed to save backup file: {}", e)})
+                .to_string(),
+        );
+        return;
     }
 
+    let size_str = format_size(zip_bytes.len() as u64);
     info!(
         "Backup saved: {:?} ({} files, {} bytes)",
         backup_path,
@@ -515,26 +618,50 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
         "INFO",
         &format!(
             "Manual backup completed for '{}': {} files → {} ({})",
-            ms_name,
-            downloaded,
-            filename,
-            format_size(zip_bytes.len() as u64)
+            ms_name, downloaded, filename, size_str
         ),
     )
     .await;
 
-    // Rotate old backups
     rotate_backups(&dir).await;
 
-    Html(format!(
-        "<div class='alert alert-success'>Backup of <strong>{}</strong> completed: \
-         {} file(s) → {} ({}) \
-         &mdash; <a href='/miniserver/backup'>Refresh</a> to see the updated list.</div>",
-        ms_name,
-        downloaded,
-        filename,
-        format_size(zip_bytes.len() as u64),
-    ))
+    send(
+        "done",
+        serde_json::json!({
+            "filename": filename,
+            "size": size_str,
+            "count": downloaded,
+        })
+        .to_string(),
+    );
+
+    // Clean up job slot (normally the SSE handler already consumed it)
+    let mut jobs = BACKUP_JOBS.lock().unwrap();
+    jobs.remove(&job_id);
+}
+
+/// Stream real-time backup progress as Server-Sent Events.
+pub async fn backup_progress(
+    Path((_id, job_id)): Path<(String, String)>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let rx = {
+        let mut jobs = BACKUP_JOBS.lock().unwrap();
+        jobs.remove(&job_id)
+    };
+
+    let stream = async_stream::stream! {
+        let Some(mut rx) = rx else {
+            yield Ok(Event::default()
+                .event("backup_error")
+                .data(r#"{"message":"Backup job not found or already consumed"}"#));
+            return;
+        };
+        while let Some((event_name, data)) = rx.recv().await {
+            yield Ok(Event::default().event(event_name).data(data));
+        }
+    };
+
+    Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
 /// Download a backup file to the browser.

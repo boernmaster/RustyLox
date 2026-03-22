@@ -155,6 +155,10 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/miniserver/backup/:id/schedule",
             post(handlers::miniserver_backup::save_schedule),
         )
+        .route(
+            "/miniserver/backup/:id/progress/:job_id",
+            get(handlers::miniserver_backup::backup_progress),
+        )
         // Authentication
         .route("/login", get(handlers::auth::show_login))
         .route("/login", post(handlers::auth::handle_login))

@@ -81,13 +81,11 @@
 
         <div class="card" style="margin-bottom: 20px;">
             <p>
-                Downloads the Loxone project file from each Miniserver via the file-system HTTP API
-                and stores it locally.
+                Downloads all data from each Miniserver (log, prog, sys, stats, temp, update, web, user)
+                via the file-system HTTP API and packages everything into a ZIP archive.
                 The 7 most recent backups per Miniserver are kept automatically.
             </p>
         </div>
-
-        <div id="backup-result" style="margin-bottom: 16px;"></div>
 
         {% if entries.is_empty() %}
         <div class="card">
@@ -104,16 +102,27 @@
                 </div>
                 <button
                     hx-post="/miniserver/backup/{{ entry.id }}/run"
-                    hx-target="#backup-result"
+                    hx-target="#bkp-status-{{ entry.id }}"
                     hx-swap="innerHTML"
-                    hx-indicator="#spinner-{{ entry.id }}"
                     class="btn btn-primary">
                     Backup Now
                 </button>
             </div>
 
-            <div id="spinner-{{ entry.id }}" class="htmx-indicator" style="margin-bottom: 10px;">
-                Downloading backup from Miniserver, please wait&hellip;
+            <div id="bkp-status-{{ entry.id }}" style="margin-bottom: 10px;"></div>
+
+            <div id="bkp-progress-{{ entry.id }}" style="display:none; margin-bottom: 12px;">
+                <div style="margin-bottom: 4px; font-size: 0.875rem; color: #555;">
+                    Downloading from Miniserver&hellip;
+                    <span id="bkp-count-{{ entry.id }}" style="float: right; font-variant-numeric: tabular-nums;">0 / ?</span>
+                </div>
+                <div style="background: #e9ecef; border-radius: 4px; height: 10px; overflow: hidden;">
+                    <div id="bkp-bar-{{ entry.id }}"
+                         style="background: #007bff; height: 100%; width: 0%; transition: width 0.15s ease-out;"></div>
+                </div>
+                <div id="bkp-file-{{ entry.id }}"
+                     style="font-size: 0.75rem; color: #888; margin-top: 3px;
+                            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
             </div>
 
             {% if entry.backups.is_empty() %}
@@ -186,5 +195,80 @@
     <footer class="footer">
         <p>RustyLox {{ version }} | &copy; 2026</p>
     </footer>
+
+<script>
+// After HTMX swaps in the job-trigger span, start the SSE progress stream.
+document.addEventListener('htmx:afterSwap', function(evt) {
+    var span = evt.detail.target.querySelector('[data-backup-job]');
+    if (!span) return;
+    startBackupSSE(span.dataset.msId, span.dataset.backupJob);
+});
+
+function startBackupSSE(msId, jobId) {
+    var progressEl = document.getElementById('bkp-progress-' + msId);
+    var barEl      = document.getElementById('bkp-bar-'      + msId);
+    var countEl    = document.getElementById('bkp-count-'    + msId);
+    var fileEl     = document.getElementById('bkp-file-'     + msId);
+    var statusEl   = document.getElementById('bkp-status-'   + msId);
+
+    if (progressEl) { progressEl.style.display = 'block'; }
+    if (barEl)      { barEl.style.width = '0%'; }
+    if (countEl)    { countEl.textContent = '0 / ?'; }
+    if (fileEl)     { fileEl.textContent = ''; }
+
+    var total = 0;
+    var es = new EventSource('/miniserver/backup/' + msId + '/progress/' + jobId);
+
+    es.addEventListener('start', function(e) {
+        var d = JSON.parse(e.data);
+        total = d.total;
+        if (countEl) countEl.textContent = '0 / ' + total;
+    });
+
+    es.addEventListener('file', function(e) {
+        var d = JSON.parse(e.data);
+        total = d.total;
+        var pct = total > 0 ? Math.round(d.done / total * 100) : 0;
+        if (barEl)   barEl.style.width = pct + '%';
+        if (countEl) countEl.textContent = d.done + ' / ' + total;
+        if (fileEl)  fileEl.textContent = d.file;
+    });
+
+    es.addEventListener('done', function(e) {
+        var d = JSON.parse(e.data);
+        es.close();
+        if (progressEl) progressEl.style.display = 'none';
+        if (statusEl) statusEl.innerHTML =
+            '<div class="alert alert-success">Backup of <strong>' + escHtml(d.filename) + '</strong> completed: ' +
+            d.count + ' file(s), ' + escHtml(d.size) +
+            ' &mdash; <a href="/miniserver/backup">Refresh</a> to see the updated list.</div>';
+    });
+
+    es.addEventListener('backup_error', function(e) {
+        var d = JSON.parse(e.data);
+        es.close();
+        if (progressEl) progressEl.style.display = 'none';
+        if (statusEl) statusEl.innerHTML =
+            '<div class="alert alert-danger">Backup failed: ' + escHtml(d.message) + '</div>';
+    });
+
+    es.onerror = function() {
+        es.close();
+        if (progressEl) progressEl.style.display = 'none';
+        if (statusEl && statusEl.querySelector('[data-backup-job]')) {
+            statusEl.innerHTML =
+                '<div class="alert alert-danger">Connection lost during backup.</div>';
+        }
+    };
+}
+
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+</script>
 </body>
 </html>

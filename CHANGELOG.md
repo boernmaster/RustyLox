@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.17] - 2026-03-22
+
+### Added
+- Miniserver backup: real-time progress bar during backup download via Server-Sent Events (SSE)
+- Backup Now button returns immediately; background task streams per-file progress to the browser
+- Progress bar shows file count (done / total), current file path, and animated fill
+- SSE endpoint: `GET /miniserver/backup/:id/progress/:job_id`
+- JS `EventSource` handles `start`, `file`, `done`, and `backup_error` events
+
 ## [0.6.16] - 2026-03-22
 
 ### Changed
