@@ -345,6 +345,7 @@
     </footer>
 
     <script>
+        const MAX_MESSAGES = 200;
         let messages = [];
         let paused = false;
         let filters = {
@@ -384,21 +385,45 @@
             };
         }
 
-        function addMessage(msg) {
-            messages.unshift(msg); // Add to beginning
+        function passesFilters(msg) {
+            if (filters.miniserver && msg.miniserver_name !== filters.miniserver) return false;
+            if (filters.direction && msg.direction !== filters.direction) return false;
+            if (filters.protocol && msg.protocol !== filters.protocol) return false;
+            return true;
+        }
 
-            // Track miniservers
+        function addMessage(msg) {
+            messages.unshift(msg);
+
+            // Track miniservers for filter dropdown
             if (msg.miniserver_name) {
                 miniservers.add(msg.miniserver_name);
                 updateMiniserverFilter();
             }
 
-            // Limit to 1000 messages
-            if (messages.length > 1000) {
-                messages = messages.slice(0, 1000);
+            if (messages.length > MAX_MESSAGES) {
+                messages.pop();
             }
 
-            updateDisplay();
+            if (!passesFilters(msg)) return;
+
+            const messagesDiv = document.getElementById('messages');
+
+            // Remove placeholder if present
+            const placeholder = messagesDiv.querySelector('[data-placeholder]');
+            if (placeholder) messagesDiv.innerHTML = '';
+
+            // Prepend new element (O(1) DOM work)
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = formatMessage(msg);
+            messagesDiv.insertBefore(wrapper.firstChild, messagesDiv.firstChild);
+
+            // Trim oldest DOM entries beyond limit
+            while (messagesDiv.children.length > MAX_MESSAGES) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+
+            document.getElementById('messageCount').textContent = messagesDiv.children.length;
         }
 
         function updateMiniserverFilter() {
@@ -418,17 +443,12 @@
 
         function updateDisplay() {
             const messagesDiv = document.getElementById('messages');
-            const filteredMessages = messages.filter(m => {
-                if (filters.miniserver && m.miniserver_name !== filters.miniserver) return false;
-                if (filters.direction && m.direction !== filters.direction) return false;
-                if (filters.protocol && m.protocol !== filters.protocol) return false;
-                return true;
-            });
+            const filteredMessages = messages.filter(m => passesFilters(m));
 
             document.getElementById('messageCount').textContent = filteredMessages.length;
 
             if (filteredMessages.length === 0) {
-                messagesDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No messages match filters</div>';
+                messagesDiv.innerHTML = '<div data-placeholder style="padding: 20px; text-align: center; color: #666;">No messages match filters</div>';
                 return;
             }
 
@@ -502,6 +522,8 @@
 
         function clearMessages() {
             messages = [];
+            miniservers.clear();
+            updateMiniserverFilter();
             updateDisplay();
         }
 

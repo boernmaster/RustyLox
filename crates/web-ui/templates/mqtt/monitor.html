@@ -200,6 +200,7 @@
     </footer>
 
     <script>
+        const MAX_MESSAGES = 200;
         let messages = [];
         let paused = false;
         let filter = '';
@@ -234,15 +235,44 @@
             };
         }
 
-        function addMessage(msg) {
-            messages.unshift(msg); // Add to beginning
+        function formatMessage(msg) {
+            return `
+                <div class="message">
+                    <div class="message-topic">${escapeHtml(msg.topic)}</div>
+                    <div class="message-payload">${formatPayload(msg.payload)}</div>
+                    <div class="message-meta">
+                        ${msg.timestamp} | QoS: ${msg.qos} | Retain: ${msg.retain ? 'Yes' : 'No'}
+                    </div>
+                </div>
+            `;
+        }
 
-            // Limit to 1000 messages
-            if (messages.length > 1000) {
-                messages = messages.slice(0, 1000);
+        function addMessage(msg) {
+            messages.unshift(msg);
+            if (messages.length > MAX_MESSAGES) {
+                messages.pop();
             }
 
-            updateDisplay();
+            const passes = !filter || matchTopic(msg.topic, filter);
+            if (!passes) return;
+
+            const messagesDiv = document.getElementById('messages');
+
+            // Remove placeholder if present
+            const placeholder = messagesDiv.querySelector('[data-placeholder]');
+            if (placeholder) messagesDiv.innerHTML = '';
+
+            // Prepend new element (O(1) DOM work)
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = formatMessage(msg);
+            messagesDiv.insertBefore(wrapper.firstChild, messagesDiv.firstChild);
+
+            // Trim oldest DOM entries beyond limit
+            while (messagesDiv.children.length > MAX_MESSAGES) {
+                messagesDiv.removeChild(messagesDiv.lastChild);
+            }
+
+            document.getElementById('messageCount').textContent = messagesDiv.children.length;
         }
 
         function updateDisplay() {
@@ -254,19 +284,11 @@
             document.getElementById('messageCount').textContent = filteredMessages.length;
 
             if (filteredMessages.length === 0) {
-                messagesDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No messages</div>';
+                messagesDiv.innerHTML = '<div data-placeholder style="padding: 20px; text-align: center; color: #666;">No messages</div>';
                 return;
             }
 
-            messagesDiv.innerHTML = filteredMessages.map(msg => `
-                <div class="message">
-                    <div class="message-topic">${escapeHtml(msg.topic)}</div>
-                    <div class="message-payload">${formatPayload(msg.payload)}</div>
-                    <div class="message-meta">
-                        ${msg.timestamp} | QoS: ${msg.qos} | Retain: ${msg.retain ? 'Yes' : 'No'}
-                    </div>
-                </div>
-            `).join('');
+            messagesDiv.innerHTML = filteredMessages.map(msg => formatMessage(msg)).join('');
         }
 
         function togglePause() {
