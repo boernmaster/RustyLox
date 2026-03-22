@@ -7,6 +7,10 @@ use std::io::Write;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
+fn zip_err(e: zip::result::ZipError) -> rustylox_core::Error {
+    rustylox_core::Error::backup(e.to_string())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BackupMetadata {
     pub version: String,
@@ -62,7 +66,7 @@ impl BackupManager {
 
         // Add metadata.json
         let metadata_json = serde_json::to_string_pretty(&metadata)?;
-        zip.start_file("metadata.json", options)?;
+        zip.start_file("metadata.json", options).map_err(zip_err)?;
         zip.write_all(metadata_json.as_bytes())?;
 
         // Add directories
@@ -76,9 +80,9 @@ impl BackupManager {
                     let name = rel_path.to_string_lossy();
 
                     if path.is_dir() {
-                        zip.add_directory(format!("{}/", name), options)?;
+                        zip.add_directory(format!("{}/", name), options).map_err(zip_err)?;
                     } else if path.is_file() {
-                        zip.start_file(name.to_string(), options)?;
+                        zip.start_file(name.to_string(), options).map_err(zip_err)?;
                         let data = std::fs::read(path)?;
                         zip.write_all(&data)?;
                     }
@@ -88,7 +92,7 @@ impl BackupManager {
             }
         }
 
-        zip.finish()?;
+        zip.finish().map_err(zip_err)?;
 
         let file_size = tokio::fs::metadata(&backup_path).await?.len();
         tracing::info!(
@@ -137,7 +141,7 @@ impl BackupManager {
     /// Read metadata from backup file
     fn read_backup_metadata(&self, backup_path: &PathBuf) -> Result<BackupMetadata> {
         let file = std::fs::File::open(backup_path)?;
-        let mut archive = zip::ZipArchive::new(file)?;
+        let mut archive = zip::ZipArchive::new(file).map_err(zip_err)?;
 
         let mut entry = archive.by_name("metadata.json").map_err(|e| {
             rustylox_core::Error::backup(format!("Metadata not found in backup: {}", e))

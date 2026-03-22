@@ -15,9 +15,12 @@ pub async fn restore_backup(lbhomedir: PathBuf, backup_path: PathBuf) -> Result<
     tracing::info!("Restoring from backup: {}", backup_path.display());
 
     let file = File::open(&backup_path)?;
-    let mut archive = zip::ZipArchive::new(file)?;
+    let mut archive =
+        zip::ZipArchive::new(file).map_err(|e| rustylox_core::Error::backup(e.to_string()))?;
 
-    archive.extract(&lbhomedir)?;
+    archive
+        .extract(&lbhomedir)
+        .map_err(|e| rustylox_core::Error::backup(e.to_string()))?;
 
     tracing::info!("Backup restored successfully");
 

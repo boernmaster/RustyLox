@@ -4,7 +4,7 @@
 
 ![Project Status](https://img.shields.io/badge/Project-Active-brightgreen)
 ![Current Phase](https://img.shields.io/badge/Current%20Phase-7a%20(In%20Progress)-blue)
-![Completion](https://img.shields.io/badge/Completion-85%25-yellow)
+![Completion](https://img.shields.io/badge/Completion-90%25-yellow)
 
 </div>
 
@@ -246,7 +246,7 @@ Production-grade security for the RustyLox platform.
 
 **Duration**: 6 weeks (Q1 2026)
 **Status**: 🚧 In Progress
-**Completion**: ~70%
+**Completion**: ~80%
 **Priority**: HIGH
 
 ### Objectives
@@ -387,8 +387,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 | 1.0.0 | 2024-09 | 1-4 | Complete core system |
 | 1.2.0 | 2025-03 | 5 | SDK compatibility, logging, MQTT UI |
 | 1.3.0 | 2026-03 | 6-7 | Monitoring, security hardening, JWT/RBAC |
-| 0.6.x | 2026-03 | 7a | Miniserver backup, log viewer, CI improvements |
-| 1.4.0 | 2026-Q2 | 7a | Web UI for all backend features (planned) |
+| 0.6.x | 2026-03 | 7a | Miniserver backup w/ SSE progress, log viewer, CI improvements |
+| 1.4.0 | 2026-Q2 | 7a | Complete web UI, system update, CSS polish (planned) |
 | 2.0.0 | 2026-Q3 | 8 | Advanced features & ecosystem (planned) |
 
 ---
