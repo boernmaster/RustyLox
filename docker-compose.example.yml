@@ -1,0 +1,66 @@
+# RustyLox — example deployment compose file (no build required)
+#
+# Usage:
+#   # Pull and start RustyLox only:
+#   docker compose -f docker-compose.example.yml up -d
+#
+#   # Include the built-in Mosquitto MQTT broker:
+#   docker compose -f docker-compose.example.yml --profile mqtt up -d
+#
+# If you already run your own MQTT broker, set MQTT_BROKER / MQTT_PORT
+# below and omit the --profile mqtt flag.
+
+services:
+  rustylox:
+    image: ghcr.io/boernmaster/rustylox:latest
+    container_name: rustylox
+    restart: unless-stopped
+    ports:
+      - "8080:8080"         # Web UI / REST API
+      - "11884:11884/udp"   # MQTT UDP input
+    volumes:
+      - rustylox-config:/opt/loxberry/config
+      - rustylox-data:/opt/loxberry/data
+      - rustylox-log:/opt/loxberry/log
+      # Uncomment to persist plugin web assets and binaries on the host:
+      # - ./webfrontend:/opt/loxberry/webfrontend
+      # - ./templates:/opt/loxberry/templates/plugins
+      # - ./bin:/opt/loxberry/bin/plugins
+    environment:
+      - RUST_LOG=info
+      - LBHOMEDIR=/opt/loxberry
+      - BIND_ADDR=0.0.0.0:8080
+      # Point to your MQTT broker — change if you use an external one:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+    networks:
+      - loxberry-net
+
+  # Optional: built-in Mosquitto broker.
+  # Enable with:  --profile mqtt
+  mosquitto:
+    profiles: [mqtt]
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"   # WebSocket
+    volumes:
+      - mosquitto-config:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    networks:
+      - loxberry-net
+
+networks:
+  loxberry-net:
+    driver: bridge
+
+volumes:
+  rustylox-config:
+  rustylox-data:
+  rustylox-log:
+  mosquitto-config:
+  mosquitto-data:
+  mosquitto-log:
