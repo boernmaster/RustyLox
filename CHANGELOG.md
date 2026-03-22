@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.20] - 2026-03-22
+
+### Added
+- Authentication middleware now enforces login redirect for the entire web UI, not just individual routes
+- Unauthenticated requests are redirected to `/login?redirect=<original_path>` so users return to their destination after login
+- Session cookie (`lb_token`) is set on successful login and cleared on logout
+- Public paths (`/login`, `/static/`, `/health`) bypass auth checks
+
 ## [0.6.19] - 2026-03-22
 
 ### Fixed
