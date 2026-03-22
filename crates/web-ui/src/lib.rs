@@ -1,10 +1,12 @@
 //! Web UI - Server-rendered interface with Askama templates and HTMX
 
 pub mod handlers;
+pub mod middleware;
 pub mod templates;
 
 use axum::{
     extract::DefaultBodyLimit,
+    middleware as axum_middleware,
     routing::{get, post},
     Router,
 };
@@ -184,5 +186,9 @@ pub fn create_ui_router(state: AppState) -> Router {
         .route("/weather/refresh", post(handlers::weather::refresh))
         // Static files (CSS, JS, images)
         .nest_service("/static", ServeDir::new(static_dir))
+        .layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            middleware::require_auth,
+        ))
         .with_state(state)
 }

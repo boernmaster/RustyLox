@@ -38,6 +38,10 @@
             {% endif %}
 
             <form method="post" action="/login">
+                {% if let Some(r) = redirect %}
+                <input type="hidden" name="redirect" value="{{ r }}">
+                {% endif %}
+
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" required autofocus
@@ -54,7 +58,7 @@
                 </div>
 
                 <div class="remember-row">
-                    <input type="checkbox" id="remember_me" name="remember_me">
+                    <input type="checkbox" id="remember_me" name="remember_me" value="1">
                     <label for="remember_me">Remember me for 30 days</label>
                 </div>
 
