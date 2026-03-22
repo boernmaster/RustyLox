@@ -117,6 +117,11 @@ pub fn create_ui_router(state: AppState) -> Router {
         // Log viewer
         .route("/logs", get(handlers::logs::index))
         .route("/logs/view", get(handlers::logs::view))
+        // LoxBerry-compatible logfile.cgi (used by plugins)
+        .route(
+            "/admin/system/tools/logfile.cgi",
+            get(handlers::logs::logfile_compat),
+        )
         // Backup management
         .route("/backup", get(handlers::backup::index))
         .route("/backup/create", post(handlers::backup::create))

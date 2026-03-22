@@ -75,6 +75,79 @@ fn default_lines() -> usize {
     100
 }
 
+/// LoxBerry-compatible logfile.cgi handler
+/// Handles: /admin/system/tools/logfile.cgi?logfile=/plugins/Foo/bar.log&header=html&format=template
+pub async fn logfile_compat(
+    State(state): State<AppState>,
+    Query(query): Query<LogfileCompatQuery>,
+) -> Html<String> {
+    let logfile = match query.logfile {
+        Some(ref f) if !f.is_empty() => f,
+        _ => return Html("<p>No logfile specified.</p>".to_string()),
+    };
+
+    // Strip leading slash, prevent path traversal
+    let rel = logfile.trim_start_matches('/');
+    if rel.contains("..") {
+        return Html("<p>Invalid path.</p>".to_string());
+    }
+
+    let log_dir = state.lbhomedir.join("log");
+    let path = log_dir.join(rel);
+
+    // Ensure resolved path stays within log dir
+    let canonical_log = match log_dir.canonicalize() {
+        Ok(p) => p,
+        Err(_) => return Html("<p>Log directory not found.</p>".to_string()),
+    };
+    let canonical_path = match path.canonicalize() {
+        Ok(p) => p,
+        Err(_) => return Html(format!("<p>Log file not found: {}</p>", rel)),
+    };
+    if !canonical_path.starts_with(&canonical_log) {
+        return Html("<p>Access denied.</p>".to_string());
+    }
+
+    match tokio::fs::read_to_string(&canonical_path).await {
+        Ok(content) => {
+            let file_name = canonical_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(rel);
+            let escaped: String = content
+                .lines()
+                .map(|l| {
+                    l.replace('&', "&amp;")
+                        .replace('<', "&lt;")
+                        .replace('>', "&gt;")
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            Html(format!(
+                "<!DOCTYPE html><html><head>\
+                 <meta charset='utf-8'>\
+                 <title>{}</title>\
+                 <link rel='stylesheet' href='/static/css/style.css'>\
+                 </head><body style='background:#111;color:#d4d4d4;padding:16px;'>\
+                 <h2 style='color:#eee;'>{}</h2>\
+                 <pre style='background:#1e1e1e;padding:16px;border-radius:4px;\
+                 overflow:auto;font-size:12px;white-space:pre-wrap;'>{}</pre>\
+                 </body></html>",
+                file_name, file_name, escaped
+            ))
+        }
+        Err(e) => Html(format!("<p>Failed to read log: {}</p>", e)),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LogfileCompatQuery {
+    pub logfile: Option<String>,
+    // header and format params are accepted but ignored — we always render HTML
+    pub header: Option<String>,
+    pub format: Option<String>,
+}
+
 /// View log file contents (HTMX endpoint)
 pub async fn view(
     State(state): State<AppState>,

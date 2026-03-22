@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.12] - 2026-03-22
+
+### Added
+- LoxBerry-compatible `/admin/system/tools/logfile.cgi` route for plugin log viewing
+- Plugins calling `?logfile=/plugins/Foo/bar.log&header=html&format=template` now render via the built-in log viewer with path traversal protection
+
 ## [0.6.11] - 2026-03-22
 
 ### Added
