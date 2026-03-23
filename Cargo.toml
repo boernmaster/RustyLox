@@ -49,3 +49,6 @@ dashmap = "6.0"
 
 # Temp files
 tempfile = "3.8"
+
+# Base64 encoding/decoding
+base64 = "0.22"
