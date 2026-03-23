@@ -146,6 +146,41 @@ async fn main() -> Result<()> {
                 });
             });
         gw.set_miniserver_monitor(callback).await;
+
+        // Bridge: inbound UDP (port 11884) → miniserver monitor
+        // UdpReceived messages are currently only visible in the MQTT monitor;
+        // this task also emits a MiniserverEvent so they appear in the miniserver monitor.
+        {
+            let monitor_tx = state.miniserver_monitor.clone();
+            let mut gw_rx = gw.message_sender().subscribe();
+            tokio::spawn(async move {
+                loop {
+                    match gw_rx.recv().await {
+                        Ok(mqtt_gateway::GatewayMessage::UdpReceived { topic, value }) => {
+                            let _ = monitor_tx.send(MiniserverEvent {
+                                miniserver_id: 0,
+                                miniserver_name: "Miniserver".to_string(),
+                                direction: "received".to_string(),
+                                protocol: "udp".to_string(),
+                                url: Some("udp://:11884".to_string()),
+                                params: Some(format!("{}={}", topic, value)),
+                                response: None,
+                                code: None,
+                                error: None,
+                                timestamp: chrono::Utc::now()
+                                    .format("%Y-%m-%d %H:%M:%S")
+                                    .to_string(),
+                            });
+                        }
+                        Ok(_) => {}
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                            warn!("Miniserver monitor bridge lagged by {} messages", n);
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                    }
+                }
+            });
+        }
     }
 
     // Start Miniserver UDP receiver (for Virtual UDP Output from the Miniserver)
