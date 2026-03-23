@@ -8,8 +8,8 @@ Tests all three inbound paths:
   1. Virtual HTTP Output  -> GET   http://<host>:8080/dev/sps/io/<name>/<value>
   2. MQTT Gateway UDP     -> UDP   <host>:11884  (JSON / simple / space / prefix format)
   3. Miniserver UDP recv  -> UDP   <host>:8090   (prefix format)
-  4. PHP plugin calls     -> GET   http://<host>:<plugin-port>/plugins/...
-                                   (Vitoconnect, sonos4lox — port 80 in production)
+  4. PHP plugin calls     -> GET   http://<host>:<http-port>/plugins/...
+                                   (Vitoconnect, sonos4lox)
 
 Usage:
   python3 scripts/miniserver_sim.py [--host HOST] [--http-port PORT]
@@ -86,7 +86,6 @@ class HttpTest:
     description: str
     path: str          # e.g. /dev/sps/io/Sensor/42
     expected_code: int = 200
-    port_override: int = 0   # 0 = use default http-port arg
     basic_auth: tuple[str, str] | None = None   # (user, password)
     follow_redirects: bool = True
 
@@ -200,8 +199,7 @@ UDP_8090_KALTENEGGER: list[UdpTest] = [
 ]
 
 # PHP plugin HTTP tests — from Kaltenegger_MQTT.Loxone VirtualOut commands
-# The Miniserver calls these URLs on port 80 (LoxBerry HTTP server).
-# In the Loxone config update to: http://admin:lbx_TOKEN@10.0.0.7:80/...
+# The Miniserver calls these URLs on the RustyLox HTTP port.
 # The web-ui middleware accepts lbx_ API keys as the Basic Auth password.
 # expected_code=404 means "not yet implemented in RustyLox — plugin missing"
 _VITOCONNECT_AUTH = ("admin", "lbx_hE9dI3PG4zbTBcz8edoxfTWFFyzkOQl1q8yJBLFQ")
@@ -212,55 +210,55 @@ HTTP_PHP_PLUGINS: list[HttpTest] = [
     # 200 would mean the plugin is fully functional.
     HttpTest("Vitoconnect: oneTimeCharge start",
              "/admin/plugins/Vitoconnect/vitoconnect.php?action=setvalue&option=heating.dhw.oneTimeCharge&value=start",
-             expected_code=500, port_override=80,
+             expected_code=500,
              basic_auth=_VITOCONNECT_AUTH,
              follow_redirects=False),
     HttpTest("Vitoconnect: oneTimeCharge stop",
              "/admin/plugins/Vitoconnect/vitoconnect.php?action=setvalue&option=heating.dhw.oneTimeCharge&value=stop",
-             expected_code=500, port_override=80,
+             expected_code=500,
              basic_auth=_VITOCONNECT_AUTH,
              follow_redirects=False),
     # sonos4lox — Wohnzimmer
     HttpTest("Sonos WZ: stop",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=stop",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos WZ: volume=20",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=volume&volume=20",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos WZ: radio FM4",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=radioplaylist&playlist=ORF+Radio+FM4&volume=20",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos WZ: bass=5",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=setbass&bass=5",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos WZ: treble=5",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=settreble&treble=5",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos WZ: TTS alarm scharf",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=sendmessage&text=Achtung!+Alarmanlage+ist+scharf&volume=50",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos WZ: getsonosinfo",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=getsonosinfo",
-             expected_code=404, port_override=80),
+             expected_code=404),
     # sonos4lox — Kinderzimmer
     HttpTest("Sonos KiZi: stop",
              "/plugins/sonos4lox/index.php?zone=kinderzimmer&action=stop",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos KiZi: volume=20",
              "/plugins/sonos4lox/index.php?zone=kinderzimmer&action=volume&volume=20",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos KiZi: radio FM4",
              "/plugins/sonos4lox/index.php?zone=kinderzimmer&action=radioplaylist&playlist=Radio+FM4+92.4&volume=20",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos KiZi: messageid=8 (Hexenlachen)",
              "/plugins/sonos4lox/index.php?zone=kinderzimmer&action=sendmessage&messageid=8&volume=80",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos KiZi: messageid=99 (Weihnachtsglocke)",
              "/plugins/sonos4lox/index.php?zone=kinderzimmer&action=sendmessage&messageid=99&volume=100",
-             expected_code=404, port_override=80),
+             expected_code=404),
     HttpTest("Sonos KiZi: wecker (messageid=5)",
              "/plugins/sonos4lox/index.php?zone=kinderzimmer&playgong=yes&action=sendmessage&messageid=5&volume=20",
-             expected_code=404, port_override=80),
+             expected_code=404),
 ]
 
 # ── Runner ────────────────────────────────────────────────────────────────────
@@ -268,18 +266,17 @@ HTTP_PHP_PLUGINS: list[HttpTest] = [
 def run_http_tests(host: str, port: int, tests: list[HttpTest]) -> tuple[int, int]:
     passed = failed = 0
     for t in tests:
-        effective_port = t.port_override if t.port_override else port
-        url = f"http://{host}:{effective_port}{t.path}"
+        url = f"http://{host}:{port}{t.path}"
         status, body = http_get(url, basic_auth=t.basic_auth, follow_redirects=t.follow_redirects)
         body_preview = body.strip().replace("\n", " ")[:80]
         if status == t.expected_code:
             print(ok(f"{t.description}"))
-            print(f"       {DIM}GET :{effective_port}{t.path[:60]}{RESET}")
+            print(f"       {DIM}GET :{port}{t.path[:60]}{RESET}")
             print(f"       {DIM}{status} {body_preview}{RESET}")
             passed += 1
         else:
             print(err(f"{t.description}"))
-            print(f"       {DIM}GET :{effective_port}{t.path[:60]}{RESET}")
+            print(f"       {DIM}GET :{port}{t.path[:60]}{RESET}")
             print(f"       {DIM}expected {t.expected_code}, got {status}: {body_preview}{RESET}")
             failed += 1
         time.sleep(0.05)
@@ -409,7 +406,7 @@ Examples:
         total_pass += p; total_fail += f
 
     if php_tests and (not args.only or args.only == "php"):
-        print(f"\n{BOLD}PHP Plugin HTTP Calls  (port {args.http_port} — Vitoconnect + sonos4lox){RESET}")
+        print(f"\n{BOLD}PHP Plugin HTTP Calls  (Vitoconnect + sonos4lox){RESET}")
         print(f"  {DIM}expected_code=404 means plugin not yet installed in RustyLox{RESET}")
         p, f = run_http_tests(args.host, args.http_port, php_tests)
         total_pass += p; total_fail += f
