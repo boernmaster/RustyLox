@@ -165,6 +165,24 @@ impl UdpListener {
             return Ok(());
         }
 
+        // Try LoxBerry space-separated format: "topic value"
+        // The Loxone "To MQTT" VirtualOut sends in this format, e.g.:
+        //   "loxberry/Heizung/Einstellung_Betriebsart 2"
+        //   "shellies/shellyplug-s-.../relay/0/command on"
+        // MQTT topics cannot contain spaces, so any space is the topic/value separator.
+        if let Some(space_pos) = content.find(' ') {
+            let topic = &content[..space_pos];
+            let value = content[space_pos + 1..].trim();
+            debug!("UDP message (space-separated): {} = {}", topic, value);
+            let msg = GatewayMessage::UdpReceived {
+                topic: topic.to_string(),
+                value: value.to_string(),
+            };
+            tx.send(msg)
+                .map_err(|e| Error::gateway(format!("Failed to send UDP message: {}", e)))?;
+            return Ok(());
+        }
+
         // Try bare value (Miniserver might send just a string for pulse outputs)
         debug!("UDP message (bare): {}", content);
         let msg = GatewayMessage::UdpReceived {

@@ -43,3 +43,6 @@ chrono = "0.4"
 
 # ZIP archive creation (full Miniserver binary backup)
 zip = "2.1"
+
+# Base64 decoding for HTTP Basic Auth
+base64 = { workspace = true }

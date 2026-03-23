@@ -5,6 +5,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
 };
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 use web_api::AppState;
 
 /// Paths that are accessible without authentication
@@ -60,6 +61,44 @@ pub async fn require_auth(State(state): State<AppState>, request: Request, next:
     };
 
     if authenticated {
+        return next.run(request).await;
+    }
+
+    // Try HTTP Basic Auth: accept any password that is a valid API key (lbx_...)
+    // This allows the Loxone Miniserver VirtualOut to authenticate using a URL like:
+    //   http://admin:lbx_TOKEN@10.0.0.7/admin/plugins/...
+    let authenticated_via_api_key = if let Some(auth_header) = request.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if let Some(encoded) = auth_str.strip_prefix("Basic ") {
+                if let Ok(decoded) = BASE64.decode(encoded.trim()) {
+                    if let Ok(credentials) = std::str::from_utf8(&decoded) {
+                        // credentials = "username:password" — the password is the API key
+                        let password = credentials
+                            .splitn(2, ':')
+                            .nth(1)
+                            .unwrap_or("");
+                        if password.starts_with("lbx_") {
+                            auth_service.authenticate_api_key(password).await.is_ok()
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    if authenticated_via_api_key {
         return next.run(request).await;
     }
 
