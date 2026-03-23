@@ -45,10 +45,10 @@ tempfile = { workspace = true }
 tokio-util = { version = "0.7", features = ["io"] }
 
 # Rate limiting
-tower_governor = { version = "0.4", features = ["axum"] }
+tower_governor = { version = "0.8", features = ["axum"] }
 
 # System info for network diagnostics
-sysinfo = "0.32"
+sysinfo = "0.38"
 
 # HTTP client (for Open-Meteo weather API)
 reqwest = { workspace = true }
