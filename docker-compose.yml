@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   rustylox:
@@ -12,7 +11,8 @@ services:
     container_name: rustylox
     restart: unless-stopped
     ports:
-      - "8080:8080"       # Web UI / API + Virtual HTTP Input from Miniserver
+      # - "8080:8080"       # Web UI / API + Virtual HTTP Input from Miniserver
+      - "80:80"       # Web UI / API + Virtual HTTP Input from Minise
       - "6066:6066"       # Loxone Cloud Emulator (weather.loxone.com)
       - "8090:8090/udp"   # Miniserver Virtual UDP Output receiver
       - "11884:11884/udp" # MQTT UDP input
@@ -26,7 +26,8 @@ services:
     environment:
       - RUST_LOG=debug
       - LBHOMEDIR=/opt/loxberry
-      - BIND_ADDR=0.0.0.0:8080
+      # - BIND_ADDR=0.0.0.0:8080
+      - BIND_ADDR=0.0.0.0:80
       - MQTT_BROKER=mosquitto
       - MQTT_PORT=1883
     depends_on:
