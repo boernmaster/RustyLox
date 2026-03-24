@@ -896,9 +896,16 @@ function lbfriendlyname()
 
 ####################################################
 # lbhostname - Returns the network hostname
+# In CGI context, prefer HTTP_HOST so plugins build
+# correct URLs even when running inside Docker where
+# gethostname() returns the container ID.
 ####################################################
 function lbhostname()
 {
+	// HTTP_HOST may contain port (e.g. "192.168.1.100:8080") — strip it
+	if (!empty($_SERVER['HTTP_HOST'])) {
+		return strtok($_SERVER['HTTP_HOST'], ':');
+	}
 	return gethostname();
 }
 

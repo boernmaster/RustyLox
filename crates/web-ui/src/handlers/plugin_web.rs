@@ -42,6 +42,7 @@ struct PhpRequest {
     query_string: String,
     content_type: String,
     body: Vec<u8>,
+    http_host: String,
 }
 
 impl PhpRequest {
@@ -51,8 +52,18 @@ impl PhpRequest {
             query_string: String::new(),
             content_type: String::new(),
             body: Vec::new(),
+            http_host: String::new(),
         }
     }
+}
+
+/// Extract the HTTP Host header value from the request headers
+fn extract_http_host(headers: &HeaderMap) -> String {
+    headers
+        .get(header::HOST)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string()
 }
 
 /// Serve public plugin web interface (no authentication required)
@@ -61,13 +72,16 @@ impl PhpRequest {
 pub async fn serve_plugin_public(
     State(state): State<AppState>,
     Path((plugin_name, path)): Path<(String, String)>,
+    headers: HeaderMap,
 ) -> Response {
     let base_dir = state
         .lbhomedir
         .join("webfrontend/html/plugins")
         .join(&plugin_name);
 
-    serve_plugin_file(&base_dir, &path, &plugin_name, PhpRequest::get_only()).await
+    let mut req = PhpRequest::get_only();
+    req.http_host = extract_http_host(&headers);
+    serve_plugin_file(&base_dir, &path, &plugin_name, req).await
 }
 
 /// Serve public plugin index (no path specified)
@@ -76,19 +90,16 @@ pub async fn serve_plugin_public(
 pub async fn serve_plugin_public_index(
     State(state): State<AppState>,
     Path(plugin_name): Path<String>,
+    headers: HeaderMap,
 ) -> Response {
     let base_dir = state
         .lbhomedir
         .join("webfrontend/html/plugins")
         .join(&plugin_name);
 
-    serve_plugin_file(
-        &base_dir,
-        "index.html",
-        &plugin_name,
-        PhpRequest::get_only(),
-    )
-    .await
+    let mut req = PhpRequest::get_only();
+    req.http_host = extract_http_host(&headers);
+    serve_plugin_file(&base_dir, "index.html", &plugin_name, req).await
 }
 
 /// Serve authenticated plugin web interface (GET)
@@ -98,6 +109,7 @@ pub async fn serve_plugin_auth(
     State(state): State<AppState>,
     Path((plugin_name, path)): Path<(String, String)>,
     uri: Uri,
+    headers: HeaderMap,
 ) -> Response {
     let base_dir = state
         .lbhomedir
@@ -109,6 +121,7 @@ pub async fn serve_plugin_auth(
         query_string: uri.query().unwrap_or("").to_string(),
         content_type: String::new(),
         body: Vec::new(),
+        http_host: extract_http_host(&headers),
     };
 
     serve_plugin_file(&base_dir, &path, &plugin_name, php_req).await
@@ -140,6 +153,7 @@ pub async fn serve_plugin_auth_post(
         query_string: uri.query().unwrap_or("").to_string(),
         content_type,
         body: body.to_vec(),
+        http_host: extract_http_host(&headers),
     };
 
     serve_plugin_file(&base_dir, &path, &plugin_name, php_req).await
@@ -151,25 +165,23 @@ pub async fn serve_plugin_auth_post(
 pub async fn serve_plugin_auth_index(
     State(state): State<AppState>,
     Path(plugin_name): Path<String>,
+    headers: HeaderMap,
 ) -> Response {
     let base_dir = state
         .lbhomedir
         .join("webfrontend/htmlauth/plugins")
         .join(&plugin_name);
 
+    let mut req = PhpRequest::get_only();
+    req.http_host = extract_http_host(&headers);
+
     // Try index.php → index.cgi → index.html
     if base_dir.join("index.php").exists() {
-        serve_plugin_file(&base_dir, "index.php", &plugin_name, PhpRequest::get_only()).await
+        serve_plugin_file(&base_dir, "index.php", &plugin_name, req).await
     } else if base_dir.join("index.cgi").exists() {
-        serve_plugin_file(&base_dir, "index.cgi", &plugin_name, PhpRequest::get_only()).await
+        serve_plugin_file(&base_dir, "index.cgi", &plugin_name, req).await
     } else {
-        serve_plugin_file(
-            &base_dir,
-            "index.html",
-            &plugin_name,
-            PhpRequest::get_only(),
-        )
-        .await
+        serve_plugin_file(&base_dir, "index.html", &plugin_name, req).await
     }
 }
 
@@ -319,7 +331,8 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         .env("SCRIPT_FILENAME", path.to_string_lossy().to_string())
         .env("SERVER_PROTOCOL", "HTTP/1.1")
         .env("GATEWAY_INTERFACE", "CGI/1.1")
-        .env("SERVER_SOFTWARE", "RustyLox");
+        .env("SERVER_SOFTWARE", "RustyLox")
+        .env("HTTP_HOST", &php_req.http_host);
 
     // For POST requests, pipe the body via stdin and capture stdout
     if !php_req.body.is_empty() {
@@ -438,7 +451,8 @@ async fn serve_cgi_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         .env("SCRIPT_FILENAME", path.to_string_lossy().to_string())
         .env("SERVER_PROTOCOL", "HTTP/1.1")
         .env("GATEWAY_INTERFACE", "CGI/1.1")
-        .env("SERVER_SOFTWARE", "RustyLox");
+        .env("SERVER_SOFTWARE", "RustyLox")
+        .env("HTTP_HOST", &php_req.http_host);
 
     match cmd.output().await {
         Ok(out) => {

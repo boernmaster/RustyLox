@@ -2,7 +2,7 @@
 # Uses cargo-chef for dependency layer caching to speed up builds
 
 # Chef stage - uses prebuilt cargo-chef image (avoids reinstalling on every build)
-FROM lukemathwalker/cargo-chef:latest-rust-bookworm AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-bullseye AS chef
 WORKDIR /build
 
 # Planner stage - generates a recipe of dependencies
@@ -40,8 +40,9 @@ ENV GIT_DIRTY=${GIT_DIRTY}
 
 RUN cargo build --release --bin rustylox-daemon
 
-# Runtime stage
-FROM debian:bookworm-slim
+# Runtime stage - uses Debian 11 (bullseye) for PHP 7.4 compatibility
+# PHP 8.x removed curly-brace string offset syntax used by older plugins
+FROM debian:bullseye-slim
 
 # Metadata labels
 LABEL org.opencontainers.image.title="RustyLox"
@@ -122,7 +123,7 @@ COPY sdk/bashlib /opt/loxberry/libs/bashlib
 COPY sdk/templates/system /opt/loxberry/templates/system
 
 # Set permissions
-# Install Perl modules not available in Debian bookworm repos
+# Install Perl modules not available in Debian bullseye repos
 RUN cpanm --notest List::MoreUtils 2>/dev/null
 
 RUN chown -R loxberry:loxberry /opt/loxberry
