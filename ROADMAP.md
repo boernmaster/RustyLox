@@ -271,7 +271,7 @@ Build a full web UI for all backend functionality introduced in phases 5–7, an
 - ✅ Task execution history viewer — file-persisted execution history
 - ✅ CSS/responsive polish and accessibility — skip-link, focus-visible, mobile nav, print styles
 
-**[📄 Full Details](PHASE7A_PLAN.md)**
+**[📄 Full Details](PHASE7A_COMPLETE.md)**
 
 ---
 
@@ -407,7 +407,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 - ✅ **[Phase 5](PHASE5_COMPLETE.md)** - SDK & Logging
 - ✅ **[Phase 6](PHASE6_COMPLETE.md)** - Performance & Monitoring
 - ✅ **[Phase 7](PHASE7_COMPLETE.md)** - Security Hardening
-- ✅ **[Phase 7a](PHASE7A_PLAN.md)** - Web UI for Backend Features
+- ✅ **[Phase 7a](PHASE7A_COMPLETE.md)** - Web UI for Backend Features
 - 📅 **[Phase 8](PHASE8_PLAN.md)** - Advanced Features & Ecosystem
 
 ---
