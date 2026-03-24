@@ -115,7 +115,7 @@ pub async fn check_update(State(state): State<AppState>) -> impl IntoResponse {
     );
 
     Json(UpdateCheckResponse {
-        current_version: current_version,
+        current_version,
         latest_version: release.tag_name.clone(),
         update_available,
         release_name: release.name,
