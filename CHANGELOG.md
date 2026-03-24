@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-25
+
+Phase 7a complete — all web UI features for backend functionality delivered.
+
+### Added
+- **System Update UI** (`/system-update`) — check GitHub releases, view release notes and download assets, update instructions
+- **Email send history** — file-persisted JSON history at `data/system/email_history.json` with sent/failed status badges
+- **Task execution history** — file-persisted at `data/system/task_history.json` with duration and status display
+- **CSS accessibility pass** — skip-to-content link, `:focus-visible` outlines, mobile hamburger nav, `.sr-only` utility, print styles, 480px breakpoint
+- "Update" navigation link added to all templates
+- Base64 encoding/decoding support
+- Miniserver communication enhancements and simulator
+- Integration tests for inbound Miniserver communication
+
+### Fixed
+- Task execution history no longer empty (stateless-per-request scheduler now uses file persistence)
+- Vitoconnect plugin compatibility restored
+- Removed `port_override` from miniserver simulator
+
+### Changed
+- Phase 7a marked complete — all web UI features for backend functionality delivered
+- `PHASE7A_PLAN.md` renamed to `PHASE7A_COMPLETE.md`
+
 ## [0.6.22] - 2026-03-22
 
 ### Fixed
@@ -267,7 +290,9 @@ This is the first stable release of RustyLox, a complete rewrite of LoxBerry in 
 
 ---
 
-[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/boernmaster/RustyLox/releases/tag/v0.7.0
+[0.6.22]: https://github.com/boernmaster/RustyLox/releases/tag/v0.6.22
 [1.3.0]: https://github.com/boernmaster/RustyLox/releases/tag/v1.3.0
 [1.2.0]: https://github.com/boernmaster/RustyLox/releases/tag/v1.2.0
 [1.0.0]: https://github.com/boernmaster/RustyLox/releases/tag/v1.0.0
