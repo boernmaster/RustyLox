@@ -47,9 +47,8 @@ fn validate_log_directive(directive: &str) -> bool {
         }
         if part.contains('=') {
             // component=level format
-            let mut iter = part.splitn(2, '=');
-            let _component = iter.next().unwrap_or("").trim();
-            let level = iter.next().unwrap_or("").trim();
+            let (_component, level) = part.split_once('=').unwrap_or(("", ""));
+            let level = level.trim();
             if !VALID_LOG_LEVELS.contains(&level) {
                 return false;
             }
