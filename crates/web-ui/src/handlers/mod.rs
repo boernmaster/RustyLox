@@ -19,5 +19,6 @@ pub mod plugins;
 pub mod profile;
 pub mod security;
 pub mod settings;
+pub mod system_update;
 pub mod tasks;
 pub mod weather;

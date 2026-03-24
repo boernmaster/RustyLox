@@ -252,6 +252,13 @@ pub struct WeatherConfigTemplate {
     pub cfg: WeatherConfig,
 }
 
+/// System update template
+#[derive(Template)]
+#[template(path = "system_update.html")]
+pub struct SystemUpdateTemplate {
+    pub version: String,
+}
+
 /// API documentation template
 #[derive(Template)]
 #[template(path = "api_docs.html")]

@@ -4,7 +4,11 @@ use crate::config::EmailConfig;
 use crate::templates::{EmailTemplate, EmailType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
+
+/// Maximum number of email history entries to keep
+const MAX_EMAIL_HISTORY: usize = 100;
 
 /// Result of an email send attempt
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -24,10 +28,62 @@ pub struct EmailHistoryEntry {
     pub sent_at: DateTime<Utc>,
 }
 
+/// Manages loading and saving email send history
+pub struct EmailHistoryManager {
+    history_path: PathBuf,
+}
+
+impl EmailHistoryManager {
+    pub fn new(lbhomedir: &Path) -> Self {
+        Self {
+            history_path: lbhomedir.join("data/system/email_history.json"),
+        }
+    }
+
+    /// Load history from disk
+    pub async fn load(&self) -> Vec<EmailHistoryEntry> {
+        if !self.history_path.exists() {
+            return Vec::new();
+        }
+        match tokio::fs::read_to_string(&self.history_path).await {
+            Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+            Err(e) => {
+                warn!("Failed to load email history: {}", e);
+                Vec::new()
+            }
+        }
+    }
+
+    /// Append an entry and save to disk
+    pub async fn record(&self, entry: EmailHistoryEntry) {
+        let mut history = self.load().await;
+        history.push(entry);
+        // Keep only the last MAX_EMAIL_HISTORY entries
+        if history.len() > MAX_EMAIL_HISTORY {
+            history.drain(0..history.len() - MAX_EMAIL_HISTORY);
+        }
+        if let Ok(content) = serde_json::to_string_pretty(&history) {
+            if let Some(parent) = self.history_path.parent() {
+                let _ = tokio::fs::create_dir_all(parent).await;
+            }
+            if let Err(e) = tokio::fs::write(&self.history_path, content).await {
+                warn!("Failed to save email history: {}", e);
+            }
+        }
+    }
+
+    /// Get recent history (last N entries, newest first)
+    pub async fn recent(&self, n: usize) -> Vec<EmailHistoryEntry> {
+        let history = self.load().await;
+        history.into_iter().rev().take(n).collect()
+    }
+}
+
 /// Manages email sending
 pub struct EmailManager {
     config: EmailConfig,
     version: String,
+    history_manager: Option<EmailHistoryManager>,
 }
 
 impl EmailManager {
@@ -36,7 +92,14 @@ impl EmailManager {
         Self {
             config,
             version: version.into(),
+            history_manager: None,
         }
+    }
+
+    /// Create a new email manager with history tracking
+    pub fn with_history(mut self, lbhomedir: &Path) -> Self {
+        self.history_manager = Some(EmailHistoryManager::new(lbhomedir));
+        self
     }
 
     /// Check if email is enabled and configured
@@ -69,6 +132,17 @@ impl EmailManager {
             results.push(result);
         }
 
+        // Record in history
+        if let Some(ref hm) = self.history_manager {
+            hm.record(EmailHistoryEntry {
+                subject: template.subject.clone(),
+                recipients: self.config.notification_addresses.clone(),
+                results: results.clone(),
+                sent_at: Utc::now(),
+            })
+            .await;
+        }
+
         results
     }
 
@@ -82,13 +156,27 @@ impl EmailManager {
             &self.version,
         );
 
-        self.send_email(
-            recipient,
-            &template.subject,
-            &template.html_body,
-            &template.text_body,
-        )
-        .await
+        let result = self
+            .send_email(
+                recipient,
+                &template.subject,
+                &template.html_body,
+                &template.text_body,
+            )
+            .await;
+
+        // Record in history
+        if let Some(ref hm) = self.history_manager {
+            hm.record(EmailHistoryEntry {
+                subject: template.subject,
+                recipients: vec![recipient.to_string()],
+                results: vec![result.clone()],
+                sent_at: Utc::now(),
+            })
+            .await;
+        }
+
+        result
     }
 
     /// Send a single email

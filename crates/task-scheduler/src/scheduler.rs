@@ -9,7 +9,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
 
-/// Maximum number of execution history records to keep in memory
+/// Maximum number of execution history records to keep
 const MAX_HISTORY: usize = 100;
 
 /// The task scheduler
@@ -18,16 +18,20 @@ pub struct TaskScheduler {
     executor: TaskExecutor,
     /// Recent execution history (in-memory, last MAX_HISTORY entries)
     history: Arc<RwLock<VecDeque<TaskExecution>>>,
+    /// Path for persisting history to disk
+    history_path: PathBuf,
 }
 
 impl TaskScheduler {
     /// Create a new task scheduler
     pub fn new(lbhomedir: impl Into<PathBuf>) -> Self {
         let lbhomedir = lbhomedir.into();
+        let history_path = lbhomedir.join("data/system/task_history.json");
         Self {
             config_manager: ScheduledTasksConfigManager::new(&lbhomedir),
             executor: TaskExecutor::new(&lbhomedir),
             history: Arc::new(RwLock::new(VecDeque::new())),
+            history_path,
         }
     }
 
@@ -39,6 +43,46 @@ impl TaskScheduler {
     /// Save task configuration
     pub async fn save_config(&self, config: &ScheduledTasksConfig) -> Result<()> {
         self.config_manager.save(config).await
+    }
+
+    /// Load execution history from disk into memory (only if memory is empty)
+    async fn load_history_from_disk(&self) {
+        {
+            let history = self.history.read().await;
+            if !history.is_empty() {
+                return;
+            }
+        }
+        if !self.history_path.exists() {
+            return;
+        }
+        match tokio::fs::read_to_string(&self.history_path).await {
+            Ok(content) => {
+                if let Ok(entries) = serde_json::from_str::<Vec<TaskExecution>>(&content) {
+                    let mut history = self.history.write().await;
+                    if history.is_empty() {
+                        *history = entries.into_iter().collect();
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Failed to load task history from disk: {}", e);
+            }
+        }
+    }
+
+    /// Save execution history to disk
+    async fn save_history_to_disk(&self) {
+        let history = self.history.read().await;
+        let entries: Vec<&TaskExecution> = history.iter().collect();
+        if let Ok(content) = serde_json::to_string_pretty(&entries) {
+            if let Some(parent) = self.history_path.parent() {
+                let _ = tokio::fs::create_dir_all(parent).await;
+            }
+            if let Err(e) = tokio::fs::write(&self.history_path, content).await {
+                warn!("Failed to save task history to disk: {}", e);
+            }
+        }
     }
 
     /// Run all tasks that are due now (for manual trigger / testing)
@@ -77,6 +121,8 @@ impl TaskScheduler {
 
     /// Execute a specific task and record the result
     pub async fn run_task(&self, task: &ScheduledTask) -> TaskExecution {
+        self.load_history_from_disk().await;
+
         let execution = self.executor.execute(task).await;
 
         // Record in history
@@ -88,17 +134,20 @@ impl TaskScheduler {
             history.push_back(execution.clone());
         }
 
+        self.save_history_to_disk().await;
         execution
     }
 
     /// Get execution history
     pub async fn get_history(&self) -> Vec<TaskExecution> {
+        self.load_history_from_disk().await;
         let history = self.history.read().await;
         history.iter().cloned().collect()
     }
 
     /// Get recent execution history (last N entries)
     pub async fn get_recent_history(&self, n: usize) -> Vec<TaskExecution> {
+        self.load_history_from_disk().await;
         let history = self.history.read().await;
         history.iter().rev().take(n).cloned().collect()
     }
@@ -149,7 +198,6 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let scheduler = TaskScheduler::new(temp.path());
         let config = scheduler.load_config().await.unwrap();
-        // Should have default tasks
         assert!(!config.tasks.is_empty());
     }
 

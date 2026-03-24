@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Update - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                    <li><a href="/miniserver/backup">MS Backup</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/monitor">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/system-update">Update</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>System Update</h1>
+
+        <div class="card">
+            <h2>Current Version</h2>
+            <p style="font-size: 1.2em; margin-bottom: 16px;">
+                <strong>{{ version }}</strong>
+            </p>
+            <button class="btn btn-primary" id="check-btn" onclick="checkForUpdates()">
+                Check for Updates
+            </button>
+            <span id="check-spinner" style="display: none; margin-left: 12px;">
+                <span class="spinner"></span> Checking...
+            </span>
+        </div>
+
+        <div id="update-result"></div>
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+    function checkForUpdates() {
+        const btn = document.getElementById('check-btn');
+        const spinner = document.getElementById('check-spinner');
+        const result = document.getElementById('update-result');
+        btn.disabled = true;
+        spinner.style.display = 'inline';
+        result.innerHTML = '';
+
+        apiFetch('/api/system/update/check')
+            .then(data => {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+
+                if (data.update_available) {
+                    const notes = escHtml(data.release_notes || 'No release notes.').replace(/\n/g, '<br>');
+                    const assetRows = (data.assets || []).map(a =>
+                        `<tr>
+                            <td style="padding: 8px;">${escHtml(a.name)}</td>
+                            <td style="padding: 8px;">${formatBytes(a.size)}</td>
+                            <td style="padding: 8px;">
+                                <a href="${escHtml(a.browser_download_url)}" class="btn btn-sm btn-secondary" target="_blank" rel="noopener">Download</a>
+                            </td>
+                        </tr>`
+                    ).join('');
+
+                    result.innerHTML = `
+                        <div class="card" style="border-left: 4px solid var(--success-color);">
+                            <h2>Update Available: ${escHtml(data.latest_version)}</h2>
+                            <p><strong>Current:</strong> ${escHtml(data.current_version)} &rarr; <strong>Latest:</strong> ${escHtml(data.latest_version)}</p>
+                            <p><strong>Released:</strong> ${escHtml(data.published_at.substring(0, 10))}</p>
+                            ${data.prerelease ? '<p><span class="badge badge-warning">Pre-release</span></p>' : ''}
+                            <h3 style="margin-top: 16px;">Release Notes</h3>
+                            <div style="background: var(--light-bg); padding: 12px; border-radius: 4px; margin: 8px 0; max-height: 300px; overflow-y: auto;">
+                                <p style="white-space: pre-wrap; font-size: 0.9em;">${notes}</p>
+                            </div>
+                            ${assetRows ? `
+                            <h3 style="margin-top: 16px;">Downloads</h3>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead><tr><th>File</th><th>Size</th><th></th></tr></thead>
+                                    <tbody>${assetRows}</tbody>
+                                </table>
+                            </div>` : ''}
+                            <div style="margin-top: 16px;">
+                                <a href="${escHtml(data.release_url)}" class="btn btn-primary" target="_blank" rel="noopener">
+                                    View on GitHub
+                                </a>
+                                <button class="btn btn-success" onclick="applyUpdate()" style="margin-left: 8px;">
+                                    Show Update Instructions
+                                </button>
+                            </div>
+                            <div id="apply-result" style="margin-top: 12px;"></div>
+                        </div>`;
+                } else {
+                    result.innerHTML = `
+                        <div class="card">
+                            <div class="alert alert-success" style="margin: 0;">
+                                You are running the latest version (${escHtml(data.current_version)}).
+                            </div>
+                        </div>`;
+                }
+            })
+            .catch(e => {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                result.innerHTML = `<div class="card"><div class="alert alert-danger">Failed to check for updates: ${escHtml(String(e))}</div></div>`;
+            });
+    }
+
+    function applyUpdate() {
+        const el = document.getElementById('apply-result');
+        el.innerHTML = '<span class="spinner"></span> Loading...';
+        apiFetch('/api/system/update/apply', { method: 'POST' })
+            .then(data => {
+                const msg = escHtml(data.message || '').replace(/\n/g, '<br>');
+                el.innerHTML = `<div class="alert alert-info"><strong>Update Instructions:</strong><br><br>${msg}</div>`;
+            })
+            .catch(e => {
+                el.innerHTML = `<div class="alert alert-danger">${escHtml(String(e))}</div>`;
+            });
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    </script>
+</body>
+</html>

@@ -115,6 +115,8 @@ pub fn create_ui_router(state: AppState) -> Router {
         .route("/tasks", get(handlers::tasks::index))
         // Network diagnostics
         .route("/network", get(handlers::network::index))
+        // System update
+        .route("/system-update", get(handlers::system_update::index))
         // Settings
         .route("/settings", get(handlers::settings::index))
         .route("/settings", post(handlers::settings::submit))

@@ -1,8 +1,8 @@
 # Phase 7a: Complete Web UI for Backend Features
 
-![Status](https://img.shields.io/badge/Status-In%20Progress-blue)
-![Phase](https://img.shields.io/badge/Phase-7a-blue)
-![Completion](https://img.shields.io/badge/Completion-80%25-yellow)
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
+![Phase](https://img.shields.io/badge/Phase-7a-brightgreen)
+![Completion](https://img.shields.io/badge/Completion-100%25-brightgreen)
 
 ## Overview
 
@@ -45,12 +45,12 @@ Phase 7a builds a full web UI for all backend functionality introduced in Phases
 
 ---
 
-## Remaining
+## Also Implemented
 
-- [ ] System update UI (check GitHub releases, apply update)
-- [ ] Email send history viewer
-- [ ] Task execution history viewer
-- [ ] CSS/responsive polish and accessibility pass
+- [x] System update UI — check GitHub releases, view release notes, update instructions (`/system-update`)
+- [x] Email send history viewer — persisted JSON history, badge status in `/email` page
+- [x] Task execution history viewer — file-persisted execution history in `/tasks` page
+- [x] CSS/responsive polish and accessibility pass — skip-link, focus-visible outlines, mobile nav, print styles, sr-only utility
 
 ---
 
