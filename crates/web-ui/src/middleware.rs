@@ -80,7 +80,12 @@ pub async fn require_auth(State(state): State<AppState>, request: Request, next:
                         if password.starts_with("lbx_") {
                             auth_service.authenticate_api_key(password).await.is_ok()
                         } else {
-                            false
+                            // Fall back to regular username:password verification
+                            let username = credentials.splitn(2, ':').next().unwrap_or("");
+                            auth_service
+                                .verify_user_password(username, password)
+                                .await
+                                .is_ok()
                         }
                     } else {
                         false

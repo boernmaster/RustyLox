@@ -195,6 +195,35 @@ impl AuthService {
         })
     }
 
+    /// Verify a username + password without creating a session or JWT.
+    /// Used for HTTP Basic Auth on API endpoints (e.g. Miniserver VirtualOut query links).
+    pub async fn verify_user_password(
+        &self,
+        username: &str,
+        password: &str,
+    ) -> Result<AuthIdentity, AuthError> {
+        let user = self
+            .store
+            .find_user_by_username(username)
+            .await?
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        if !user.enabled {
+            return Err(AuthError::AccountDisabled);
+        }
+
+        if !verify_password(password, &user.password_hash)? {
+            return Err(AuthError::InvalidCredentials);
+        }
+
+        Ok(AuthIdentity {
+            user_id: user.id,
+            username: user.username,
+            roles: user.roles,
+            kind: IdentityKind::Session(Uuid::new_v4().to_string()),
+        })
+    }
+
     // --- User management ---
 
     pub async fn create_user(

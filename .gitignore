@@ -29,3 +29,4 @@ Thumbs.db
 # Loxone Configurations
 *.Loxone
 kaltenegger-loxone-config.md
+nodered_flows

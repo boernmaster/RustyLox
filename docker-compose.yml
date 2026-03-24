@@ -8,6 +8,7 @@ services:
         - GIT_TAG=${GIT_TAG:-}
         - GIT_DIRTY=${GIT_DIRTY:-false}
     image: rustylox:latest
+    # image: ghcr.io/boernmaster/rustylox:latest
     container_name: rustylox
     restart: unless-stopped
     ports:
