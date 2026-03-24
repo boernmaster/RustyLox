@@ -57,6 +57,7 @@
                     <li><a href="/tasks">Tasks</a></li>
                     <li><a href="/network">Network</a></li>
                     <li><a href="/email">Email</a></li>
+                    <li><a href="/system-update">Update</a></li>
                     <li><a href="/settings">Settings</a></li>
                 </ul>
             </li>
@@ -167,8 +168,8 @@
 
     function loadTasks() {
         apiFetch('/api/tasks')
-            .then(tasks => {
-                if (!Array.isArray(tasks)) throw new TypeError('Unexpected response format');
+            .then(resp => {
+                const tasks = Array.isArray(resp) ? resp : (resp.tasks || []);
                 allTasks = tasks;
                 const tbody = document.getElementById('tasks-tbody');
                 if (tasks.length === 0) {
@@ -205,27 +206,35 @@
     function loadHistory() {
         apiFetch('/api/tasks/history')
             .then(history => {
-                if (!Array.isArray(history)) throw new TypeError('Unexpected response format');
+                const items = Array.isArray(history) ? history : [];
                 const tbody = document.getElementById('history-tbody');
-                if (history.length === 0) {
+                if (items.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center;">No history yet.</td></tr>';
                     return;
                 }
-                tbody.innerHTML = history.slice(0, 20).map(h => {
-                    const statusClass = h.status === 'Completed' ? 'badge-success'
-                                      : h.status === 'Failed' ? 'badge-danger' : 'badge-secondary';
+                tbody.innerHTML = items.slice(0, 20).map(h => {
+                    const statusStr = h.status || 'unknown';
+                    const statusClass = statusStr === 'completed' ? 'badge-success'
+                                      : statusStr === 'failed' ? 'badge-danger' : 'badge-secondary';
+                    const started = h.started_at ? h.started_at.substring(0, 19).replace('T', ' ') : '-';
+                    const duration = h.duration_ms != null ? (h.duration_ms < 1000 ? h.duration_ms + 'ms' : (h.duration_ms / 1000).toFixed(1) + 's') : '-';
+                    const name = h.task_name || h.task_id || '-';
                     return `
                         <tr style="border-bottom: 1px solid #dee2e6;">
-                            <td style="padding: 10px;">${escHtml(h.task_id)}</td>
-                            <td style="padding: 10px;">${escHtml(h.started_at || '-')}</td>
-                            <td style="padding: 10px;">${h.duration_ms != null ? h.duration_ms + 'ms' : '-'}</td>
-                            <td style="padding: 10px;"><span class="badge ${statusClass}">${escHtml(h.status)}</span></td>
-                            <td style="padding: 10px; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
-                                <code style="font-size: 0.8em;">${escHtml((h.output || h.error || '').substring(0, 100))}</code>
+                            <td style="padding: 10px;">${escHtml(name)}</td>
+                            <td style="padding: 10px;">${escHtml(started)}</td>
+                            <td style="padding: 10px;">${duration}</td>
+                            <td style="padding: 10px;"><span class="badge ${statusClass}">${escHtml(statusStr)}</span></td>
+                            <td style="padding: 10px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <code style="font-size: 0.8em;">${escHtml((h.output || h.error || '').substring(0, 120))}</code>
                             </td>
                         </tr>
                     `;
                 }).join('');
+            })
+            .catch(() => {
+                document.getElementById('history-tbody').innerHTML =
+                    '<tr><td colspan="5" style="padding: 10px; color: red;">Failed to load history.</td></tr>';
             });
     }
 

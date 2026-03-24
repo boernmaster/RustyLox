@@ -2,7 +2,7 @@
 
 use crate::state::AppState;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use email_manager::{EmailConfig, EmailConfigManager, EmailManager, EmailType};
+use email_manager::{EmailConfig, EmailConfigManager, EmailHistoryManager, EmailManager, EmailType};
 use serde::Deserialize;
 use tracing::{error, info};
 
@@ -113,7 +113,7 @@ pub async fn send_test(
             .into_response();
     }
 
-    let email_manager = EmailManager::new(config, &state.version);
+    let email_manager = EmailManager::new(config, &state.version).with_history(&state.lbhomedir);
     let result = email_manager.send_test(&recipient).await;
 
     if result.success {
@@ -161,7 +161,7 @@ pub async fn send_notification(
             .into_response();
     }
 
-    let email_manager = EmailManager::new(config, &state.version);
+    let email_manager = EmailManager::new(config, &state.version).with_history(&state.lbhomedir);
     let email_type = EmailType::Custom {
         subject: req.subject,
         body: req.message,
@@ -186,4 +186,13 @@ pub async fn send_notification(
         "failed": failed
     }))
     .into_response()
+}
+
+/// Get email send history
+///
+/// GET /api/email/history
+pub async fn get_history(State(state): State<AppState>) -> impl IntoResponse {
+    let history_manager = EmailHistoryManager::new(&state.lbhomedir);
+    let history = history_manager.recent(50).await;
+    Json(history).into_response()
 }

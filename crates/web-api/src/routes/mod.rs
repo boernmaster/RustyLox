@@ -13,6 +13,7 @@ pub mod mqtt_stats;
 pub mod network;
 pub mod plugins;
 pub mod system;
+pub mod system_update;
 pub mod tasks;
 pub mod virtual_input;
 pub mod weather;

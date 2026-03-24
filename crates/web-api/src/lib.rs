@@ -110,6 +110,16 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/email/config", put(routes::email::update_config))
         .route("/api/email/test", post(routes::email::send_test))
         .route("/api/email/send", post(routes::email::send_notification))
+        .route("/api/email/history", get(routes::email::get_history))
+        // System update routes
+        .route(
+            "/api/system/update/check",
+            get(routes::system_update::check_update),
+        )
+        .route(
+            "/api/system/update/apply",
+            post(routes::system_update::apply_update),
+        )
         // Scheduled task routes
         .route("/api/tasks", get(routes::tasks::list_tasks))
         .route("/api/tasks", post(routes::tasks::create_task))
