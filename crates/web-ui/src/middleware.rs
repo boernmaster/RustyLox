@@ -74,12 +74,12 @@ pub async fn require_auth(State(state): State<AppState>, request: Request, next:
                     if let Ok(decoded) = BASE64.decode(encoded.trim()) {
                         if let Ok(credentials) = std::str::from_utf8(&decoded) {
                             // credentials = "username:password" — the password is the API key
-                            let password = credentials.splitn(2, ':').nth(1).unwrap_or("");
+                            let (username, password) =
+                                credentials.split_once(':').unwrap_or(("", credentials));
                             if password.starts_with("lbx_") {
                                 auth_service.authenticate_api_key(password).await.is_ok()
                             } else {
                                 // Fall back to regular username:password verification
-                                let username = credentials.splitn(2, ':').next().unwrap_or("");
                                 auth_service
                                     .verify_user_password(username, password)
                                     .await
