@@ -2,7 +2,9 @@
 
 use crate::state::AppState;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use email_manager::{EmailConfig, EmailConfigManager, EmailHistoryManager, EmailManager, EmailType};
+use email_manager::{
+    EmailConfig, EmailConfigManager, EmailHistoryManager, EmailManager, EmailType,
+};
 use serde::Deserialize;
 use tracing::{error, info};
 
