@@ -17,7 +17,7 @@ tokio = { workspace = true }
 argon2 = "0.5"
 
 # JWT
-jsonwebtoken = "9.3"
+jsonwebtoken = "10.3"
 
 # UUID generation
 uuid = { version = "1.8", features = ["v4", "serde"] }
@@ -26,7 +26,7 @@ uuid = { version = "1.8", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # Random number generation
-rand = "0.8"
+rand = "0.9"
 
 # Cryptographic hashing
 sha2 = "0.10"
