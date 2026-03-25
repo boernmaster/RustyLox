@@ -21,9 +21,15 @@ impl BrokerClient {
     pub fn new(config: &MqttConfig) -> Result<Self> {
         let broker_host = config.broker_host();
         let broker_port = config.broker_port();
-        let client_id = format!("rustylox-gateway-{}", std::process::id());
+        let hostname = std::env::var("HOSTNAME")
+            .or_else(|_| std::env::var("COMPUTERNAME"))
+            .unwrap_or_else(|_| format!("pid-{}", std::process::id()));
+        let client_id = format!("rustylox-{}", hostname);
 
-        info!("Connecting to MQTT broker: {}:{}", broker_host, broker_port);
+        info!(
+            "Connecting to MQTT broker: {}:{} (client_id={})",
+            broker_host, broker_port, client_id
+        );
 
         let mut mqttoptions = MqttOptions::new(&client_id, broker_host, broker_port);
         mqttoptions.set_keep_alive(std::time::Duration::from_secs(30));

@@ -45,7 +45,7 @@ def hdr(msg: str)  -> str: return f"\n{BOLD}{YELLOW}{'─'*60}{RESET}\n{BOLD}{YE
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def http_get(url: str, timeout: float = 3.0,
+def http_get(url: str, timeout: float = 10.0,
              basic_auth: tuple[str, str] | None = None,
              follow_redirects: bool = True) -> tuple[int, str]:
     """Send an HTTP GET and return (status_code, body)."""
@@ -200,25 +200,25 @@ UDP_8090_KALTENEGGER: list[UdpTest] = [
 
 # PHP plugin HTTP tests — from Kaltenegger_MQTT.Loxone VirtualOut commands
 # The Miniserver calls these URLs on the RustyLox HTTP port.
-# The web-ui middleware accepts lbx_ API keys as the Basic Auth password.
+# Auth uses default admin credentials (same as Miniserver Virtual Output config).
 # expected_code=404 means "not yet implemented in RustyLox — plugin missing"
-_VITOCONNECT_AUTH = ("admin", "lbx_hE9dI3PG4zbTBcz8edoxfTWFFyzkOQl1q8yJBLFQ")
+_VITOCONNECT_AUTH = ("admin", "abc123")
 
 HTTP_PHP_PLUGINS: list[HttpTest] = [
-    # Vitoconnect — plugin is installed; token auth passes (no 303 redirect).
-    # PHP script runs but exits with error → 500 (internal PHP failure, not auth).
-    # 200 would mean the plugin is fully functional.
+    # Vitoconnect — plugin is installed; Basic Auth with admin credentials passes.
+    # PHP-CGI has a cold start on first call (~5s), so timeout is set to 10s.
+    # 200 = plugin executed (may fail internally without Viessmann API token).
     HttpTest("Vitoconnect: oneTimeCharge start",
              "/admin/plugins/Vitoconnect/vitoconnect.php?action=setvalue&option=heating.dhw.oneTimeCharge&value=start",
-             expected_code=500,
+             expected_code=200,
              basic_auth=_VITOCONNECT_AUTH,
              follow_redirects=False),
     HttpTest("Vitoconnect: oneTimeCharge stop",
              "/admin/plugins/Vitoconnect/vitoconnect.php?action=setvalue&option=heating.dhw.oneTimeCharge&value=stop",
-             expected_code=500,
+             expected_code=200,
              basic_auth=_VITOCONNECT_AUTH,
              follow_redirects=False),
-    # sonos4lox — Wohnzimmer
+    #sonos4lox — Wohnzimmer
     HttpTest("Sonos WZ: stop",
              "/plugins/sonos4lox/index.php?zone=wohnzimmer&action=stop",
              expected_code=404),
