@@ -15,7 +15,7 @@ pub async fn system_status(State(state): State<AppState>) -> (StatusCode, Json<V
         StatusCode::OK,
         Json(json!({
             "status": "running",
-            "version": config.base.version,
+            "version": state.version,
             "language": config.base.lang,
             "miniserver_count": config.miniserver.len(),
             "mqtt_enabled": config.mqtt.uses_local_broker(),
