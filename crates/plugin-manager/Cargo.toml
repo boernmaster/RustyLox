@@ -14,13 +14,13 @@ tracing = { workspace = true }
 tokio = { workspace = true, features = ["fs", "process"] }
 
 # ZIP extraction
-zip = "2.1"
+zip = "8.4"
 
 # INI parsing for plugin.cfg
 serde_ini = "0.2"
 
 # MD5 checksum
-md5 = "0.7"
+md5 = "0.8"
 
 # Directory traversal
 walkdir = "2.5"
