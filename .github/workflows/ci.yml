@@ -92,6 +92,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            GIT_TAG=${{ github.ref_name }}
+            GIT_HASH=${{ github.sha }}
 
   release:
     name: Create GitHub Release
