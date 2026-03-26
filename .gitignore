@@ -30,3 +30,6 @@ Thumbs.db
 *.Loxone
 kaltenegger-loxone-config.md
 nodered_flows
+viessmann-migration
+viessmann-simplification*
+.quarto

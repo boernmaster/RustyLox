@@ -29,10 +29,9 @@
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 - [About](#about)
-- [Project Status](#project-status)
 - [Architecture](#architecture)
 - [Features](#features)
 - [Quick Start](#quick-start)
@@ -51,70 +50,13 @@
 
 This project is a complete rewrite of [LoxBerry](https://github.com/mschlenstedt/Loxberry) in Rust. LoxBerry is an open-source toolbox for Raspberry Pi that extends the Loxone Smart Home System with additional features like MQTT integration, weather services, and a plugin ecosystem.
 
-- 🏠 **Original Repository:** [LoxBerry](https://github.com/mschlenstedt/Loxberry)
-- 📜 **License:** Apache License 2.0 (same as original LoxBerry)
-- 🦀 **Language:** Rust 1.80+ (Edition 2021)
-- 🐳 **Platform:** Docker + Docker Compose
-- 🌐 **Web Framework:** Axum 0.7 + Askama Templates + HTMX
-- 📡 **MQTT:** rumqttc 0.24 + Eclipse Mosquitto
-- ⚡ **Runtime:** Tokio async runtime
-
-## Project Status
-
-✅ **Phase 1 - Foundation** (Completed)
-- Core types and error handling
-- Configuration management (JSON)
-- Miniserver HTTP/UDP client
-- REST API foundation
-
-✅ **Phase 2 - Plugin System** (Completed)
-- Plugin manager (install/uninstall/upgrade)
-- Plugin database (JSON)
-- Lifecycle hooks (preroot, preinstall, postinstall, postroot, uninstall)
-- Plugin API endpoints
-
-✅ **Phase 3 - MQTT Gateway** (Completed)
-- MQTT broker integration (rumqttc)
-- UDP input listener (port 11884)
-- Message transformers (built-in + external scripts)
-- Bidirectional relay (MQTT ↔ Miniserver)
-- Hot-reload for subscriptions and transformers
-
-✅ **Phase 4 - Web UI** (Completed)
-- Server-rendered templates (Askama)
-- HTMX for dynamic interactions
-- Real-time MQTT monitor (Server-Sent Events)
-- Miniserver management interface
-- Plugin management interface
-- System settings page
-
-✅ **Phase 4a - Authentication** (Completed)
-- Miniserver credentials (username/password)
-- MQTT broker authentication
-- Credential storage ready
-
-✅ **Phase 5 - Logging & SDK** (Completed)
-- Structured logging framework
-- Plugin logging integration
-- Backup/restore functionality
-- Configuration validation
-
-✅ **Phase 6 - Performance & Monitoring** (Completed)
-- Database abstraction layer (PostgreSQL/SQLite)
-- Email notification system (SMTP)
-- Task scheduler (cron-like)
-- Network diagnostics tools
-- System health monitoring
-- Backup/restore functionality
-
-✅ **Phase 7 - Security Hardening** (Completed)
-- JWT authentication & authorization
-- Role-Based Access Control (RBAC)
-- API key management
-- Argon2id password hashing
-- Account lockout protection
-- Security headers middleware
-- Audit logging
+- **Original Repository:** [LoxBerry](https://github.com/mschlenstedt/Loxberry)
+- **License:** Apache License 2.0 (same as original LoxBerry)
+- **Language:** Rust 1.80+ (Edition 2021)
+- **Platform:** Docker + Docker Compose
+- **Web Framework:** Axum 0.7 + Askama Templates + HTMX
+- **MQTT:** rumqttc 0.24 + Eclipse Mosquitto
+- **Runtime:** Tokio async runtime
 
 ## Architecture
 
@@ -126,6 +68,11 @@ loxberry-rust/
 │   ├── miniserver-client/   - HTTP/UDP Miniserver communication
 │   ├── mqtt-gateway/        - MQTT Gateway with transformers
 │   ├── plugin-manager/      - Plugin lifecycle management
+│   ├── auth/                - JWT authentication & RBAC
+│   ├── database/            - PostgreSQL/SQLite abstraction
+│   ├── email-manager/       - SMTP email notifications
+│   ├── task-scheduler/      - Cron-like task scheduling
+│   ├── backup-manager/      - Backup & restore
 │   ├── web-api/             - REST API with Axum
 │   ├── web-ui/              - Server-rendered web interface (Askama + HTMX)
 │   └── loxberry-daemon/     - Main orchestrator binary
@@ -134,6 +81,7 @@ loxberry-rust/
 │   ├── config/              - Configuration files
 │   ├── data/                - Data storage
 │   └── log/                 - Log files
+├── sdk/                     - Perl/PHP/Bash SDK compatibility layer
 ├── Dockerfile               - Multi-stage build
 └── docker-compose.yml       - Stack with Mosquitto broker
 ```
@@ -146,7 +94,6 @@ loxberry-rust/
 - Delta-sending optimization (only send changed values)
 - Miniserver reboot detection
 - CloudDNS dynamic IP resolution
-- SSL certificate verification disabled (for self-signed certs)
 
 ### MQTT Gateway
 - Connect to Mosquitto broker (or external MQTT broker)
@@ -163,9 +110,9 @@ loxberry-rust/
 - Install/uninstall/upgrade plugins from ZIP archives
 - Plugin database (JSON at `data/system/plugindatabase.json`)
 - MD5-based plugin identity (author + name + folder)
-- Lifecycle hooks with script execution
+- Lifecycle hooks with script execution (preroot, preinstall, postinstall, postroot, uninstall)
 - Directory isolation per plugin
-- Environment variable injection for SDK compatibility
+- Environment variable injection for full SDK compatibility
 
 ### Web UI
 - **Dashboard** - System overview and quick links
@@ -173,10 +120,23 @@ loxberry-rust/
 - **MQTT Monitor** - Real-time message viewer with SSE streaming
 - **MQTT Configuration** - Broker settings and authentication
 - **Plugin Management** - Install, list, uninstall plugins
-- **Settings** - System configuration
-- Server-rendered templates (Askama)
-- HTMX for progressive enhancement
-- Responsive CSS design
+- **System Health** - CPU, memory, disk usage with real-time metrics
+- **Email Configuration** - SMTP setup and send history
+- **Task Scheduler** - Cron-like task management and history
+- **Network Diagnostics** - Ping, port scan, connectivity tests
+- **Backup & Restore** - Scheduled and manual backups
+- **Admin Panel** - User management, API keys, audit log, security settings
+- **System Update** - Check GitHub releases and view release notes
+- Server-rendered templates (Askama) with HTMX progressive enhancement
+
+### Security
+- JWT authentication (HS256) with cookie support
+- Role-Based Access Control (RBAC) — Admin, Operator, Viewer, PluginManager
+- API key management (`lbx_` prefix, SHA-256 hashing)
+- Argon2id password hashing
+- Account lockout after 5 failed login attempts
+- Security headers middleware (CSP, X-Frame-Options, etc.)
+- Comprehensive audit logging
 
 ### REST API
 
@@ -204,9 +164,17 @@ loxberry-rust/
 - `POST /api/mqtt/subscriptions/reload` - Hot-reload subscriptions
 - `POST /api/mqtt/transformers/reload` - Hot-reload transformers
 
+#### Authentication
+- `POST /api/auth/login` - Login, receive JWT
+- `POST /api/auth/logout` - Logout
+- `GET /api/users` - List users (admin)
+- `POST /api/users` - Create user (admin)
+
 #### System
 - `GET /health` - Health check
 - `GET /api/system/status` - System status
+- `POST /api/backup/create` - Create backup
+- `GET /api/backup/list` - List backups
 
 ## Quick Start
 
@@ -392,7 +360,7 @@ cargo build
 cargo test
 
 # Run daemon locally
-LBHOMEDIR=/tmp/loxberry cargo run --bin rustylox-daemon
+LBHOMEDIR=/tmp/loxberry cargo run --bin loxberry-daemon
 ```
 
 ### Docker Build
@@ -407,14 +375,19 @@ docker compose down && docker compose up -d
 ### Project Structure
 Each crate is independent with its own Cargo.toml:
 
-- **rustylox-core**: Common types, errors, results
-- **rustylox-config**: JSON config parsing and management
+- **loxberry-core**: Common types, errors, results
+- **loxberry-config**: JSON config parsing and management
 - **miniserver-client**: HTTP/UDP client for Loxone Miniserver
 - **mqtt-gateway**: MQTT broker client, UDP listener, transformers
 - **plugin-manager**: ZIP extraction, database, lifecycle hooks
+- **auth**: JWT authentication and RBAC
+- **database**: PostgreSQL/SQLite abstraction layer
+- **email-manager**: SMTP email notification system
+- **task-scheduler**: Cron-like task scheduling
+- **backup-manager**: Backup and restore functionality
 - **web-api**: REST API routes and handlers (Axum)
 - **web-ui**: Server-rendered templates and UI handlers (Askama)
-- **rustylox-daemon**: Main binary that orchestrates all services
+- **loxberry-daemon**: Main binary that orchestrates all services
 
 ## Differences from Original LoxBerry
 
@@ -432,106 +405,14 @@ Each crate is independent with its own Cargo.toml:
 
 ### Compatibility
 - **Configuration**: Compatible JSON format with original LoxBerry
-- **Plugins**: SDK compatibility layer in development (Phase 5)
+- **Plugins**: Full SDK compatibility layer (Perl/PHP/Bash)
 - **MQTT**: Full compatibility with existing MQTT clients
 
 ## Roadmap
 
-### ✅ Phase 1 - Foundation (Complete)
-- Core types and error handling
-- Configuration management (JSON)
-- Miniserver HTTP/UDP client
-- REST API foundation
-- Docker containerization
+The core system is production-ready. See [ROADMAP.md](ROADMAP.md) for the full history and future plans.
 
-**[📄 View Details](PHASE1_COMPLETE.md)**
-
-### ✅ Phase 2 - Plugin System (Complete)
-- Plugin manager (install/uninstall/upgrade)
-- Plugin database (JSON)
-- Lifecycle hooks (preroot, preinstall, postinstall, postroot, uninstall)
-- Plugin API endpoints
-- Real plugin testing (Vitoconnect)
-
-**[📄 View Details](PHASE2_COMPLETE.md)**
-
-### ✅ Phase 3 - MQTT Gateway (Complete)
-- MQTT broker integration (rumqttc)
-- UDP input listener (port 11884)
-- Message transformers (built-in + external scripts)
-- Bidirectional relay (MQTT ↔ Miniserver)
-- Hot-reload for subscriptions and transformers
-
-**[📄 View Details](PHASE3_COMPLETE.md)**
-
-### ✅ Phase 4 - Web UI (Complete)
-- Server-rendered templates (Askama)
-- HTMX for dynamic interactions
-- Real-time MQTT monitor (Server-Sent Events)
-- Complete CRUD interfaces
-- MQTT configuration with subscriptions/conversions
-- RegEx filter expressions
-- Professional branding (favicon, logo)
-
-**[📄 View Details](PHASE4_COMPLETE.md)**
-
-### ✅ Phase 5 - SDK Compatibility & Logging (Complete)
-- Full SDK compatibility layer (Perl/PHP/Bash)
-- Environment variable injection
-- Plugin execution wrapper
-- Structured logging with rotation
-- Log management UI
-- Backup & restore functionality
-
-**[📄 View Details](PHASE5_COMPLETE.md)**
-
-### ✅ Phase 6 - Performance & Monitoring (Complete)
-- Database abstraction layer (PostgreSQL/SQLite)
-- Email notification system (SMTP)
-- Task scheduler (cron-like)
-- Network diagnostics tools
-- System health monitoring
-- Backup/restore functionality
-
-**[📄 View Details](PHASE6_COMPLETE.md)**
-
-### ✅ Phase 7 - Security Hardening (Complete)
-- JWT authentication & authorization
-- Role-Based Access Control (RBAC)
-- API key management
-- Argon2id password hashing
-- Account lockout protection
-- Security headers middleware
-- Audit logging
-
-**[📄 View Details](PHASE7_COMPLETE.md)**
-
-### 🚧 Phase 7a - Complete Web UI for Backend Features (In Planning)
-- Authentication UI (login, user management, API keys)
-- System health dashboard with real-time metrics
-- Email configuration and testing interface
-- Task scheduler management UI
-- Network diagnostics tools interface
-- Backup/restore web interface
-- Audit log viewer with filters
-- Database management UI
-- Security settings page
-- Enhanced main dashboard
-
-**[📋 View Plan](PHASE7A_PLAN.md)**
-
-### 📅 Phase 8 - Advanced Features & Ecosystem (Future)
-- High availability & clustering
-- Plugin marketplace
-- Kubernetes deployment
-- OAuth2/OIDC integration
-- Two-factor authentication (2FA)
-- Mobile app & PWA
-- GraphQL API
-- Multi-tenancy support
-- OpenTelemetry tracing
-
-**[📋 View Plan](PHASE8_PLAN.md)**
+**Next up**: Advanced features & ecosystem expansion — plugin marketplace, Kubernetes deployment, OAuth2/OIDC, PWA/mobile, plugin sandboxing.
 
 ## Contributing
 
@@ -553,13 +434,13 @@ Quick start for contributors:
 
 See also:
 - [CHANGELOG.md](CHANGELOG.md) - Version history and changes
-- [Phase Documentation](PHASE1_COMPLETE.md) - Detailed phase implementation notes
+- [ROADMAP.md](ROADMAP.md) - Development roadmap
 
 ## Support
 
 - **Original LoxBerry**: https://www.loxwiki.eu/display/LOXBERRY/LoxBerry
 - **Forum**: https://www.loxforum.com/forum/german/software-konfiguration-und-programmierung/loxberry
-- **GitHub Issues**: <this-repo-issues-url>
+- **GitHub Issues**: https://github.com/boernmaster/RustyLox/issues
 
 ## Acknowledgments
 
