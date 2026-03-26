@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **serde/serde_json** - Serialization (JSON config files)
 - **serde_ini** - INI file parsing (plugin configs)
 - **DashMap** - Concurrent hashmaps
-- **PostgreSQL/SQLite** - Database abstraction layer (Phase 6)
+- **PostgreSQL/SQLite** - Database abstraction layer
 
 ### DevOps
 - **Docker** - Multi-stage builds
@@ -98,7 +98,7 @@ loxberry-rust/
 ├── ROADMAP.md                      # Development roadmap
 ├── CONTRIBUTING.md                 # Contribution guidelines
 ├── CHANGELOG.md                    # Version history
-└── PHASE*.md                       # Phase documentation (1-7)
+└── docs/archive/                   # Archived phase documentation
 ```
 
 ## Development Environment
@@ -844,21 +844,13 @@ error!("Error occurred: {}", err);
 **Problem**: Async runtime blocking
 **Solution**: Don't use `std::fs` or other blocking I/O in async functions
 
-## Phase-Based Development
+## Project Status
 
-This project follows a **phased development approach**. See detailed docs:
+**Current Status**: Production-ready. All core features are implemented — MQTT gateway, plugin system, web UI, security hardening (JWT/RBAC), monitoring, backup/restore, and admin panel.
 
-- ✅ [Phase 1](PHASE1_COMPLETE.md) - Foundation (COMPLETE)
-- ✅ [Phase 2](PHASE2_COMPLETE.md) - Plugin System (COMPLETE)
-- ✅ [Phase 3](PHASE3_COMPLETE.md) - MQTT Gateway (COMPLETE)
-- ✅ [Phase 4](PHASE4_COMPLETE.md) - Web UI (COMPLETE)
-- ✅ [Phase 5](PHASE5_COMPLETE.md) - SDK & Logging (COMPLETE)
-- ✅ [Phase 6](PHASE6_COMPLETE.md) - Performance & Monitoring (COMPLETE)
-- ✅ [Phase 7](PHASE7_COMPLETE.md) - Security Hardening (COMPLETE)
-- ✅ [Phase 7a](PHASE7A_COMPLETE.md) - Complete Web UI for Backend Features (COMPLETE)
-- 📅 [Phase 8](PHASE8_PLAN.md) - Advanced Features & Ecosystem (FUTURE)
+Next planned work: advanced features & ecosystem expansion (plugin marketplace, Kubernetes, OAuth2/OIDC, PWA). See [ROADMAP.md](ROADMAP.md) for details.
 
-**Current Status**: Production-ready. Phase 7a complete. Phase 8 next: advanced features & ecosystem.
+Historical phase documentation is archived in [docs/archive/](docs/archive/).
 
 ## Additional Resources
 
@@ -885,7 +877,7 @@ This project follows a **phased development approach**. See detailed docs:
 If you're unsure about:
 - Architecture decisions - Check [ROADMAP.md](ROADMAP.md)
 - How to contribute - See [CONTRIBUTING.md](CONTRIBUTING.md)
-- Specific features - Read the relevant PHASE*.md document
+- Specific features - Look at existing similar code or check [docs/archive/](docs/archive/)
 - Code patterns - Look at existing similar code first
 
 When in doubt:
