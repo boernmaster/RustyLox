@@ -31,10 +31,18 @@ pub struct SystemStatus {
     pub uptime: String,
 }
 
-/// MQTT Monitor template
+/// MQTT Monitor template (Incoming Overview)
 #[derive(Template)]
 #[template(path = "mqtt/monitor.html")]
 pub struct MqttMonitorTemplate {
+    pub title: String,
+    pub version: String,
+}
+
+/// MQTT Finder template
+#[derive(Template)]
+#[template(path = "mqtt/finder.html")]
+pub struct MqttFinderTemplate {
     pub title: String,
     pub version: String,
 }

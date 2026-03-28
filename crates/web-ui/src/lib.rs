@@ -40,9 +40,11 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/miniserver/:id/test",
             post(handlers::miniserver::test_connection),
         )
-        // MQTT Monitor (real-time)
+        // MQTT Monitor (Incoming Overview)
         .route("/mqtt/monitor", get(handlers::mqtt::monitor))
         .route("/mqtt/monitor/stream", get(handlers::mqtt::monitor_stream))
+        // MQTT Finder
+        .route("/mqtt/finder", get(handlers::mqtt_finder::index))
         // MQTT Configuration
         .route("/mqtt/config", get(handlers::mqtt::config))
         .route("/mqtt/config", post(handlers::mqtt::config_submit))

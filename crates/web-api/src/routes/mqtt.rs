@@ -190,6 +190,32 @@ pub struct TopicDeleteRequest {
     pub topic: String,
 }
 
+/// Get MQTT Finder data (all topics seen on broker)
+///
+/// GET /api/mqtt/finder
+pub async fn get_finder_data(State(state): State<AppState>) -> impl IntoResponse {
+    if let Some(gateway) = &state.mqtt_gateway {
+        let finder = gateway.mqtt_finder();
+        let entries = finder.get_all();
+        let total = finder.topic_count();
+        let total_messages = finder.total_messages();
+        Json(serde_json::json!({
+            "topics": entries,
+            "topic_count": total,
+            "total_messages": total_messages,
+        }))
+        .into_response()
+    } else {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "error": "MQTT gateway not running"
+            })),
+        )
+            .into_response()
+    }
+}
+
 /// Reload transformers from disk
 ///
 /// POST /api/mqtt/transformers/reload
