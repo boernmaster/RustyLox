@@ -1011,3 +1011,161 @@ function tz_offset() {
     $offset = $origin_dtz->getOffset($origin_dt) - $remote_dtz->getOffset($remote_dt);
     return $offset;
 }
+
+///////////////////////////////////////////////////////////////////
+// Lock / Unlock functions
+// Provides file-based locking for exclusive access
+///////////////////////////////////////////////////////////////////
+
+function lock($lockfile, $wait = 0)
+{
+    global $lbhomedir;
+    $lockdir = "$lbhomedir/log/system_tmpfs/lock";
+    if (!is_dir($lockdir)) {
+        @mkdir($lockdir, 0777, true);
+    }
+
+    $lockpath = "$lockdir/$lockfile.lock";
+    $fp = @fopen($lockpath, 'w');
+    if (!$fp) {
+        return "Error opening lock file $lockpath";
+    }
+
+    if ($wait > 0) {
+        $start = time();
+        while (!flock($fp, LOCK_EX | LOCK_NB)) {
+            if (time() - $start > $wait) {
+                fclose($fp);
+                return "Timeout acquiring lock $lockfile after $wait seconds";
+            }
+            usleep(500000); // 0.5 seconds
+        }
+    } else {
+        if (!flock($fp, LOCK_EX | LOCK_NB)) {
+            fclose($fp);
+            return "Could not acquire lock $lockfile";
+        }
+    }
+
+    // Store the file handle globally for later unlock
+    $GLOBALS['_lockhandles'][$lockfile] = $fp;
+    return "";
+}
+
+function unlock($lockfile)
+{
+    if (isset($GLOBALS['_lockhandles'][$lockfile])) {
+        $fp = $GLOBALS['_lockhandles'][$lockfile];
+        flock($fp, LOCK_UN);
+        fclose($fp);
+        unset($GLOBALS['_lockhandles'][$lockfile]);
+    }
+}
+
+///////////////////////////////////////////////////////////////////
+// Check Secure PIN
+///////////////////////////////////////////////////////////////////
+
+function check_securepin($pin)
+{
+    global $lbsconfigdir;
+    $shadow_file = "$lbsconfigdir/securepin.dat";
+    if (!file_exists($shadow_file)) {
+        return 0;
+    }
+
+    $stored = trim(file_get_contents($shadow_file));
+    if (empty($stored)) {
+        return 0;
+    }
+
+    // The pin is stored as a hash
+    if (function_exists('password_verify')) {
+        return password_verify($pin, $stored) ? 1 : 0;
+    }
+
+    // Fallback: MD5 comparison
+    return (md5($pin) === $stored) ? 1 : 0;
+}
+
+///////////////////////////////////////////////////////////////////
+// Disk space info
+///////////////////////////////////////////////////////////////////
+
+function diskspaceinfo($folder = '/')
+{
+    $result = array();
+    $result['size'] = @disk_total_space($folder);
+    $result['free'] = @disk_free_space($folder);
+    if ($result['size'] && $result['free']) {
+        $result['used'] = $result['size'] - $result['free'];
+        $result['usedpercent'] = round(($result['used'] / $result['size']) * 100, 1);
+    }
+    return $result;
+}
+
+///////////////////////////////////////////////////////////////////
+// Format bytes in human readable form
+///////////////////////////////////////////////////////////////////
+
+function bytes_humanreadable($size, $inputfactor = 1)
+{
+    $size = $size * $inputfactor;
+    $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+    $i = 0;
+    while ($size >= 1024 && $i < count($units) - 1) {
+        $size /= 1024;
+        $i++;
+    }
+    return round($size, 2) . ' ' . $units[$i];
+}
+
+///////////////////////////////////////////////////////////////////
+// Read/write file utilities
+///////////////////////////////////////////////////////////////////
+
+function read_file($filename)
+{
+    if (!file_exists($filename)) {
+        return false;
+    }
+    return file_get_contents($filename);
+}
+
+function write_file($filename, $content)
+{
+    return file_put_contents($filename, $content);
+}
+
+///////////////////////////////////////////////////////////////////
+// Version tag helper (add/remove 'v' prefix)
+///////////////////////////////////////////////////////////////////
+
+function vers_tag($version, $reverse = false)
+{
+    if ($reverse) {
+        return ltrim($version, 'v');
+    } else {
+        if (substr($version, 0, 1) !== 'v') {
+            return 'v' . $version;
+        }
+        return $version;
+    }
+}
+
+///////////////////////////////////////////////////////////////////
+// System log level
+///////////////////////////////////////////////////////////////////
+
+function systemloglevel()
+{
+    global $lbsconfigdir;
+    $config_file = "$lbsconfigdir/general.json";
+    if (file_exists($config_file)) {
+        $json = json_decode(file_get_contents($config_file), true);
+        if (isset($json['Base']['Systemloglevel'])) {
+            return intval($json['Base']['Systemloglevel']);
+        }
+    }
+    return 6; // Default INFO
+}
