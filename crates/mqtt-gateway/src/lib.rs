@@ -8,14 +8,18 @@
 //! - Relay to Miniserver via HTTP/UDP
 
 pub mod broker_client;
+pub mod mqtt_finder;
 pub mod relay;
+pub mod relay_tracker;
 pub mod stats;
 pub mod subscription;
 pub mod transformer;
 pub mod udp_listener;
 
 pub use broker_client::BrokerClient;
+pub use mqtt_finder::MqttFinder;
 pub use relay::Relay;
+pub use relay_tracker::{RelayTracker, RelayedTopicsResponse, TopicSettings};
 pub use stats::{MqttGatewayStats, RejectedParam, StatsSnapshot};
 pub use subscription::{Subscription, SubscriptionManager};
 pub use transformer::{TransformResult, Transformer, TransformerRegistry};
@@ -54,6 +58,8 @@ pub struct MqttGateway {
     transformer_registry: Arc<TransformerRegistry>,
     relay: Arc<Relay>,
     stats: Arc<MqttGatewayStats>,
+    relay_tracker: Arc<RelayTracker>,
+    mqtt_finder: Arc<MqttFinder>,
     message_tx: broadcast::Sender<GatewayMessage>,
 }
 
@@ -82,7 +88,13 @@ impl MqttGateway {
         ));
 
         let stats = Arc::new(MqttGatewayStats::new());
-        let relay = Arc::new(Relay::new(Arc::clone(&config), Arc::clone(&stats)));
+        let relay_tracker = Arc::new(RelayTracker::new());
+        let mqtt_finder = Arc::new(MqttFinder::new());
+        let relay = Arc::new(Relay::new(
+            Arc::clone(&config),
+            Arc::clone(&stats),
+            Arc::clone(&relay_tracker),
+        ));
 
         Ok(Self {
             config,
@@ -93,6 +105,8 @@ impl MqttGateway {
             transformer_registry,
             relay,
             stats,
+            relay_tracker,
+            mqtt_finder,
             message_tx,
         })
     }
@@ -159,6 +173,21 @@ impl MqttGateway {
             })
         };
 
+        // Start periodic MQTT Finder cleanup (every hour, removes entries older than 7 days)
+        let finder_cleanup_handle = {
+            let finder = Arc::clone(&self.mqtt_finder);
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(3600));
+                loop {
+                    interval.tick().await;
+                    let removed = finder.cleanup();
+                    if removed > 0 {
+                        info!("MQTT Finder cleanup: removed {} stale entries", removed);
+                    }
+                }
+            })
+        };
+
         info!("MQTT Gateway started successfully");
 
         // Wait for all tasks (in production, these would run forever)
@@ -180,6 +209,11 @@ impl MqttGateway {
             },
             async {
                 stats_logger_handle
+                    .await
+                    .map_err(|e| rustylox_core::Error::gateway(e.to_string()))
+            },
+            async {
+                finder_cleanup_handle
                     .await
                     .map_err(|e| rustylox_core::Error::gateway(e.to_string()))
             },
@@ -249,8 +283,19 @@ impl MqttGateway {
                 self.stats.inc_received();
                 let value = String::from_utf8_lossy(&payload).to_string();
 
+                // Record in MQTT Finder (all messages, regardless of relay)
+                self.mqtt_finder.record(&topic, &value);
+
                 // Apply transformers
                 let result = self.transformer_registry.transform(&topic, &value).await?;
+
+                // Check per-topic "do not forward" setting
+                if self.relay_tracker.is_do_not_forward(&result.topic) {
+                    self.relay_tracker
+                        .record_http_cached(&result.topic, &result.value);
+                    self.stats.inc_filtered();
+                    return Ok(());
+                }
 
                 // Relay to Miniserver if configured
                 if result.relay_to_miniserver {
@@ -260,6 +305,8 @@ impl MqttGateway {
                         .await?;
                 } else {
                     self.stats.inc_filtered();
+                    self.relay_tracker
+                        .record_http_cached(&result.topic, &result.value);
                 }
             }
             GatewayMessage::UdpReceived { topic, value } => {
@@ -308,6 +355,8 @@ impl MqttGateway {
             transformer_registry: Arc::clone(&self.transformer_registry),
             relay: Arc::clone(&self.relay),
             stats: Arc::clone(&self.stats),
+            relay_tracker: Arc::clone(&self.relay_tracker),
+            mqtt_finder: Arc::clone(&self.mqtt_finder),
             message_tx: self.message_tx.clone(),
         }
     }
@@ -315,6 +364,16 @@ impl MqttGateway {
     /// Get statistics
     pub fn stats(&self) -> Arc<MqttGatewayStats> {
         Arc::clone(&self.stats)
+    }
+
+    /// Get relay tracker for the "Incoming Overview" monitor
+    pub fn relay_tracker(&self) -> Arc<RelayTracker> {
+        Arc::clone(&self.relay_tracker)
+    }
+
+    /// Get MQTT Finder data store
+    pub fn mqtt_finder(&self) -> Arc<MqttFinder> {
+        Arc::clone(&self.mqtt_finder)
     }
 
     /// Get gateway status

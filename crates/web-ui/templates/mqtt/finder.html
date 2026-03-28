@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Finder - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .finder-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .finder-search {
+            flex: 1;
+            min-width: 250px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .finder-info {
+            font-size: 0.85em;
+            color: #555;
+            padding: 6px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .finder-list {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            max-height: calc(100vh - 320px);
+            overflow-y: auto;
+        }
+        .finder-entry {
+            padding: 6px 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 0.9em;
+            cursor: default;
+        }
+        .finder-entry:last-child { border-bottom: none; }
+        .finder-entry:hover { background: #f5f5f5; }
+        .finder-entry.fresh { background-color: #e8f5e9; }
+        .finder-entry.fresh:hover { background-color: #c8e6c9; }
+        .finder-entry.highlight { background-color: #ffff99; }
+
+        .finder-topic {
+            font-weight: bold;
+            font-size: 90%;
+            cursor: pointer;
+            word-break: break-all;
+            min-width: 200px;
+            max-width: 45%;
+            flex-shrink: 0;
+        }
+        .finder-topic:hover { text-decoration: underline; color: #0066cc; }
+
+        .finder-payload {
+            font-size: 90%;
+            color: #333;
+            word-break: break-all;
+            flex: 1;
+            cursor: pointer;
+        }
+        .finder-payload:hover { color: #0066cc; }
+        .finder-payload-truncated {
+            display: inline;
+        }
+        .finder-payload-full {
+            display: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: #f8f8f8;
+            padding: 4px 8px;
+            border-radius: 3px;
+            border: 1px solid #eee;
+            margin-top: 4px;
+        }
+        .finder-payload-full.expanded { display: block; }
+        .expand-btn {
+            font-size: 10px;
+            color: #0066cc;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0 4px;
+        }
+
+        .finder-time {
+            font-size: 70%;
+            font-style: italic;
+            color: #888;
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .copy-toast.show { opacity: 1; }
+
+        .subscription-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85em;
+        }
+
+        .hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                    <li><a href="/miniserver/backup">MS Backup</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/mqtt/config">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/system-update">Update</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>{{ title }}</h1>
+
+        <p class="hint">
+            Shows all MQTT messages on the broker. Click on a topic or payload to copy it to the clipboard.
+            Messages are retained for 7 days. Green entries were received within the last 60 seconds.
+        </p>
+
+        <div class="finder-controls">
+            <input type="text" class="finder-search" id="searchInput"
+                   placeholder="Search topics or payloads... (supports MQTT wildcards with checkbox)"
+                   oninput="debouncedRender()">
+            <div class="subscription-toggle">
+                <input type="checkbox" id="useSubscriptionSyntax" onchange="renderList()">
+                <label for="useSubscriptionSyntax">Use subscription syntax</label>
+            </div>
+        </div>
+
+        <div class="finder-info">
+            <span><strong id="shownCount">0</strong> / <strong id="totalCount">0</strong> topics shown</span>
+            <span>Total messages: <strong id="totalMessages">0</strong></span>
+            <span>Last update: <span id="lastUpdate">-</span></span>
+        </div>
+
+        <div class="finder-list" id="finderList">
+            <div style="padding: 20px; text-align: center; color: #666;">
+                Loading MQTT topics...
+            </div>
+        </div>
+    </main>
+
+    <div class="copy-toast" id="copyToast">Copied!</div>
+
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
+    </footer>
+
+    <script>
+        let finderData = null;
+        let debounceTimer = null;
+        const FRESH_THRESHOLD = 60; // seconds
+
+        function debouncedRender() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(renderList, 300);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function subscriptionToRegex(pattern) {
+            // Convert MQTT subscription wildcards to regex
+            let regex = '';
+            const parts = pattern.split('/');
+            for (let i = 0; i < parts.length; i++) {
+                if (i > 0) regex += '\\/';
+                if (parts[i] === '#') {
+                    regex += '[^/].*';
+                    break; // # matches everything after
+                } else if (parts[i] === '+') {
+                    regex += '[^/]+';
+                } else {
+                    regex += escapeRegex(parts[i]);
+                }
+            }
+            return new RegExp('^' + regex + '$', 'i');
+        }
+
+        function timeAgo(unixTimestamp) {
+            const now = Date.now() / 1000;
+            const diff = now - unixTimestamp;
+            if (diff < 5) return 'just now';
+            if (diff < 60) return Math.floor(diff) + 's ago';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+
+        function isFresh(timestamp) {
+            return (Date.now() / 1000 - timestamp) < FRESH_THRESHOLD;
+        }
+
+        function truncate(str, maxLen) {
+            if (!str || str.length <= maxLen) return { text: str || '', truncated: false };
+            return { text: str.substring(0, maxLen), truncated: true };
+        }
+
+        function matchesSearch(entry, searchTerm, useSubscription) {
+            if (!searchTerm) return true;
+
+            if (useSubscription) {
+                try {
+                    const regex = subscriptionToRegex(searchTerm);
+                    return regex.test(entry.topic);
+                } catch (e) {
+                    return entry.topic.toLowerCase().includes(searchTerm.toLowerCase());
+                }
+            }
+
+            const lowerSearch = searchTerm.toLowerCase();
+            return entry.topic.toLowerCase().includes(lowerSearch) ||
+                   (entry.payload && entry.payload.toLowerCase().includes(lowerSearch));
+        }
+
+        function renderList() {
+            if (!finderData) return;
+
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const useSubscription = document.getElementById('useSubscriptionSyntax').checked;
+            const container = document.getElementById('finderList');
+
+            const filtered = finderData.topics.filter(e => matchesSearch(e, searchTerm, useSubscription));
+
+            document.getElementById('shownCount').textContent = filtered.length;
+            document.getElementById('totalCount').textContent = finderData.topic_count;
+            document.getElementById('totalMessages').textContent = finderData.total_messages.toLocaleString();
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No matching topics</div>';
+                return;
+            }
+
+            let html = '';
+            for (const entry of filtered) {
+                const fresh = isFresh(entry.timestamp);
+                const cls = fresh ? 'finder-entry fresh' : 'finder-entry';
+                const { text: truncPayload, truncated } = truncate(entry.payload, 80);
+                const entryId = 'e_' + entry.topic.replace(/[^a-zA-Z0-9]/g, '_');
+
+                html += '<div class="' + cls + '">';
+
+                // Topic (clickable to copy)
+                html += '<span class="finder-topic" onclick="copyToClipboard(\'' + escapeAttr(entry.topic) + '\')">';
+                html += escapeHtml(entry.topic);
+                html += '</span>';
+
+                // Payload (clickable to copy)
+                html += '<span class="finder-payload" onclick="copyToClipboard(\'' + escapeAttr(entry.payload) + '\')">';
+                html += '<span class="finder-payload-truncated">' + escapeHtml(truncPayload);
+                if (truncated) {
+                    html += '<button class="expand-btn" onclick="event.stopPropagation(); toggleExpand(\'' + entryId + '\')">...</button>';
+                }
+                html += '</span>';
+                if (truncated) {
+                    html += '<div class="finder-payload-full" id="' + entryId + '">' + formatPayload(entry.payload) + '</div>';
+                }
+                html += '</span>';
+
+                // Timestamp
+                html += '<span class="finder-time">' + timeAgo(entry.timestamp) + '</span>';
+
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function formatPayload(payload) {
+            // Try to pretty-print JSON
+            try {
+                const json = JSON.parse(payload);
+                return escapeHtml(JSON.stringify(json, null, 2));
+            } catch (e) {
+                return escapeHtml(payload);
+            }
+        }
+
+        function escapeAttr(text) {
+            if (!text) return '';
+            return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+        }
+
+        function toggleExpand(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('expanded');
+        }
+
+        function copyToClipboard(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+
+            // Show toast
+            const toast = document.getElementById('copyToast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1500);
+        }
+
+        function fetchData() {
+            fetch('/api/mqtt/finder')
+                .then(r => r.json())
+                .then(data => {
+                    finderData = data;
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                    renderList();
+                })
+                .catch(err => console.error('Failed to fetch finder data:', err));
+        }
+
+        // Check URL params for pre-populated search
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('q')) {
+            document.getElementById('searchInput').value = urlParams.get('q');
+        }
+        if (urlParams.has('e')) {
+            document.getElementById('useSubscriptionSyntax').checked = true;
+        }
+
+        // Initial fetch + poll every 3 seconds
+        fetchData();
+        setInterval(fetchData, 3000);
+    </script>
+</body>
+</html>
