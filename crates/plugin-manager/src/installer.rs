@@ -1292,7 +1292,9 @@ impl PluginInstaller {
                 "x86_64" | "x64" | "amd64" => system_arch == "x86_64",
                 "aarch64" | "arm64" => system_arch == "aarch64",
                 "armhf" | "armv7l" | "arm" => system_arch == "arm",
-                "i386" | "i686" | "x86" => system_arch == "x86",
+                "i386" | "i686" => system_arch == "x86",
+                // "x86" in LoxBerry means the x86 PC platform (both 32-bit and 64-bit)
+                "x86" => system_arch == "x86" || system_arch == "x86_64",
                 "raspberry" => system_arch == "arm" || system_arch == "aarch64",
                 _ => arch == system_arch,
             };

@@ -278,7 +278,7 @@ fn parse_ini(content: &str) -> Result<HashMap<String, HashMap<String, String>>> 
         // Parse key=value
         if let Some((key, value)) = line.split_once('=') {
             let key = key.trim().to_uppercase();
-            let value = value.trim().to_string();
+            let value = value.trim().trim_matches('"').to_string();
 
             if let Some(ref section_name) = current_section {
                 if let Some(section) = result.get_mut(section_name) {
