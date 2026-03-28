@@ -84,6 +84,22 @@ pub fn create_router(state: AppState) -> Router {
         // MQTT Gateway routes
         .route("/api/mqtt/status", get(routes::mqtt::get_status))
         .route(
+            "/api/mqtt/relayed-topics",
+            get(routes::mqtt::get_relayed_topics),
+        )
+        .route(
+            "/api/mqtt/topic-settings",
+            post(routes::mqtt::update_topic_setting),
+        )
+        .route(
+            "/api/mqtt/topic-delete",
+            post(routes::mqtt::delete_topic_cache),
+        )
+        .route(
+            "/api/mqtt/relay-cache/clear",
+            post(routes::mqtt::clear_relay_cache),
+        )
+        .route(
             "/api/mqtt/subscriptions/reload",
             post(routes::mqtt::reload_subscriptions),
         )

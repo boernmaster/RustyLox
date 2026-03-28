@@ -15,10 +15,10 @@ use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use web_api::AppState;
 
-/// MQTT Monitor page (displays the UI)
+/// MQTT Monitor page — "Incoming Overview" showing relay state to Miniserver
 pub async fn monitor(State(state): State<AppState>) -> Html<String> {
     let template = MqttMonitorTemplate {
-        title: "MQTT Monitor - Real-time Message Viewer".to_string(),
+        title: "Incoming Overview".to_string(),
         version: state.version.clone(),
     };
 

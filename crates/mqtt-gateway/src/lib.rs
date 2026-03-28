@@ -9,6 +9,7 @@
 
 pub mod broker_client;
 pub mod relay;
+pub mod relay_tracker;
 pub mod stats;
 pub mod subscription;
 pub mod transformer;
@@ -16,6 +17,7 @@ pub mod udp_listener;
 
 pub use broker_client::BrokerClient;
 pub use relay::Relay;
+pub use relay_tracker::{RelayTracker, RelayedTopicsResponse, TopicSettings};
 pub use stats::{MqttGatewayStats, RejectedParam, StatsSnapshot};
 pub use subscription::{Subscription, SubscriptionManager};
 pub use transformer::{TransformResult, Transformer, TransformerRegistry};
@@ -54,6 +56,7 @@ pub struct MqttGateway {
     transformer_registry: Arc<TransformerRegistry>,
     relay: Arc<Relay>,
     stats: Arc<MqttGatewayStats>,
+    relay_tracker: Arc<RelayTracker>,
     message_tx: broadcast::Sender<GatewayMessage>,
 }
 
@@ -82,7 +85,12 @@ impl MqttGateway {
         ));
 
         let stats = Arc::new(MqttGatewayStats::new());
-        let relay = Arc::new(Relay::new(Arc::clone(&config), Arc::clone(&stats)));
+        let relay_tracker = Arc::new(RelayTracker::new());
+        let relay = Arc::new(Relay::new(
+            Arc::clone(&config),
+            Arc::clone(&stats),
+            Arc::clone(&relay_tracker),
+        ));
 
         Ok(Self {
             config,
@@ -93,6 +101,7 @@ impl MqttGateway {
             transformer_registry,
             relay,
             stats,
+            relay_tracker,
             message_tx,
         })
     }
@@ -252,6 +261,14 @@ impl MqttGateway {
                 // Apply transformers
                 let result = self.transformer_registry.transform(&topic, &value).await?;
 
+                // Check per-topic "do not forward" setting
+                if self.relay_tracker.is_do_not_forward(&result.topic) {
+                    self.relay_tracker
+                        .record_http_cached(&result.topic, &result.value);
+                    self.stats.inc_filtered();
+                    return Ok(());
+                }
+
                 // Relay to Miniserver if configured
                 if result.relay_to_miniserver {
                     self.stats.inc_relayed();
@@ -260,6 +277,8 @@ impl MqttGateway {
                         .await?;
                 } else {
                     self.stats.inc_filtered();
+                    self.relay_tracker
+                        .record_http_cached(&result.topic, &result.value);
                 }
             }
             GatewayMessage::UdpReceived { topic, value } => {
@@ -308,6 +327,7 @@ impl MqttGateway {
             transformer_registry: Arc::clone(&self.transformer_registry),
             relay: Arc::clone(&self.relay),
             stats: Arc::clone(&self.stats),
+            relay_tracker: Arc::clone(&self.relay_tracker),
             message_tx: self.message_tx.clone(),
         }
     }
@@ -315,6 +335,11 @@ impl MqttGateway {
     /// Get statistics
     pub fn stats(&self) -> Arc<MqttGatewayStats> {
         Arc::clone(&self.stats)
+    }
+
+    /// Get relay tracker for the "Incoming Overview" monitor
+    pub fn relay_tracker(&self) -> Arc<RelayTracker> {
+        Arc::clone(&self.relay_tracker)
     }
 
     /// Get gateway status
