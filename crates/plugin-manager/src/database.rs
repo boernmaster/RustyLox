@@ -75,11 +75,11 @@ pub struct PluginEntry {
     pub files: Option<PluginFiles>,
 
     /// First installation timestamp (matches original LoxBerry field name)
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "install_timestamp", skip_serializing_if = "Option::is_none")]
     pub epoch_firstinstalled: Option<u64>,
 
     /// Last update timestamp (matches original LoxBerry field name)
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "update_timestamp", skip_serializing_if = "Option::is_none")]
     pub epoch_lastupdated: Option<u64>,
 
     /// Original plugin name before conflict resolution rename
@@ -95,14 +95,22 @@ pub struct PluginEntry {
 ///
 /// Key names match the original LoxBerry PluginDB format:
 /// lbphtmlauthdir, lbphtmldir, lbptemplatedir, etc.
+/// Aliases support the legacy short-name format (htmlauth, html, template, …).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDirectories {
+    #[serde(alias = "htmlauth")]
     pub lbphtmlauthdir: String,
+    #[serde(alias = "html")]
     pub lbphtmldir: String,
+    #[serde(alias = "template")]
     pub lbptemplatedir: String,
+    #[serde(alias = "data")]
     pub lbpdatadir: String,
+    #[serde(alias = "log")]
     pub lbplogdir: String,
+    #[serde(alias = "config")]
     pub lbpconfigdir: String,
+    #[serde(alias = "bin")]
     pub lbpbindir: String,
     /// Install files backup directory
     #[serde(skip_serializing_if = "Option::is_none")]
