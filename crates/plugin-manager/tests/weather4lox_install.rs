@@ -55,7 +55,11 @@ async fn test_install_weather4lox() {
 
             // Verify title was parsed from plain TITLE= key
             assert!(
-                entry.directories.bin.to_string().contains("weather4lox"),
+                entry
+                    .directories
+                    .lbpbindir
+                    .to_string()
+                    .contains("weather4lox"),
                 "bin dir should contain 'weather4lox'"
             );
 

@@ -42,7 +42,7 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
 
                 // Format install date
                 let install_date = p
-                    .install_timestamp
+                    .epoch_firstinstalled
                     .map(|ts| {
                         use std::time::{Duration, UNIX_EPOCH};
                         let d = UNIX_EPOCH + Duration::from_secs(ts);
@@ -205,7 +205,7 @@ pub async fn details(State(state): State<AppState>, Path(md5): Path<String>) -> 
             let has_web_ui = webui_dir.exists();
 
             let install_date = p
-                .install_timestamp
+                .epoch_firstinstalled
                 .map(|ts| {
                     use std::time::{Duration, UNIX_EPOCH};
                     let d = UNIX_EPOCH + Duration::from_secs(ts);

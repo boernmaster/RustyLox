@@ -13,6 +13,7 @@ pub struct PluginConfig {
     pub author: AuthorInfo,
     pub plugin: PluginInfo,
     pub system: Option<SystemRequirements>,
+    pub autoupdate: Option<AutoUpdateConfig>,
     pub daemon: Option<DaemonConfig>,
     pub cron: Option<CronConfig>,
     pub sudoers: Option<SudoersConfig>,
@@ -56,6 +57,32 @@ pub struct SystemRequirements {
     pub architecture: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os: Option<String>,
+    /// Plugin interface version (e.g. "2.0") - original LoxBerry location
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interface: Option<String>,
+    /// Whether plugin requires reboot after installation
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reboot: Option<String>,
+    /// Whether custom log levels are enabled
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_loglevels: Option<String>,
+}
+
+/// Auto-update configuration (from [AUTOUPDATE] section)
+///
+/// The original LoxBerry uses a separate [AUTOUPDATE] section in plugin.cfg
+/// with AUTOMATIC_UPDATES, RELEASECFG, and PRERELEASECFG fields.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutoUpdateConfig {
+    /// Whether automatic updates are enabled ("0" or "1")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub automatic_updates: Option<String>,
+    /// Release configuration URL for update checking
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub releasecfg: Option<String>,
+    /// Pre-release configuration URL
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prereleasecfg: Option<String>,
 }
 
 /// Daemon configuration
@@ -169,6 +196,16 @@ impl PluginConfig {
             lb_maximum: sys.get("LB_MAXIMUM").cloned(),
             architecture: sys.get("ARCHITECTURE").cloned(),
             os: sys.get("OS").cloned(),
+            interface: sys.get("INTERFACE").cloned(),
+            reboot: sys.get("REBOOT").cloned(),
+            custom_loglevels: sys.get("CUSTOM_LOGLEVELS").cloned(),
+        });
+
+        // Extract autoupdate config (optional, from [AUTOUPDATE] section)
+        let autoupdate = ini.get("AUTOUPDATE").map(|au| AutoUpdateConfig {
+            automatic_updates: au.get("AUTOMATIC_UPDATES").cloned(),
+            releasecfg: au.get("RELEASECFG").cloned(),
+            prereleasecfg: au.get("PRERELEASECFG").cloned(),
         });
 
         // Extract daemon config (optional)
@@ -208,6 +245,7 @@ impl PluginConfig {
             author,
             plugin,
             system,
+            autoupdate,
             daemon,
             cron,
             sudoers,

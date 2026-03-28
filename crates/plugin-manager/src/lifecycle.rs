@@ -16,12 +16,14 @@ pub enum LifecycleHook {
     PreRoot,
     /// Executed before installation (as loxberry user)
     PreInstall,
+    /// Executed before upgrade (as loxberry user)
+    PreUpgrade,
     /// Executed after installation (as loxberry user)
     PostInstall,
+    /// Executed after upgrade (as loxberry user)
+    PostUpgrade,
     /// Executed after installation (as root)
     PostRoot,
-    /// Executed after upgrade
-    PostUpgrade,
     /// Executed during uninstallation
     Uninstall,
 }
@@ -32,9 +34,10 @@ impl LifecycleHook {
         match self {
             LifecycleHook::PreRoot => "preroot.sh",
             LifecycleHook::PreInstall => "preinstall.sh",
+            LifecycleHook::PreUpgrade => "preupgrade.sh",
             LifecycleHook::PostInstall => "postinstall.sh",
-            LifecycleHook::PostRoot => "postroot.sh",
             LifecycleHook::PostUpgrade => "postupgrade.sh",
+            LifecycleHook::PostRoot => "postroot.sh",
             LifecycleHook::Uninstall => "uninstall.sh",
         }
     }
@@ -68,11 +71,33 @@ impl LifecycleManager {
     }
 
     /// Execute a lifecycle hook if it exists
+    ///
+    /// Arguments passed to hooks match original LoxBerry plugininstall.pl:
+    /// ARGV[0] = tempfile (session identifier)
+    /// ARGV[1] = plugin name
+    /// ARGV[2] = plugin folder
+    /// ARGV[3] = plugin version
+    /// ARGV[4] = lbhomedir
+    /// ARGV[5] = source directory (temp extraction folder)
     pub async fn execute_hook(
         &self,
         hook: LifecycleHook,
         plugin_dir: &Path,
         plugin_folder: &str,
+    ) -> Result<Option<HookResult>> {
+        self.execute_hook_with_args(hook, plugin_dir, plugin_folder, "", "", None)
+            .await
+    }
+
+    /// Execute a lifecycle hook with full LoxBerry-compatible arguments
+    pub async fn execute_hook_with_args(
+        &self,
+        hook: LifecycleHook,
+        plugin_dir: &Path,
+        plugin_folder: &str,
+        plugin_name: &str,
+        plugin_version: &str,
+        source_dir: Option<&Path>,
     ) -> Result<Option<HookResult>> {
         let script_path = plugin_dir.join(hook.script_name());
 
@@ -104,9 +129,27 @@ impl LifecycleManager {
         // Build environment variables
         let env_vars = self.build_plugin_env(plugin_folder);
 
-        // Execute the script
+        // Generate a session identifier (matches original LoxBerry tempfile)
+        let tempfile_id: String = (0..10)
+            .map(|_| {
+                let idx = rand_char();
+                (b'a' + idx) as char
+            })
+            .collect();
+
+        // Execute the script with positional arguments matching original LoxBerry
         let mut cmd = Command::new("bash");
         cmd.arg(&script_path)
+            .arg(&tempfile_id) // ARGV[0]: tempfile session ID
+            .arg(plugin_name) // ARGV[1]: plugin name
+            .arg(plugin_folder) // ARGV[2]: plugin folder
+            .arg(plugin_version) // ARGV[3]: plugin version
+            .arg(self.lbhomedir.display().to_string()) // ARGV[4]: lbhomedir
+            .arg(
+                source_dir
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_default(),
+            ) // ARGV[5]: source dir
             .envs(&env_vars)
             .current_dir(plugin_dir)
             .stdout(Stdio::piped())
@@ -186,6 +229,16 @@ impl LifecycleManager {
         self.execute_hook(LifecycleHook::Uninstall, plugin_dir, plugin_folder)
             .await
     }
+}
+
+/// Simple random character generator for session IDs (a-z)
+fn rand_char() -> u8 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .subsec_nanos();
+    (nanos % 26) as u8
 }
 
 #[cfg(test)]

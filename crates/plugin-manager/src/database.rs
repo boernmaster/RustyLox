@@ -17,6 +17,9 @@ pub struct PluginDatabase {
 }
 
 /// Plugin entry in the database
+///
+/// Field names match the original LoxBerry plugindatabase.json format
+/// for backward compatibility with existing plugins and SDK libraries.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginEntry {
     /// MD5 checksum (author_name + author_email + name + folder)
@@ -40,7 +43,7 @@ pub struct PluginEntry {
     /// Plugin title (multilingual)
     pub title: HashMap<String, String>,
 
-    /// Web interface path (relative to htmlauth)
+    /// Plugin interface version (e.g. "2.0")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interface: Option<String>,
 
@@ -56,32 +59,68 @@ pub struct PluginEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prereleasecfg: Option<String>,
 
-    /// Log level (0-7)
+    /// Log level (0-7, -1=disabled)
     #[serde(default = "default_loglevel")]
     pub loglevel: String,
+
+    /// Whether custom log levels are enabled
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub loglevels_enabled: Option<String>,
 
     /// Plugin directories
     pub directories: PluginDirectories,
 
-    /// Installation timestamp
+    /// Plugin system files (daemon, uninstall, sudoers)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub install_timestamp: Option<u64>,
+    pub files: Option<PluginFiles>,
 
-    /// Last update timestamp
+    /// First installation timestamp (matches original LoxBerry field name)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub update_timestamp: Option<u64>,
+    pub epoch_firstinstalled: Option<u64>,
+
+    /// Last update timestamp (matches original LoxBerry field name)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub epoch_lastupdated: Option<u64>,
+
+    /// Original plugin name before conflict resolution rename
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub orig_name: Option<String>,
+
+    /// Original plugin folder before conflict resolution rename
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub orig_folder: Option<String>,
 }
 
 /// Plugin directory paths
+///
+/// Key names match the original LoxBerry PluginDB format:
+/// lbphtmlauthdir, lbphtmldir, lbptemplatedir, etc.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDirectories {
-    pub htmlauth: String,
-    pub html: String,
-    pub template: String,
-    pub data: String,
-    pub log: String,
-    pub config: String,
-    pub bin: String,
+    pub lbphtmlauthdir: String,
+    pub lbphtmldir: String,
+    pub lbptemplatedir: String,
+    pub lbpdatadir: String,
+    pub lbplogdir: String,
+    pub lbpconfigdir: String,
+    pub lbpbindir: String,
+    /// Install files backup directory
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub installfiles: Option<String>,
+}
+
+/// Plugin system file paths (daemon, uninstall, sudoers)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginFiles {
+    /// Daemon script path
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub daemon: Option<String>,
+    /// Uninstall script path
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uninstall: Option<String>,
+    /// Sudoers file path
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sudoers: Option<String>,
 }
 
 fn default_loglevel() -> String {
@@ -230,22 +269,27 @@ mod tests {
                 .iter()
                 .cloned()
                 .collect(),
-            interface: Some("index.html".to_string()),
+            interface: Some("2.0".to_string()),
             autoupdate: 0,
             releasecfg: None,
             prereleasecfg: None,
             loglevel: "6".to_string(),
+            loglevels_enabled: None,
             directories: PluginDirectories {
-                htmlauth: "/opt/loxberry/webfrontend/htmlauth/plugins/testplugin".to_string(),
-                html: "/opt/loxberry/webfrontend/html/plugins/testplugin".to_string(),
-                template: "/opt/loxberry/templates/plugins/testplugin".to_string(),
-                data: "/opt/loxberry/data/plugins/testplugin".to_string(),
-                log: "/opt/loxberry/log/plugins/testplugin".to_string(),
-                config: "/opt/loxberry/config/plugins/testplugin".to_string(),
-                bin: "/opt/loxberry/bin/plugins/testplugin".to_string(),
+                lbphtmlauthdir: "/opt/loxberry/webfrontend/htmlauth/plugins/testplugin".to_string(),
+                lbphtmldir: "/opt/loxberry/webfrontend/html/plugins/testplugin".to_string(),
+                lbptemplatedir: "/opt/loxberry/templates/plugins/testplugin".to_string(),
+                lbpdatadir: "/opt/loxberry/data/plugins/testplugin".to_string(),
+                lbplogdir: "/opt/loxberry/log/plugins/testplugin".to_string(),
+                lbpconfigdir: "/opt/loxberry/config/plugins/testplugin".to_string(),
+                lbpbindir: "/opt/loxberry/bin/plugins/testplugin".to_string(),
+                installfiles: None,
             },
-            install_timestamp: None,
-            update_timestamp: None,
+            files: None,
+            epoch_firstinstalled: None,
+            epoch_lastupdated: None,
+            orig_name: None,
+            orig_folder: None,
         };
 
         // Test upsert
