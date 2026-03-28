@@ -22,7 +22,7 @@
             padding-top: 12px;
             padding-bottom: 12px;
             text-align: left;
-            background-color: #6dac20;
+            background-color: var(--primary-color);
             color: white;
         }
         .topics-table-data {
@@ -41,7 +41,7 @@
         }
 
         .collapsible-header {
-            background-color: #6dac20;
+            background-color: var(--primary-color);
             color: white;
             padding: 12px 16px;
             cursor: pointer;
@@ -52,7 +52,7 @@
             align-items: center;
             user-select: none;
         }
-        .collapsible-header:hover { background-color: #5c9a1b; }
+        .collapsible-header:hover { background-color: #0052a3; }
         .collapsible-header .arrow { transition: transform 0.2s; }
         .collapsible-header.open .arrow { transform: rotate(90deg); }
         .collapsible-body {
@@ -77,7 +77,7 @@
             align-items: center;
             margin-bottom: 10px;
             padding: 8px;
-            background: #f5f5f5;
+            background: var(--light-bg);
             border-radius: 4px;
         }
         .filter-bar label {
@@ -181,7 +181,7 @@
             font-family: monospace;
             font-size: 110%;
             font-weight: bold;
-            color: green;
+            color: var(--success-color);
         }
 
         .strikethrough {
@@ -223,10 +223,8 @@
                 </ul>
             </li>
             <li class="nav-group">
-                <a class="nav-group-label active" href="/mqtt/monitor">MQTT</a>
+                <a class="nav-group-label active" href="/mqtt/config">MQTT</a>
                 <ul class="nav-dropdown">
-                    <li><a href="/mqtt/monitor">Incoming Overview</a></li>
-                    <li><a href="/mqtt/finder">MQTT Finder</a></li>
                     <li><a href="/mqtt/config">Configuration</a></li>
                     <li><a href="/mqtt/stats">Statistics</a></li>
                 </ul>
