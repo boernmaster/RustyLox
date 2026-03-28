@@ -85,6 +85,84 @@ impl PluginInstaller {
             config.plugin.name, config.plugin.version, config.plugin.folder
         );
 
+        // Sanitize name and folder to [A-Za-z0-9_-] (matches original LoxBerry)
+        config.plugin.name = sanitize_identifier(&config.plugin.name);
+        config.plugin.folder = sanitize_identifier(&config.plugin.folder);
+
+        // Truncate title to 25 chars (matches original LoxBerry)
+        for title in config.plugin.title.values_mut() {
+            if title.len() > 25 {
+                title.truncate(22);
+                title.push_str("...");
+            }
+        }
+
+        // Validate interface version (original LoxBerry requires 2.0, rejects 1.0)
+        let iface_version = config
+            .system
+            .as_ref()
+            .and_then(|s| s.interface.clone())
+            .or_else(|| config.plugin.interface.clone());
+        if let Some(ref iface) = iface_version {
+            if iface == "1.0" {
+                return Err(Error::plugin(
+                    "Plugin interface version 1.0 is no longer supported. Requires 2.0+",
+                ));
+            }
+        }
+
+        // Validate architecture compatibility
+        if let Some(ref sys) = config.system {
+            if let Some(ref arch_list) = sys.architecture {
+                if !arch_list.is_empty() {
+                    let supported = self.check_architecture(arch_list);
+                    if !supported {
+                        return Err(Error::plugin(format!(
+                            "Plugin requires architecture '{}' which is not supported by this system",
+                            arch_list
+                        )));
+                    }
+                }
+            }
+
+            // Validate LoxBerry version constraints
+            if let Some(ref lb_min) = sys.lb_minimum {
+                if !lb_min.is_empty() && lb_min != "false" {
+                    let system_version = self.get_system_version().await;
+                    if let Some(ref sv) = system_version {
+                        if version_compare(sv, lb_min) < 0 {
+                            warn!("System version {} is below minimum required {}", sv, lb_min);
+                            if !request.force {
+                                return Err(Error::plugin(format!(
+                                    "Plugin requires LoxBerry >= {} but system is {}",
+                                    lb_min, sv
+                                )));
+                            }
+                        }
+                    }
+                }
+            }
+            if let Some(ref lb_max) = sys.lb_maximum {
+                if !lb_max.is_empty() && lb_max != "false" {
+                    let system_version = self.get_system_version().await;
+                    if let Some(ref sv) = system_version {
+                        if version_compare(sv, lb_max) > 0 {
+                            warn!(
+                                "System version {} is above maximum supported {}",
+                                sv, lb_max
+                            );
+                            if !request.force {
+                                return Err(Error::plugin(format!(
+                                    "Plugin requires LoxBerry <= {} but system is {}",
+                                    lb_max, sv
+                                )));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Calculate MD5
         let md5 = calculate_plugin_md5(
             &config.author.name,
@@ -244,6 +322,9 @@ impl PluginInstaller {
 
         // Copy plugin files to their destinations
         self.copy_plugin_files(plugin_dir, &config).await?;
+
+        // Install APT packages (non-fatal, matches original LoxBerry)
+        self.install_apt_packages(plugin_dir).await;
 
         // Execute postinstall hook (from final installed location)
         let final_plugin_dir = self
@@ -1035,19 +1116,203 @@ impl PluginInstaller {
                     continue;
                 }
 
-                // Read file, perform replacements, write back
+                // Read file, perform replacements + DOS2UNIX, write back
                 if let Ok(content) = tokio::fs::read_to_string(path).await {
                     let mut modified = content.clone();
+                    // REPLACELB* variable substitution
                     for (placeholder, value) in &replacements {
                         modified = modified.replace(placeholder, value);
                     }
+                    // DOS to Unix line ending conversion (\r\n → \n)
+                    if modified.contains("\r\n") {
+                        modified = modified.replace("\r\n", "\n");
+                    }
                     if modified != content {
                         tokio::fs::write(path, &modified).await.ok();
-                        debug!("Replaced variables in: {}", path.display());
+                        debug!("Processed text file: {}", path.display());
                     }
                 }
             }
         }
+    }
+
+    /// Install APT packages from dpkg/apt file
+    ///
+    /// Matches original LoxBerry: reads package list from dpkg/apt (or version-specific
+    /// files like dpkg/apt12 for Debian 12), then runs apt-get install.
+    /// Non-fatal: warnings are logged but installation continues.
+    async fn install_apt_packages(&self, source_dir: &Path) {
+        let dpkg_dir = source_dir.join("dpkg");
+        if !dpkg_dir.exists() {
+            return;
+        }
+
+        // Try version-specific apt files first, then fall back to generic
+        // Priority: apt{debian_major} > apt (generic)
+        let apt_file = self.find_apt_file(&dpkg_dir).await;
+        let apt_file = match apt_file {
+            Some(f) => f,
+            None => return,
+        };
+
+        // Read and parse the apt file
+        let content = match tokio::fs::read_to_string(&apt_file).await {
+            Ok(c) => c,
+            Err(e) => {
+                warn!("Failed to read APT file {}: {}", apt_file.display(), e);
+                return;
+            }
+        };
+
+        let packages: Vec<String> = content
+            .lines()
+            .map(|l| l.trim())
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .map(|l| l.to_string())
+            .collect();
+
+        if packages.is_empty() {
+            return;
+        }
+
+        info!("Installing APT packages: {:?}", packages);
+
+        // Run apt-get update first
+        let update_result = tokio::process::Command::new("apt-get")
+            .args(["update", "-q"])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::piped())
+            .output()
+            .await;
+
+        if let Err(e) = &update_result {
+            warn!("apt-get update failed: {} (continuing anyway)", e);
+        }
+
+        // Install packages
+        let install_result = tokio::process::Command::new("apt-get")
+            .args(["install", "-y", "--no-install-recommends"])
+            .args(&packages)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .output()
+            .await;
+
+        match install_result {
+            Ok(output) => {
+                if output.status.success() {
+                    info!("APT packages installed successfully");
+                } else {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    warn!("APT package installation had issues: {}", stderr);
+                }
+            }
+            Err(e) => {
+                warn!("Failed to run apt-get install: {}", e);
+            }
+        }
+
+        // Install architecture-specific .deb files
+        let arch = std::env::consts::ARCH;
+        let deb_arch = match arch {
+            "x86_64" => "amd64",
+            "aarch64" => "arm64",
+            "arm" => "armhf",
+            _ => arch,
+        };
+
+        let arch_deb_dir = dpkg_dir.join(deb_arch);
+        if arch_deb_dir.exists() {
+            info!("Installing .deb packages from {}", arch_deb_dir.display());
+            let dpkg_result = tokio::process::Command::new("dpkg")
+                .args(["-i", "-R"])
+                .arg(&arch_deb_dir)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .output()
+                .await;
+
+            match dpkg_result {
+                Ok(output) if !output.status.success() => {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    warn!("dpkg install had issues: {}", stderr);
+                }
+                Err(e) => warn!("Failed to run dpkg: {}", e),
+                _ => info!("Architecture .deb packages installed"),
+            }
+        }
+    }
+
+    /// Find the best matching APT file for this system
+    async fn find_apt_file(&self, dpkg_dir: &Path) -> Option<PathBuf> {
+        // Try to detect Debian major version
+        if let Ok(content) = tokio::fs::read_to_string("/etc/os-release").await {
+            for line in content.lines() {
+                if let Some(version) = line.strip_prefix("VERSION_ID=") {
+                    let version = version.trim_matches('"');
+                    if let Some(major) = version.split('.').next() {
+                        let versioned = dpkg_dir.join(format!("apt{}", major));
+                        if versioned.exists() {
+                            return Some(versioned);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fall back to generic apt file
+        let generic = dpkg_dir.join("apt");
+        if generic.exists() {
+            return Some(generic);
+        }
+
+        None
+    }
+
+    /// Check if the system supports the required architecture
+    fn check_architecture(&self, arch_list: &str) -> bool {
+        let system_arch = std::env::consts::ARCH;
+        let config_dir = self.lbhomedir.join("config/system");
+
+        for arch in arch_list.split(',') {
+            let arch = arch.trim().to_lowercase();
+            if arch.is_empty() || arch == "all" {
+                return true;
+            }
+
+            // Check via config files (matches original LoxBerry: is_$arch.cfg or is_arch_$arch.cfg)
+            let is_arch_file = config_dir.join(format!("is_{}.cfg", arch));
+            let is_arch_file2 = config_dir.join(format!("is_arch_{}.cfg", arch));
+            if is_arch_file.exists() || is_arch_file2.exists() {
+                return true;
+            }
+
+            // Also check against Rust's detected architecture
+            let matches = match arch.as_str() {
+                "x86_64" | "x64" | "amd64" => system_arch == "x86_64",
+                "aarch64" | "arm64" => system_arch == "aarch64",
+                "armhf" | "armv7l" | "arm" => system_arch == "arm",
+                "i386" | "i686" | "x86" => system_arch == "x86",
+                "raspberry" => system_arch == "arm" || system_arch == "aarch64",
+                _ => arch == system_arch,
+            };
+            if matches {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    /// Get the system version from general.json
+    async fn get_system_version(&self) -> Option<String> {
+        let config_path = self.lbhomedir.join("config/system/general.json");
+        if let Ok(content) = tokio::fs::read_to_string(&config_path).await {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                return json["Base"]["Version"].as_str().map(|s| s.to_string());
+            }
+        }
+        None
     }
 
     /// Recursively copy directory contents
@@ -1084,6 +1349,41 @@ impl PluginInstaller {
 
         Ok(())
     }
+}
+
+/// Sanitize a plugin name or folder to [A-Za-z0-9_-] only
+/// Matches original LoxBerry: `$pname =~ s/[^A-Za-z0-9_-]//g`
+fn sanitize_identifier(input: &str) -> String {
+    input
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+        .collect()
+}
+
+/// Simple version comparison (returns -1, 0, or 1)
+/// Compares version strings like "3.0.0" vs "4.0.0.0"
+fn version_compare(a: &str, b: &str) -> i32 {
+    let parse_parts = |s: &str| -> Vec<u64> {
+        s.trim_start_matches('v')
+            .split('.')
+            .filter_map(|p| p.parse().ok())
+            .collect()
+    };
+
+    let a_parts = parse_parts(a);
+    let b_parts = parse_parts(b);
+    let max_len = a_parts.len().max(b_parts.len());
+
+    for i in 0..max_len {
+        let av = a_parts.get(i).copied().unwrap_or(0);
+        let bv = b_parts.get(i).copied().unwrap_or(0);
+        match av.cmp(&bv) {
+            std::cmp::Ordering::Less => return -1,
+            std::cmp::Ordering::Greater => return 1,
+            std::cmp::Ordering::Equal => continue,
+        }
+    }
+    0
 }
 
 #[cfg(test)]
