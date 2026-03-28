@@ -185,6 +185,68 @@
             background: #f0f0f0;
             border-color: #4CAF50;
         }
+
+        /* --- Incoming Overview tab styles --- */
+        .topics-table { border-collapse: collapse; width: 100%; }
+        .topics-table td, .topics-table th { border: 1px solid #ddd; padding: 8px; }
+        .topics-table tr:nth-child(even) { background-color: #f2f2f2; }
+        .topics-table tr:hover { background-color: #ddd; }
+        .topics-table th { padding-top: 12px; padding-bottom: 12px; text-align: left; background-color: var(--primary-color); color: white; }
+        .topics-table-data { word-break: break-all; width: 35%; }
+        .topics-table-udp-data { word-break: break-all; width: 50%; }
+        .topics-table-status { min-width: 150px; }
+        .subscription-filtered { color: #777; }
+        .collapsible-header { background-color: var(--primary-color); color: white; padding: 12px 16px; cursor: pointer; border-radius: 5px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .collapsible-header:hover { background-color: #0052a3; }
+        .collapsible-header .arrow { transition: transform 0.2s; }
+        .collapsible-header.open .arrow { transform: rotate(90deg); }
+        .collapsible-body { border: 1px solid #ddd; border-top: none; padding: 12px; display: none; }
+        .collapsible-body.open { display: block; }
+        .status-icon { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px; }
+        .icon-check { color: #28a745; }
+        .icon-notfound { color: #ffc107; }
+        .icon-locked { color: #dc3545; }
+        .icon-filtered { color: #6c757d; }
+        .icon-question { color: #17a2b8; }
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: var(--light-bg); border-radius: 4px; }
+        .filter-bar label { display: flex; align-items: center; gap: 4px; font-size: 0.85em; cursor: pointer; white-space: nowrap; }
+        .filter-bar input[type="checkbox"] { margin: 0; }
+        .search-input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; max-width: 400px; margin-bottom: 8px; }
+        .controls-bar { display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 16px; margin-bottom: 10px; }
+        .advanced-toggle { margin: 12px 0; display: flex; align-items: center; gap: 6px; }
+        .topic-advanced { font-size: 75%; color: #555; }
+        .topic-advanced label { display: inline; margin-right: 10px; }
+        .topic-advanced input[type="checkbox"] { margin-right: 3px; }
+        .copy-btn { padding: 1px 6px; font-size: 10px; background: #eee; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; margin-left: 6px; }
+        .copy-btn:hover { background: #ddd; }
+        .trash-btn { cursor: pointer; opacity: 0.6; font-size: 14px; border: none; background: none; padding: 2px; }
+        .trash-btn:hover { opacity: 1; }
+        .permission-warning { color: #dc3545; font-size: 0.8em; margin-left: 12px; }
+        .mono { font-family: monospace; font-size: 110%; font-weight: bold; color: var(--success-color); }
+        .strikethrough { text-decoration: line-through; font-style: italic; }
+
+        /* --- MQTT Finder tab styles --- */
+        .finder-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+        .finder-search { flex: 1; min-width: 250px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .finder-info { font-size: 0.85em; color: #555; padding: 6px 12px; background: #f5f5f5; border-radius: 4px; display: flex; gap: 16px; align-items: center; margin-bottom: 8px; }
+        .finder-list { border: 1px solid #ddd; border-radius: 5px; background: #fff; max-height: calc(100vh - 400px); overflow-y: auto; }
+        .finder-entry { padding: 6px 12px; border-bottom: 1px solid #eee; display: flex; align-items: baseline; gap: 8px; font-size: 0.9em; cursor: default; }
+        .finder-entry:last-child { border-bottom: none; }
+        .finder-entry:hover { background: #f5f5f5; }
+        .finder-entry.fresh { background-color: #e8f5e9; }
+        .finder-entry.fresh:hover { background-color: #c8e6c9; }
+        .finder-topic { font-weight: bold; font-size: 90%; cursor: pointer; word-break: break-all; min-width: 200px; max-width: 45%; flex-shrink: 0; }
+        .finder-topic:hover { text-decoration: underline; color: #0066cc; }
+        .finder-payload { font-size: 90%; color: #333; word-break: break-all; flex: 1; cursor: pointer; }
+        .finder-payload:hover { color: #0066cc; }
+        .finder-payload-full { display: none; white-space: pre-wrap; font-family: monospace; background: #f8f8f8; padding: 4px 8px; border-radius: 3px; border: 1px solid #eee; margin-top: 4px; }
+        .finder-payload-full.expanded { display: block; }
+        .expand-btn { font-size: 10px; color: #0066cc; cursor: pointer; border: none; background: none; padding: 0 4px; }
+        .finder-time { font-size: 70%; font-style: italic; color: #888; white-space: nowrap; min-width: 80px; text-align: right; }
+        .copy-toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 8px 16px; border-radius: 4px; font-size: 13px; opacity: 0; transition: opacity 0.3s; z-index: 1000; pointer-events: none; }
+        .copy-toast.show { opacity: 1; }
+        .subscription-toggle { display: flex; align-items: center; gap: 4px; font-size: 0.85em; }
+        .hint { font-size: 0.85em; color: #666; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -205,9 +267,8 @@
                 </ul>
             </li>
             <li class="nav-group">
-                <a class="nav-group-label active" href="/mqtt/monitor">MQTT</a>
+                <a class="nav-group-label active" href="/mqtt/config">MQTT</a>
                 <ul class="nav-dropdown">
-                    <li><a href="/mqtt/monitor">Monitor</a></li>
                     <li><a href="/mqtt/config">Configuration</a></li>
                     <li><a href="/mqtt/stats">Statistics</a></li>
                 </ul>
@@ -262,7 +323,8 @@
             <button class="tab" onclick="showTab('filter')">Topic Filter</button>
             <button class="tab" onclick="showTab('subscriptions')">Subscriptions</button>
             <button class="tab" onclick="showTab('conversions')">Conversions</button>
-            <button class="tab" onclick="showTab('incoming')">Incoming Messages</button>
+            <button class="tab" onclick="showTab('incoming-overview')">Incoming Overview</button>
+            <button class="tab" onclick="showTab('mqtt-finder')">MQTT Finder</button>
         </div>
 
         <!-- Tab 1: Broker Settings -->
@@ -508,46 +570,125 @@
             </div>
         </div>
 
-        <!-- Tab 5: Incoming Messages -->
-        <div id="incoming-tab" class="tab-content">
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3>Incoming MQTT Messages</h3>
-                    <div>
-                        <label>
-                            <input type="checkbox" id="auto-scroll" checked> Auto-scroll
-                        </label>
-                        <label style="margin-left: 15px;">
-                            <input type="checkbox" id="expand-json" checked> Auto-expand JSON
-                        </label>
-                        <button class="btn btn-secondary" onclick="clearMessages()">Clear</button>
-                    </div>
-                </div>
+        <!-- Tab 5: Incoming Overview -->
+        <div id="incoming-overview-tab" class="tab-content">
+            <p class="hint" style="margin-top: 10px;">
+                This tab lists the transmissions via the MQTT Gateway to the Miniserver.
+                It refreshes <em>automatically</em> (pauses while text is selected).
+            </p>
 
-                <div id="message-feed" style="max-height: 600px; overflow-y: auto;">
-                    <p style="text-align: center; color: #999; padding: 40px;">
-                        Waiting for messages...
-                    </p>
+            <div class="advanced-toggle">
+                <input type="checkbox" id="showAdvanced" onchange="toggleAdvanced()">
+                <label for="showAdvanced">Show details and advanced settings</label>
+            </div>
+
+            <div class="collapsible-header open" onclick="toggleSection('http')">
+                <span>HTTP Virtual Inputs <span style="font-size:80%">(<span id="httpCount">0</span> entries)<span id="httpPermissionWarning" class="permission-warning" style="display:none"> - There are entries with access denied</span></span></span>
+                <span class="arrow" id="httpArrow">&#9654;</span>
+            </div>
+            <div class="collapsible-body open" id="httpBody">
+                <div class="filter-bar">
+                    <label><input type="checkbox" id="httpFilterAll" checked onchange="httpFilterChanged('all')"> Show All</label>
+                    <label><input type="checkbox" id="httpFilter200" onchange="httpFilterChanged('200')"> <span class="icon-check">&#10004;</span> OK</label>
+                    <label><input type="checkbox" id="httpFilter404" onchange="httpFilterChanged('404')"> <span class="icon-notfound">&#9888;</span> Not found</label>
+                    <label><input type="checkbox" id="httpFilter500" onchange="httpFilterChanged('500')"> <span class="icon-locked">&#128274;</span> Access denied</label>
+                    <label><input type="checkbox" id="httpFilterFiltered" onchange="httpFilterChanged('filtered')"> <span class="icon-filtered">&#9899;</span> Filtered</label>
+                    <label><input type="checkbox" id="httpFilter0" onchange="httpFilterChanged('0')"> <span class="icon-question">&#63;</span> Not sent yet</label>
+                </div>
+                <input type="text" class="search-input" id="httpSearch" placeholder="Search virtual inputs..." oninput="renderHttpTable()">
+                <table class="topics-table" id="httpTable">
+                    <thead>
+                        <tr>
+                            <th>Miniserver Virtual Input</th>
+                            <th>Last Value</th>
+                            <th>Last Arrived</th>
+                        </tr>
+                    </thead>
+                    <tbody id="httpTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="collapsible-header" onclick="toggleSection('udp')">
+                <span>UDP Transmissions <span style="font-size:80%">(<span id="udpCount">0</span> entries)</span></span>
+                <span class="arrow" id="udpArrow">&#9654;</span>
+            </div>
+            <div class="collapsible-body" id="udpBody">
+                <input type="text" class="search-input" id="udpSearch" placeholder="Search UDP topics..." oninput="renderUdpTable()">
+                <table class="topics-table" id="udpTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Command Recognition</th>
+                            <th>Last Arrived</th>
+                        </tr>
+                    </thead>
+                    <tbody id="udpTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="controls-bar">
+                <button class="btn btn-secondary" onclick="clearCache()">Delete cache (for testing)</button>
+            </div>
+        </div>
+
+        <!-- Tab 6: MQTT Finder -->
+        <div id="mqtt-finder-tab" class="tab-content">
+            <p class="hint" style="margin-top: 10px;">
+                Shows all MQTT messages on the broker. Click on a topic or payload to copy it to the clipboard.
+                Messages are retained for 7 days. Green entries were received within the last 60 seconds.
+            </p>
+
+            <div class="finder-controls">
+                <input type="text" class="finder-search" id="finderSearchInput"
+                       placeholder="Search topics or payloads... (supports MQTT wildcards with checkbox)"
+                       oninput="debouncedRender()">
+                <div class="subscription-toggle">
+                    <input type="checkbox" id="useSubscriptionSyntax" onchange="renderFinderList()">
+                    <label for="useSubscriptionSyntax">Use subscription syntax</label>
+                </div>
+            </div>
+
+            <div class="finder-info">
+                <span><strong id="shownCount">0</strong> / <strong id="totalCount">0</strong> topics shown</span>
+                <span>Total messages: <strong id="totalMessages">0</strong></span>
+                <span>Last update: <span id="lastUpdate">-</span></span>
+            </div>
+
+            <div class="finder-list" id="finderList">
+                <div style="padding: 20px; text-align: center; color: #666;">
+                    Activate this tab to load MQTT topics...
                 </div>
             </div>
         </div>
     </main>
+
+    <div class="copy-toast" id="copyToast">Copied!</div>
 
     <footer class="footer">
         <p>RustyLox v{{ version }} | &copy; 2026</p>
     </footer>
 
     <script>
-        // Tab switching
+        // ---- Shared utilities ----
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // ---- Tab switching with lazy init ----
         function showTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
             event.target.classList.add('active');
             document.getElementById(tabName + '-tab').classList.add('active');
+
+            if (tabName === 'incoming-overview') initIncomingOverview();
+            if (tabName === 'mqtt-finder') initFinder();
         }
 
-        // Subscription management
+        // ---- Subscription management ----
         function showAddSubscription() {
             document.getElementById('add-subscription').style.display = 'block';
         }
@@ -555,33 +696,24 @@
             document.getElementById('add-subscription').style.display = 'none';
         }
 
-        // Add pattern to global filter input field
+        // ---- Global topic filter ----
         function addToGlobalFilter(pattern) {
             const filterInput = document.getElementById('topicfilter');
             const currentValue = filterInput.value.trim();
-
             if (currentValue === '') {
                 filterInput.value = pattern;
-            } else {
-                // Check if pattern already exists
-                if (!currentValue.includes(pattern)) {
-                    filterInput.value = currentValue + '|' + pattern;
-                }
+            } else if (!currentValue.includes(pattern)) {
+                filterInput.value = currentValue + '|' + pattern;
             }
-
-            // Highlight the input field briefly
             filterInput.style.background = '#e8f5e9';
-            setTimeout(() => {
-                filterInput.style.background = '';
-            }, 300);
+            setTimeout(() => { filterInput.style.background = ''; }, 300);
         }
 
-        // Clear filter
         function clearFilter() {
             document.getElementById('topicfilter').value = '';
         }
 
-        // Conversion management
+        // ---- Conversion management ----
         function showAddConversion() {
             document.getElementById('add-conversion').style.display = 'block';
         }
@@ -589,146 +721,452 @@
             document.getElementById('add-conversion').style.display = 'none';
         }
 
-        // Message feed
-        let messageCount = 0;
-        const maxMessages = 100;
+        // ============================================================
+        // Incoming Overview tab
+        // ============================================================
+        let relayData = null;
+        let updateRunning = false;
+        let refreshInterval = 1000;
+        let intervalID = null;
+        let showAdvanced = false;
+        let incomingOverviewInitialized = false;
 
-        function clearMessages() {
-            document.getElementById('message-feed').innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Waiting for messages...</p>';
-            messageCount = 0;
+        function initIncomingOverview() {
+            if (incomingOverviewInitialized) return;
+            incomingOverviewInitialized = true;
+
+            if (sessionStorage.getItem('mqtt_show_advanced') === 'true') {
+                showAdvanced = true;
+                document.getElementById('showAdvanced').checked = true;
+            }
+            restoreSections();
+            startPolling();
         }
 
-        function addMessage(topic, payload, timestamp) {
-            const feed = document.getElementById('message-feed');
-            const autoScroll = document.getElementById('auto-scroll').checked;
-            const expandJson = document.getElementById('expand-json').checked;
+        function restoreSections() {
+            ['http', 'udp'].forEach(id => {
+                const state = sessionStorage.getItem('mqtt_section_' + id);
+                const header = document.querySelector(`[onclick="toggleSection('${id}')"]`);
+                const body = document.getElementById(id + 'Body');
+                if (!header || !body) return;
+                if (state === 'open') { header.classList.add('open'); body.classList.add('open'); }
+                else if (state === 'closed') { header.classList.remove('open'); body.classList.remove('open'); }
+            });
+        }
 
-            // Remove placeholder if it exists
-            if (messageCount === 0) {
-                feed.innerHTML = '';
+        function toggleSection(id) {
+            const header = document.querySelector(`[onclick="toggleSection('${id}')"]`);
+            const body = document.getElementById(id + 'Body');
+            const isOpen = body.classList.contains('open');
+            header.classList.toggle('open');
+            body.classList.toggle('open');
+            sessionStorage.setItem('mqtt_section_' + id, isOpen ? 'closed' : 'open');
+        }
+
+        function toggleAdvanced() {
+            showAdvanced = document.getElementById('showAdvanced').checked;
+            sessionStorage.setItem('mqtt_show_advanced', showAdvanced);
+            if (relayData) { renderHttpTable(); renderUdpTable(); }
+        }
+
+        function getSelectedText() {
+            return window.getSelection ? window.getSelection().toString() : '';
+        }
+
+        function getHighestCode(entry) {
+            if (!entry.relay_results || entry.relay_results.length === 0) return 0;
+            return Math.max(...entry.relay_results.map(r => r.code));
+        }
+
+        function getStatusInfo(entry) {
+            if (entry.regex_filter_line || entry.do_not_forward) {
+                return { icon: '&#9899;', cls: 'icon-filtered', text: 'Filtered', code: -1 };
             }
-
-            // Create message element
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message-item';
-
-            const topicDiv = document.createElement('div');
-            topicDiv.className = 'message-topic';
-            topicDiv.textContent = topic;
-
-            const timeDiv = document.createElement('div');
-            timeDiv.style.fontSize = '0.85em';
-            timeDiv.style.color = '#666';
-            timeDiv.textContent = timestamp || new Date().toLocaleTimeString();
-
-            const payloadDiv = document.createElement('div');
-            payloadDiv.className = 'message-payload';
-
-            // Try to parse as JSON
-            try {
-                const json = JSON.parse(payload);
-                if (expandJson) {
-                    payloadDiv.innerHTML = formatJSON(json, 0);
-                } else {
-                    payloadDiv.innerHTML = `<span class="expandable" onclick="toggleExpand(this)">${escapeHtml(payload)}</span>`;
-                }
-            } catch (e) {
-                payloadDiv.textContent = payload;
-            }
-
-            msgDiv.appendChild(topicDiv);
-            msgDiv.appendChild(timeDiv);
-            msgDiv.appendChild(payloadDiv);
-
-            // Add to top of feed
-            feed.insertBefore(msgDiv, feed.firstChild);
-
-            messageCount++;
-
-            // Remove old messages if too many
-            while (feed.children.length > maxMessages) {
-                feed.removeChild(feed.lastChild);
-            }
-
-            // Auto-scroll
-            if (autoScroll && messageCount > 1) {
-                feed.scrollTop = 0;
+            const code = getHighestCode(entry);
+            switch (code) {
+                case 200: return { icon: '&#10004;', cls: 'icon-check', text: 'HTTP 200 OK', code: 200 };
+                case 404: return { icon: '&#9888;', cls: 'icon-notfound', text: 'HTTP 404 Not found', code: 404 };
+                case 401: case 403: case 500:
+                    return { icon: '&#128274;', cls: 'icon-locked', text: 'HTTP ' + code + ' Access denied', code: 500 };
+                default: return { icon: '?', cls: 'icon-question', text: 'Not sent yet (cached)', code: 0 };
             }
         }
 
-        function formatJSON(obj, indent) {
-            const spaces = '  '.repeat(indent);
+        function formatTimestamp(unix) {
+            if (!unix) return '';
+            const d = new Date(unix * 1000);
+            const day = String(d.getDate()).padStart(2, '0');
+            const mon = String(d.getMonth() + 1).padStart(2, '0');
+            return day + '/' + mon + ' ' + d.toLocaleTimeString();
+        }
+
+        function httpFilterChanged(which) {
+            if (which === 'all' && document.getElementById('httpFilterAll').checked) {
+                ['200', '404', '500', '0'].forEach(f => { document.getElementById('httpFilter' + f).checked = false; });
+                document.getElementById('httpFilterFiltered').checked = false;
+            } else if (which !== 'all') {
+                document.getElementById('httpFilterAll').checked = false;
+                const anyChecked = ['200', '404', '500', '0'].some(f => document.getElementById('httpFilter' + f).checked)
+                    || document.getElementById('httpFilterFiltered').checked;
+                if (!anyChecked) document.getElementById('httpFilterAll').checked = true;
+            }
+            renderHttpTable();
+        }
+
+        function shouldShowHttpEntry(entry) {
+            if (document.getElementById('httpFilterAll').checked) return true;
+            const status = getStatusInfo(entry);
+            if (document.getElementById('httpFilter200').checked && status.code === 200) return true;
+            if (document.getElementById('httpFilter404').checked && status.code === 404) return true;
+            if (document.getElementById('httpFilter500').checked && status.code === 500) return true;
+            if (document.getElementById('httpFilter0').checked && status.code === 0) return true;
+            if (document.getElementById('httpFilterFiltered').checked && status.code === -1) return true;
+            return false;
+        }
+
+        function renderHttpTable() {
+            if (!relayData) return;
+            const search = document.getElementById('httpSearch').value.toLowerCase();
+            const tbody = document.getElementById('httpTableBody');
             let html = '';
+            let hasPermissionErrors = false;
+            const entries = [...relayData.http].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            document.getElementById('httpCount').textContent = entries.length;
 
-            if (obj === null) {
-                return '<span class="json-null">null</span>';
-            }
+            for (const entry of entries) {
+                if (!shouldShowHttpEntry(entry)) continue;
+                if (search && !entry.virtual_input.toLowerCase().includes(search) && !entry.original_topic.toLowerCase().includes(search)) continue;
+                const status = getStatusInfo(entry);
+                const isFiltered = status.code === -1;
+                const tdCls = isFiltered ? 'subscription-filtered' : '';
+                if (status.code === 500) hasPermissionErrors = true;
 
-            if (typeof obj === 'boolean') {
-                const converted = obj ? '1' : '0';
-                return `<span class="json-boolean">${obj}</span> <span class="badge badge-info" title="Converted value">${converted}</span>`;
-            }
-
-            if (typeof obj === 'number') {
-                return `<span class="json-number">${obj}</span>`;
-            }
-
-            if (typeof obj === 'string') {
-                return `<span class="json-string">"${escapeHtml(obj)}"</span>`;
-            }
-
-            if (Array.isArray(obj)) {
-                if (obj.length === 0) return '[]';
-                html = '[\n';
-                obj.forEach((item, i) => {
-                    html += spaces + '  ' + formatJSON(item, indent + 1);
-                    if (i < obj.length - 1) html += ',';
-                    html += '\n';
-                });
-                html += spaces + ']';
-                return html;
-            }
-
-            if (typeof obj === 'object') {
-                const keys = Object.keys(obj);
-                if (keys.length === 0) return '{}';
-                html = '{\n';
-                keys.forEach((key, i) => {
-                    html += spaces + '  <span class="json-key">"' + escapeHtml(key) + '"</span>: ';
-                    html += formatJSON(obj[key], indent + 1);
-                    if (i < keys.length - 1) html += ',';
-                    html += '\n';
-                });
-                html += spaces + '}';
-                return html;
-            }
-
-            return String(obj);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Subscribe to SSE for incoming messages
-        if (typeof(EventSource) !== "undefined") {
-            const eventSource = new EventSource('/mqtt/monitor/stream');
-
-            eventSource.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    addMessage(data.topic, data.payload, data.timestamp);
-                } catch (e) {
-                    console.error('Failed to parse SSE message:', e);
+                html += '<tr>';
+                html += '<td class="' + tdCls + '">';
+                html += '<span class="status-icon ' + status.cls + '">' + status.icon + '</span> ';
+                html += escapeHtml(entry.virtual_input);
+                html += '<button class="copy-btn" onclick="copyText(\'' + escapeHtml(entry.virtual_input).replace(/'/g, "\\'") + '\')">Copy</button>';
+                if (showAdvanced) {
+                    html += '<br><span class="topic-advanced">(Topic <em>' + escapeHtml(entry.original_topic) + '</em>)</span>';
+                    html += '<div class="topic-advanced">';
+                    const vi = entry.virtual_input;
+                    const settings = relayData.topic_settings[vi] || {};
+                    html += '<label><input type="checkbox" ' + (settings.disable_cache ? 'checked' : '') + ' onchange="updateSetting(\'' + vi + '\', \'disable_cache\', this.checked)"> Disable cache</label>';
+                    html += '<label><input type="checkbox" ' + (settings.reset_after_send ? 'checked' : '') + ' onchange="updateSetting(\'' + vi + '\', \'reset_after_send\', this.checked)"> Reset after send</label>';
+                    html += '<label><input type="checkbox" ' + (entry.do_not_forward ? 'checked' : '') + ' onchange="updateSetting(\'' + vi + '\', \'do_not_forward\', this.checked)"> Do not forward</label>';
+                    html += '</div>';
+                    if (entry.relay_results && entry.relay_results.length > 0 && !isFiltered) {
+                        html += '<div class="topic-advanced">';
+                        for (const r of entry.relay_results) {
+                            const t = formatTimestamp(r.last_sent);
+                            let rIcon, rText;
+                            switch (r.code) {
+                                case 200: rIcon = '&#10004;'; rText = 'MS' + r.ms_id + ': HTTP 200 Value submitted'; break;
+                                case 404: rIcon = '&#9888;'; rText = 'MS' + r.ms_id + ': HTTP 404 Input not available'; break;
+                                default: rIcon = '&#128274;'; rText = 'MS' + r.ms_id + ': HTTP ' + r.code; break;
+                            }
+                            html += rIcon + ' ' + rText + ' at ' + t + '<br>';
+                        }
+                        html += '</div>';
+                    }
                 }
-            };
+                html += '</td>';
+                html += '<td class="' + tdCls + ' topics-table-data">';
+                if (isFiltered) html += '<em class="strikethrough">';
+                html += escapeHtml(entry.last_value);
+                if (isFiltered) html += '</em>';
+                html += '</td>';
+                html += '<td class="' + tdCls + ' topics-table-status">';
+                html += formatTimestamp(entry.timestamp);
+                html += ' <button class="trash-btn" onclick="deleteTopic(\'' + escapeHtml(entry.original_topic).replace(/'/g, "\\'") + '\')">&#128465;</button>';
+                if (showAdvanced) {
+                    html += '<br><span class="topic-advanced">';
+                    if (entry.regex_filter_line) html += 'Subscription filtered by RegEx line ' + entry.regex_filter_line + '<br>';
+                    if (entry.do_not_forward) html += '<em>Do not forward</em> is active<br>';
+                    html += '</span>';
+                }
+                html += '</td></tr>';
+            }
+            tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;color:#666;">No HTTP transmissions yet</td></tr>';
+            document.getElementById('httpPermissionWarning').style.display = hasPermissionErrors ? 'inline' : 'none';
+        }
 
-            eventSource.onerror = function(error) {
-                console.error('SSE error:', error);
-                // Will auto-reconnect
-            };
+        function renderUdpTable() {
+            if (!relayData) return;
+            const search = document.getElementById('udpSearch').value.toLowerCase();
+            const tbody = document.getElementById('udpTableBody');
+            let html = '';
+            const entries = [...relayData.udp].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            document.getElementById('udpCount').textContent = entries.length;
+
+            for (const entry of entries) {
+                if (search && !entry.topic.toLowerCase().includes(search)) continue;
+                const isFiltered = entry.regex_filter_line || entry.do_not_forward;
+                const tdCls = isFiltered ? 'subscription-filtered' : '';
+                html += '<tr>';
+                html += '<td class="' + tdCls + ' topics-table-udp-data">';
+                html += escapeHtml(entry.topic) + '=' + escapeHtml(entry.last_value);
+                if (showAdvanced) {
+                    html += '<br><span class="topic-advanced">(Topic <em>' + escapeHtml(entry.original_topic) + '</em>)</span>';
+                    const settings = relayData.topic_settings[entry.topic.replace(/\//g, '_')] || {};
+                    html += '<div class="topic-advanced">';
+                    html += '<label><input type="checkbox" ' + (settings.disable_cache ? 'checked' : '') + ' onchange="updateSetting(\'' + entry.topic.replace(/\//g, '_') + '\', \'disable_cache\', this.checked)"> Disable cache</label>';
+                    html += '<label><input type="checkbox" ' + (settings.reset_after_send ? 'checked' : '') + ' onchange="updateSetting(\'' + entry.topic.replace(/\//g, '_') + '\', \'reset_after_send\', this.checked)"> Reset after send</label>';
+                    html += '<label><input type="checkbox" ' + (entry.do_not_forward ? 'checked' : '') + ' onchange="updateSetting(\'' + entry.topic.replace(/\//g, '_') + '\', \'do_not_forward\', this.checked)"> Do not forward</label>';
+                    html += '</div>';
+                }
+                html += '</td>';
+                html += '<td style="font-size:80%;" class="' + tdCls + '">';
+                if (isFiltered) {
+                    if (entry.regex_filter_line) html += 'Filtered by RegEx line ' + entry.regex_filter_line + '<br>';
+                    if (entry.do_not_forward) html += '<em>Do not forward</em> is active';
+                } else {
+                    const cmdRec = 'MQTT:\\i' + entry.topic.replace(/\\/g, '\\\\') + '=\\i\\v';
+                    html += '<span class="mono" style="font-size:90%">' + escapeHtml(cmdRec) + '</span>';
+                    html += '<button class="copy-btn" onclick="copyText(\'' + cmdRec.replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')">Copy</button>';
+                }
+                html += '</td>';
+                html += '<td class="topics-table-status">';
+                html += formatTimestamp(entry.timestamp);
+                html += ' <button class="trash-btn" onclick="deleteTopic(\'' + escapeHtml(entry.topic).replace(/'/g, "\\'") + '\')">&#128465;</button>';
+                html += '</td></tr>';
+            }
+            tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;color:#666;">No UDP transmissions yet</td></tr>';
+        }
+
+        function copyText(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+
+        function updateSetting(topic, setting, enabled) {
+            fetch('/api/mqtt/topic-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic, setting, enabled })
+            }).then(r => r.json()).then(() => {
+                if (relayData && relayData.topic_settings) {
+                    if (!relayData.topic_settings[topic]) relayData.topic_settings[topic] = {};
+                    relayData.topic_settings[topic][setting] = enabled;
+                }
+            });
+        }
+
+        function deleteTopic(topic) {
+            fetch('/api/mqtt/topic-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic })
+            }).then(() => {
+                if (relayData) {
+                    relayData.http = relayData.http.filter(e => e.original_topic !== topic);
+                    relayData.udp = relayData.udp.filter(e => e.topic !== topic);
+                    renderHttpTable();
+                    renderUdpTable();
+                }
+            });
+        }
+
+        function clearCache() {
+            fetch('/api/mqtt/relay-cache/clear', { method: 'POST' }).then(() => {
+                relayData = { http: [], udp: [], http_count: 0, udp_count: 0, topic_settings: {} };
+                renderHttpTable();
+                renderUdpTable();
+            });
+        }
+
+        function updateTopics() {
+            if (getSelectedText()) return;
+            if (updateRunning) return;
+            updateRunning = true;
+            fetch('/api/mqtt/relayed-topics')
+                .then(r => r.json())
+                .then(data => { relayData = data; renderHttpTable(); renderUdpTable(); })
+                .catch(err => console.error('Failed to fetch relayed topics:', err))
+                .finally(() => { updateRunning = false; });
+        }
+
+        function calcInterval() {
+            if (!relayData) return 1000;
+            const count = (relayData.http_count || 0) + (relayData.udp_count || 0);
+            let interval = count / 200 * 1000;
+            if (interval < 1000) interval = 1000;
+            if (interval > 10000) interval = 10000;
+            return interval;
+        }
+
+        function startPolling() {
+            updateTopics();
+            intervalID = setInterval(() => {
+                const newInterval = calcInterval();
+                if (newInterval !== refreshInterval) {
+                    refreshInterval = newInterval;
+                    clearInterval(intervalID);
+                    intervalID = setInterval(updateTopics, refreshInterval);
+                }
+                updateTopics();
+            }, refreshInterval);
+        }
+
+        // ============================================================
+        // MQTT Finder tab
+        // ============================================================
+        let finderData = null;
+        let debounceTimer = null;
+        let finderInitialized = false;
+        const FRESH_THRESHOLD = 60;
+
+        function initFinder() {
+            if (finderInitialized) return;
+            finderInitialized = true;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('q')) document.getElementById('finderSearchInput').value = urlParams.get('q');
+            if (urlParams.has('e')) document.getElementById('useSubscriptionSyntax').checked = true;
+
+            fetchFinderData();
+            setInterval(fetchFinderData, 3000);
+        }
+
+        function debouncedRender() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(renderFinderList, 300);
+        }
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function subscriptionToRegex(pattern) {
+            let regex = '';
+            const parts = pattern.split('/');
+            for (let i = 0; i < parts.length; i++) {
+                if (i > 0) regex += '\\/';
+                if (parts[i] === '#') { regex += '[^/].*'; break; }
+                else if (parts[i] === '+') { regex += '[^/]+'; }
+                else { regex += escapeRegex(parts[i]); }
+            }
+            return new RegExp('^' + regex + '$', 'i');
+        }
+
+        function timeAgo(unixTimestamp) {
+            const now = Date.now() / 1000;
+            const diff = now - unixTimestamp;
+            if (diff < 5) return 'just now';
+            if (diff < 60) return Math.floor(diff) + 's ago';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+
+        function isFresh(timestamp) {
+            return (Date.now() / 1000 - timestamp) < FRESH_THRESHOLD;
+        }
+
+        function truncate(str, maxLen) {
+            if (!str || str.length <= maxLen) return { text: str || '', truncated: false };
+            return { text: str.substring(0, maxLen), truncated: true };
+        }
+
+        function matchesSearch(entry, searchTerm, useSubscription) {
+            if (!searchTerm) return true;
+            if (useSubscription) {
+                try {
+                    return subscriptionToRegex(searchTerm).test(entry.topic);
+                } catch (e) {
+                    return entry.topic.toLowerCase().includes(searchTerm.toLowerCase());
+                }
+            }
+            const lowerSearch = searchTerm.toLowerCase();
+            return entry.topic.toLowerCase().includes(lowerSearch) ||
+                   (entry.payload && entry.payload.toLowerCase().includes(lowerSearch));
+        }
+
+        function renderFinderList() {
+            if (!finderData) return;
+            const searchTerm = document.getElementById('finderSearchInput').value.trim();
+            const useSubscription = document.getElementById('useSubscriptionSyntax').checked;
+            const container = document.getElementById('finderList');
+            const filtered = finderData.topics.filter(e => matchesSearch(e, searchTerm, useSubscription));
+
+            document.getElementById('shownCount').textContent = filtered.length;
+            document.getElementById('totalCount').textContent = finderData.topic_count;
+            document.getElementById('totalMessages').textContent = finderData.total_messages.toLocaleString();
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No matching topics</div>';
+                return;
+            }
+
+            let html = '';
+            for (const entry of filtered) {
+                const fresh = isFresh(entry.timestamp);
+                const cls = fresh ? 'finder-entry fresh' : 'finder-entry';
+                const { text: truncPayload, truncated } = truncate(entry.payload, 80);
+                const entryId = 'e_' + entry.topic.replace(/[^a-zA-Z0-9]/g, '_');
+
+                html += '<div class="' + cls + '">';
+                html += '<span class="finder-topic" onclick="copyToClipboard(\'' + escapeAttr(entry.topic) + '\')">';
+                html += escapeHtml(entry.topic) + '</span>';
+                html += '<span class="finder-payload" onclick="copyToClipboard(\'' + escapeAttr(entry.payload) + '\')">';
+                html += '<span class="finder-payload-truncated">' + escapeHtml(truncPayload);
+                if (truncated) html += '<button class="expand-btn" onclick="event.stopPropagation(); toggleFinderExpand(\'' + entryId + '\')">...</button>';
+                html += '</span>';
+                if (truncated) html += '<div class="finder-payload-full" id="' + entryId + '">' + formatFinderPayload(entry.payload) + '</div>';
+                html += '</span>';
+                html += '<span class="finder-time">' + timeAgo(entry.timestamp) + '</span>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function formatFinderPayload(payload) {
+            try {
+                return escapeHtml(JSON.stringify(JSON.parse(payload), null, 2));
+            } catch (e) {
+                return escapeHtml(payload);
+            }
+        }
+
+        function escapeAttr(text) {
+            if (!text) return '';
+            return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+        }
+
+        function toggleFinderExpand(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('expanded');
+        }
+
+        function copyToClipboard(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            const toast = document.getElementById('copyToast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 1500);
+        }
+
+        function fetchFinderData() {
+            fetch('/api/mqtt/finder')
+                .then(r => r.json())
+                .then(data => {
+                    finderData = data;
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                    renderFinderList();
+                })
+                .catch(err => console.error('Failed to fetch finder data:', err));
         }
     </script>
 </body>
