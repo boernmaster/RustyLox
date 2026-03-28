@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-03-28
+
+### Changed
+- **MQTT nav simplified** — removed "Incoming Overview" and "MQTT Finder" as separate nav items; MQTT label now links directly to Configuration
+- **Incoming Overview** and **MQTT Finder** moved into tabs on the MQTT Gateway Configuration page (`/mqtt/config`)
+- Removed the old "Incoming Messages" (SSE live feed) tab from Configuration
+- Both new tabs use lazy initialization — polling only starts when the tab is first activated
+
 ## [0.7.0] - 2026-03-25
 
 Phase 7a complete — all web UI features for backend functionality delivered.

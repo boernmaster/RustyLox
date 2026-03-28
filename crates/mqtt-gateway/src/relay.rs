@@ -1,5 +1,6 @@
 //! Relay messages to Miniserver
 
+use crate::relay_tracker::RelayTracker;
 use crate::stats::MqttGatewayStats;
 use miniserver_client::{MiniserverClient, MonitorCallback, MonitorEvent};
 use rustylox_config::GeneralConfig;
@@ -13,6 +14,7 @@ use tracing::{debug, error, info, warn};
 pub struct Relay {
     config: Arc<RwLock<GeneralConfig>>,
     stats: Arc<MqttGatewayStats>,
+    relay_tracker: Arc<RelayTracker>,
     /// Cache of Miniserver clients (by Miniserver ID)
     clients: RwLock<HashMap<String, Arc<MiniserverClient>>>,
     /// Optional monitor callback to attach to newly created clients
@@ -21,10 +23,15 @@ pub struct Relay {
 
 impl Relay {
     /// Create a new relay
-    pub fn new(config: Arc<RwLock<GeneralConfig>>, stats: Arc<MqttGatewayStats>) -> Self {
+    pub fn new(
+        config: Arc<RwLock<GeneralConfig>>,
+        stats: Arc<MqttGatewayStats>,
+        relay_tracker: Arc<RelayTracker>,
+    ) -> Self {
         Self {
             config,
             stats,
+            relay_tracker,
             clients: RwLock::new(HashMap::new()),
             monitor_callback: RwLock::new(None),
         }
@@ -70,33 +77,41 @@ impl Relay {
         Ok(client)
     }
 
-    /// Check if a topic should be filtered based on global regex filter
-    fn should_filter(&self, topic: &str, filter_pattern: &str) -> bool {
+    /// Check if a topic should be filtered based on global regex filter.
+    /// Returns the 1-based line number of the matching filter, or 0 if not filtered.
+    fn check_filter(&self, topic: &str, filter_pattern: &str) -> u32 {
         if filter_pattern.is_empty() {
-            return false;
+            return 0;
         }
 
         // Replace slashes with underscores for filtering
         let normalized_topic = topic.replace('/', "_");
 
-        // Try to compile and match regex
-        match regex::Regex::new(filter_pattern) {
-            Ok(re) => {
-                if re.is_match(&normalized_topic) {
-                    debug!(
-                        "Message filtered: topic '{}' matches global filter pattern '{}'",
-                        topic, filter_pattern
-                    );
-                    true
-                } else {
-                    false
+        // Each line is a separate filter pattern
+        for (idx, line) in filter_pattern.lines().enumerate() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            match regex::Regex::new(line) {
+                Ok(re) => {
+                    if re.is_match(&normalized_topic) {
+                        debug!(
+                            "Message filtered: topic '{}' matches filter line {} '{}'",
+                            topic,
+                            idx + 1,
+                            line
+                        );
+                        return (idx + 1) as u32;
+                    }
+                }
+                Err(e) => {
+                    warn!("Invalid regex filter line {} '{}': {}", idx + 1, line, e);
                 }
             }
-            Err(e) => {
-                warn!("Invalid global regex filter '{}': {}", filter_pattern, e);
-                false
-            }
         }
+
+        0
     }
 
     /// Send message to Miniserver via HTTP/UDP
@@ -107,11 +122,14 @@ impl Relay {
             config.mqtt.topicfilter.clone()
         };
 
-        if self.should_filter(topic, &filter_pattern) {
+        let filter_line = self.check_filter(topic, &filter_pattern);
+        if filter_line > 0 {
             debug!(
                 "Message FILTERED (not sent to Miniserver): {} = {}",
                 topic, value
             );
+            self.relay_tracker
+                .record_filtered(topic, value, filter_line);
             return Ok(());
         }
 
@@ -124,6 +142,7 @@ impl Relay {
             id.clone()
         } else {
             warn!("No Miniserver configured, cannot relay message");
+            self.relay_tracker.record_http_cached(topic, value);
             return Ok(());
         };
         drop(config);
@@ -149,6 +168,8 @@ impl Relay {
                 if let Some(&success) = results.get(&param_name) {
                     if success {
                         self.stats.record_accepted();
+                        self.relay_tracker
+                            .record_http_relay(topic, value, &ms_id, 200);
                         debug!(
                             "Successfully sent {} = {} to Miniserver {}",
                             topic, value, ms_id
@@ -156,6 +177,8 @@ impl Relay {
                     } else {
                         self.stats
                             .record_rejected(param_name.clone(), value.to_string());
+                        self.relay_tracker
+                            .record_http_relay(topic, value, &ms_id, 404);
                         debug!(
                             "Miniserver {} rejected parameter {} (virtual input may not exist)",
                             ms_id, param_name
@@ -164,6 +187,8 @@ impl Relay {
                 }
             }
             Err(e) => {
+                self.relay_tracker
+                    .record_http_relay(topic, value, &ms_id, 500);
                 error!("Failed to send to Miniserver {} via HTTP: {}", ms_id, e);
                 return Err(e);
             }
@@ -184,6 +209,7 @@ impl Relay {
             // Format: "MQTT: topic=value" — matches old LoxBerry MQTT Gateway UDP format
             let msg = format!("MQTT: {}={}", topic, value);
             let target = format!("{}:{}", ip, port);
+            self.relay_tracker.record_udp_relay(topic, topic, value);
             match tokio::net::UdpSocket::bind("0.0.0.0:0").await {
                 Ok(socket) => {
                     if let Err(e) = socket.send_to(msg.as_bytes(), &target).await {
