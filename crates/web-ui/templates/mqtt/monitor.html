@@ -8,100 +8,201 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
     <style>
-        .mqtt-monitor {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 200px);
+        .topics-table {
+            border-collapse: collapse;
+            width: 100%;
         }
-
-        .monitor-controls {
-            display: flex;
-            gap: 10px;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .monitor-messages {
-            flex: 1;
-            overflow-y: auto;
+        .topics-table td, .topics-table th {
             border: 1px solid #ddd;
-            border-radius: 5px;
-            background: #fff;
+            padding: 8px;
         }
-
-        .message {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-family: monospace;
-            font-size: 0.9em;
+        .topics-table tr:nth-child(even) { background-color: #f2f2f2; }
+        .topics-table tr:hover { background-color: #ddd; }
+        .topics-table th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #6dac20;
+            color: white;
         }
-
-        .message:hover {
-            background: #f9f9f9;
-        }
-
-        .message-topic {
-            font-weight: bold;
-            color: #0066cc;
-            margin-bottom: 5px;
-        }
-
-        .message-payload {
-            color: #333;
+        .topics-table-data {
             word-break: break-all;
+            width: 35%;
+        }
+        .topics-table-udp-data {
+            word-break: break-all;
+            width: 50%;
+        }
+        .topics-table-status {
+            min-width: 150px;
+        }
+        .subscription-filtered {
+            color: #777;
         }
 
-        .message-meta {
+        .collapsible-header {
+            background-color: #6dac20;
+            color: white;
+            padding: 12px 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .collapsible-header:hover { background-color: #5c9a1b; }
+        .collapsible-header .arrow { transition: transform 0.2s; }
+        .collapsible-header.open .arrow { transform: rotate(90deg); }
+        .collapsible-body {
+            border: 1px solid #ddd;
+            border-top: none;
+            padding: 12px;
+            display: none;
+        }
+        .collapsible-body.open { display: block; }
+
+        .status-icon { width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px; }
+        .icon-check { color: #28a745; }
+        .icon-notfound { color: #ffc107; }
+        .icon-locked { color: #dc3545; }
+        .icon-filtered { color: #6c757d; }
+        .icon-question { color: #17a2b8; }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .filter-bar label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
             font-size: 0.85em;
-            color: #666;
-            margin-top: 5px;
+            cursor: pointer;
+            white-space: nowrap;
         }
+        .filter-bar input[type="checkbox"] { margin: 0; }
 
-        .status-connected {
-            color: green;
-            font-weight: bold;
-        }
-
-        .status-disconnected {
-            color: red;
-            font-weight: bold;
-        }
-
-        #messageCount {
-            font-weight: bold;
+        .search-input {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 8px;
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: 6px 14px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-sm { padding: 2px 8px; font-size: 11px; }
+        .btn-primary { background: #0066cc; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+
+        .controls-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 16px;
+            margin-bottom: 10px;
+        }
+
+        .advanced-toggle {
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .topic-advanced {
+            font-size: 75%;
+            color: #555;
+        }
+        .topic-advanced label {
+            display: inline;
+            margin-right: 10px;
+        }
+        .topic-advanced input[type="checkbox"] {
+            margin-right: 3px;
+        }
+
+        .copy-btn {
+            padding: 1px 6px;
+            font-size: 10px;
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 6px;
+        }
+        .copy-btn:hover { background: #ddd; }
+
+        .trash-btn {
+            cursor: pointer;
+            opacity: 0.6;
             font-size: 14px;
+            border: none;
+            background: none;
+            padding: 2px;
+        }
+        .trash-btn:hover { opacity: 1; }
+
+        .info-text {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 12px;
         }
 
-        .btn-primary {
-            background: #0066cc;
-            color: white;
+        .permission-warning {
+            color: #dc3545;
+            font-size: 0.8em;
+            margin-left: 12px;
         }
 
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
+        .mono {
+            font-family: monospace;
+            font-size: 110%;
+            font-weight: bold;
+            color: green;
         }
 
-        .btn-danger {
-            background: #dc3545;
-            color: white;
+        .strikethrough {
+            text-decoration: line-through;
+            font-style: italic;
         }
 
-        input[type="text"] {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            flex: 1;
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
         }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot.connected { background: #28a745; }
+        .status-dot.disconnected { background: #dc3545; }
     </style>
 </head>
 <body>
@@ -124,7 +225,7 @@
             <li class="nav-group">
                 <a class="nav-group-label active" href="/mqtt/monitor">MQTT</a>
                 <ul class="nav-dropdown">
-                    <li><a href="/mqtt/monitor">Monitor</a></li>
+                    <li><a href="/mqtt/monitor">Incoming Overview</a></li>
                     <li><a href="/mqtt/config">Configuration</a></li>
                     <li><a href="/mqtt/stats">Statistics</a></li>
                 </ul>
@@ -174,25 +275,67 @@
     <main class="container">
         <h1>{{ title }}</h1>
 
-        <div class="mqtt-monitor">
-            <!-- Controls -->
-            <div class="monitor-controls">
-                <button id="pauseBtn" class="btn btn-primary" onclick="togglePause()">Pause</button>
-                <button id="clearBtn" class="btn btn-secondary" onclick="clearMessages()">Clear</button>
-                <input type="text" id="filterInput" placeholder="Filter by topic (e.g., home/#)" onkeyup="filterMessages()">
-                <button class="btn btn-secondary" onclick="exportMessages()">Export</button>
-                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-                    <span>Messages: <span id="messageCount">0</span></span>
-                    <span id="connectionStatus" class="status-disconnected">Connecting...</span>
-                </div>
-            </div>
+        <p class="info-text">
+            This page lists the transmissions via the MQTT Gateway to the Miniserver.
+            It is refreshed <em>automatically</em> (pauses while text is selected).
+            You can copy and paste the 'Virtual Input' names for HTTP transmissions, or create command recognitions from the UDP messages.
+        </p>
 
-            <!-- Message Display -->
-            <div id="messages" class="monitor-messages">
-                <div style="padding: 20px; text-align: center; color: #666;">
-                    Waiting for MQTT messages...
-                </div>
+        <div class="advanced-toggle">
+            <input type="checkbox" id="showAdvanced" onchange="toggleAdvanced()">
+            <label for="showAdvanced">Show details and advanced settings</label>
+        </div>
+
+        <!-- HTTP Virtual Inputs -->
+        <div class="collapsible-header open" onclick="toggleSection('http')">
+            <span>HTTP Virtual Inputs <span style="font-size:80%">(<span id="httpCount">0</span> entries)<span id="httpPermissionWarning" class="permission-warning" style="display:none"> - There are entries with access denied</span></span></span>
+            <span class="arrow" id="httpArrow">&#9654;</span>
+        </div>
+        <div class="collapsible-body open" id="httpBody">
+            <div class="filter-bar">
+                <label><input type="checkbox" id="httpFilterAll" checked onchange="httpFilterChanged('all')"> Show All</label>
+                <label><input type="checkbox" id="httpFilter200" onchange="httpFilterChanged('200')"> <span class="icon-check">&#10004;</span> OK</label>
+                <label><input type="checkbox" id="httpFilter404" onchange="httpFilterChanged('404')"> <span class="icon-notfound">&#9888;</span> Not found</label>
+                <label><input type="checkbox" id="httpFilter500" onchange="httpFilterChanged('500')"> <span class="icon-locked">&#128274;</span> Access denied</label>
+                <label><input type="checkbox" id="httpFilterFiltered" onchange="httpFilterChanged('filtered')"> <span class="icon-filtered">&#9899;</span> Filtered</label>
+                <label><input type="checkbox" id="httpFilter0" onchange="httpFilterChanged('0')"> <span class="icon-question">&#63;</span> Not sent yet</label>
             </div>
+            <input type="text" class="search-input" id="httpSearch" placeholder="Search virtual inputs..." oninput="renderHttpTable()">
+            <table class="topics-table" id="httpTable">
+                <thead>
+                    <tr>
+                        <th>Miniserver Virtual Input</th>
+                        <th>Last Value</th>
+                        <th>Last Arrived</th>
+                    </tr>
+                </thead>
+                <tbody id="httpTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- UDP Transmissions -->
+        <div class="collapsible-header" onclick="toggleSection('udp')">
+            <span>UDP Transmissions <span style="font-size:80%">(<span id="udpCount">0</span> entries)</span></span>
+            <span class="arrow" id="udpArrow">&#9654;</span>
+        </div>
+        <div class="collapsible-body" id="udpBody">
+            <input type="text" class="search-input" id="udpSearch" placeholder="Search UDP topics..." oninput="renderUdpTable()">
+            <table class="topics-table" id="udpTable">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Command Recognition</th>
+                        <th>Last Arrived</th>
+                    </tr>
+                </thead>
+                <tbody id="udpTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="controls-bar">
+            <button class="btn btn-secondary" onclick="clearCache()">Delete cache (for testing)</button>
         </div>
     </main>
 
@@ -201,158 +344,359 @@
     </footer>
 
     <script>
-        const MAX_MESSAGES = 200;
-        let messages = [];
-        let paused = false;
-        let filter = '';
-        let eventSource = null;
+        let relayData = null;
+        let updateRunning = false;
+        let refreshInterval = 1000;
+        let intervalID = null;
+        let showAdvanced = false;
 
-        // Connect to SSE stream
-        function connectStream() {
-            eventSource = new EventSource('/mqtt/monitor/stream');
+        // Restore advanced toggle from sessionStorage
+        if (sessionStorage.getItem('mqtt_show_advanced') === 'true') {
+            showAdvanced = true;
+            document.getElementById('showAdvanced').checked = true;
+        }
 
-            eventSource.onopen = function() {
-                document.getElementById('connectionStatus').textContent = 'Connected';
-                document.getElementById('connectionStatus').className = 'status-connected';
-            };
-
-            eventSource.onmessage = function(event) {
-                if (!paused) {
-                    try {
-                        const message = JSON.parse(event.data);
-                        addMessage(message);
-                    } catch (e) {
-                        console.error('Failed to parse message:', e);
-                    }
+        // Restore collapsible states
+        function restoreSections() {
+            ['http', 'udp'].forEach(id => {
+                const state = sessionStorage.getItem('mqtt_section_' + id);
+                const header = document.querySelector(`[onclick="toggleSection('${id}')"]`);
+                const body = document.getElementById(id + 'Body');
+                if (state === 'open') {
+                    header.classList.add('open');
+                    body.classList.add('open');
+                } else if (state === 'closed') {
+                    header.classList.remove('open');
+                    body.classList.remove('open');
                 }
-            };
+            });
+        }
+        restoreSections();
 
-            eventSource.onerror = function() {
-                document.getElementById('connectionStatus').textContent = 'Disconnected';
-                document.getElementById('connectionStatus').className = 'status-disconnected';
-
-                // Reconnect after 5 seconds
-                setTimeout(connectStream, 5000);
-            };
+        function toggleSection(id) {
+            const header = document.querySelector(`[onclick="toggleSection('${id}')"]`);
+            const body = document.getElementById(id + 'Body');
+            const isOpen = body.classList.contains('open');
+            header.classList.toggle('open');
+            body.classList.toggle('open');
+            sessionStorage.setItem('mqtt_section_' + id, isOpen ? 'closed' : 'open');
         }
 
-        function formatMessage(msg) {
-            return `
-                <div class="message">
-                    <div class="message-topic">${escapeHtml(msg.topic)}</div>
-                    <div class="message-payload">${formatPayload(msg.payload)}</div>
-                    <div class="message-meta">
-                        ${msg.timestamp} | QoS: ${msg.qos} | Retain: ${msg.retain ? 'Yes' : 'No'}
-                    </div>
-                </div>
-            `;
-        }
-
-        function addMessage(msg) {
-            messages.unshift(msg);
-            if (messages.length > MAX_MESSAGES) {
-                messages.pop();
+        function toggleAdvanced() {
+            showAdvanced = document.getElementById('showAdvanced').checked;
+            sessionStorage.setItem('mqtt_show_advanced', showAdvanced);
+            if (relayData) {
+                renderHttpTable();
+                renderUdpTable();
             }
+        }
 
-            const passes = !filter || matchTopic(msg.topic, filter);
-            if (!passes) return;
+        function getSelectedText() {
+            return window.getSelection ? window.getSelection().toString() : '';
+        }
 
-            const messagesDiv = document.getElementById('messages');
+        function getHighestCode(entry) {
+            if (!entry.relay_results || entry.relay_results.length === 0) return 0;
+            return Math.max(...entry.relay_results.map(r => r.code));
+        }
 
-            // Remove placeholder if present
-            const placeholder = messagesDiv.querySelector('[data-placeholder]');
-            if (placeholder) messagesDiv.innerHTML = '';
-
-            // Prepend new element (O(1) DOM work)
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = formatMessage(msg);
-            messagesDiv.insertBefore(wrapper.firstElementChild, messagesDiv.firstChild);
-
-            // Trim oldest DOM entries beyond limit
-            while (messagesDiv.children.length > MAX_MESSAGES) {
-                messagesDiv.removeChild(messagesDiv.lastChild);
+        function getStatusInfo(entry) {
+            if (entry.regex_filter_line || entry.do_not_forward) {
+                return { icon: '&#9899;', cls: 'icon-filtered', text: 'Filtered', code: -1 };
             }
-
-            document.getElementById('messageCount').textContent = messagesDiv.children.length;
-        }
-
-        function updateDisplay() {
-            const messagesDiv = document.getElementById('messages');
-            const filteredMessages = filter
-                ? messages.filter(m => matchTopic(m.topic, filter))
-                : messages;
-
-            document.getElementById('messageCount').textContent = filteredMessages.length;
-
-            if (filteredMessages.length === 0) {
-                messagesDiv.innerHTML = '<div data-placeholder style="padding: 20px; text-align: center; color: #666;">No messages</div>';
-                return;
+            const code = getHighestCode(entry);
+            switch (code) {
+                case 200: return { icon: '&#10004;', cls: 'icon-check', text: 'HTTP 200 OK', code: 200 };
+                case 404: return { icon: '&#9888;', cls: 'icon-notfound', text: 'HTTP 404 Not found', code: 404 };
+                case 401:
+                case 403:
+                case 500: return { icon: '&#128274;', cls: 'icon-locked', text: 'HTTP ' + code + ' Access denied', code: 500 };
+                default: return { icon: '?', cls: 'icon-question', text: 'Not sent yet (cached)', code: 0 };
             }
-
-            messagesDiv.innerHTML = filteredMessages.map(msg => formatMessage(msg)).join('');
         }
 
-        function togglePause() {
-            paused = !paused;
-            document.getElementById('pauseBtn').textContent = paused ? 'Resume' : 'Pause';
-            document.getElementById('pauseBtn').className = paused ? 'btn btn-danger' : 'btn btn-primary';
-        }
-
-        function clearMessages() {
-            messages = [];
-            updateDisplay();
-        }
-
-        function filterMessages() {
-            filter = document.getElementById('filterInput').value.trim();
-            updateDisplay();
-        }
-
-        function matchTopic(topic, pattern) {
-            if (!pattern) return true;
-
-            // Simple wildcard matching
-            const topicParts = topic.split('/');
-            const patternParts = pattern.split('/');
-
-            for (let i = 0; i < patternParts.length; i++) {
-                if (patternParts[i] === '#') return true;
-                if (patternParts[i] === '+') continue;
-                if (topicParts[i] !== patternParts[i]) return false;
-            }
-
-            return topicParts.length === patternParts.length;
-        }
-
-        function formatPayload(payload) {
-            // Try to pretty-print JSON
-            try {
-                const json = JSON.parse(payload);
-                return '<pre>' + escapeHtml(JSON.stringify(json, null, 2)) + '</pre>';
-            } catch (e) {
-                return escapeHtml(payload);
-            }
+        function formatTimestamp(unix) {
+            if (!unix) return '';
+            const d = new Date(unix * 1000);
+            const day = String(d.getDate()).padStart(2, '0');
+            const mon = String(d.getMonth() + 1).padStart(2, '0');
+            return day + '/' + mon + ' ' + d.toLocaleTimeString();
         }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = text || '';
             return div.innerHTML;
         }
 
-        function exportMessages() {
-            const dataStr = JSON.stringify(messages, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'mqtt-messages-' + new Date().toISOString() + '.json';
-            link.click();
-            URL.revokeObjectURL(url);
+        // HTTP filter logic
+        function httpFilterChanged(which) {
+            if (which === 'all' && document.getElementById('httpFilterAll').checked) {
+                ['200', '404', '500', '0'].forEach(f => {
+                    document.getElementById('httpFilter' + f).checked = false;
+                });
+                document.getElementById('httpFilterFiltered').checked = false;
+            } else if (which !== 'all') {
+                document.getElementById('httpFilterAll').checked = false;
+                // If nothing checked, revert to All
+                const anyChecked = ['200', '404', '500', '0'].some(f => document.getElementById('httpFilter' + f).checked)
+                    || document.getElementById('httpFilterFiltered').checked;
+                if (!anyChecked) {
+                    document.getElementById('httpFilterAll').checked = true;
+                }
+            }
+            renderHttpTable();
         }
 
-        // Start streaming on page load
-        connectStream();
+        function shouldShowHttpEntry(entry) {
+            const showAll = document.getElementById('httpFilterAll').checked;
+            if (showAll) return true;
+
+            const status = getStatusInfo(entry);
+            if (document.getElementById('httpFilter200').checked && status.code === 200) return true;
+            if (document.getElementById('httpFilter404').checked && status.code === 404) return true;
+            if (document.getElementById('httpFilter500').checked && status.code === 500) return true;
+            if (document.getElementById('httpFilter0').checked && status.code === 0) return true;
+            if (document.getElementById('httpFilterFiltered').checked && status.code === -1) return true;
+            return false;
+        }
+
+        function renderHttpTable() {
+            if (!relayData) return;
+
+            const search = document.getElementById('httpSearch').value.toLowerCase();
+            const tbody = document.getElementById('httpTableBody');
+            let html = '';
+            let hasPermissionErrors = false;
+
+            // Sort by timestamp descending
+            const entries = [...relayData.http].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            document.getElementById('httpCount').textContent = entries.length;
+
+            for (const entry of entries) {
+                if (!shouldShowHttpEntry(entry)) continue;
+                if (search && !entry.virtual_input.toLowerCase().includes(search) && !entry.original_topic.toLowerCase().includes(search)) continue;
+
+                const status = getStatusInfo(entry);
+                const isFiltered = status.code === -1;
+                const tdCls = isFiltered ? 'subscription-filtered' : '';
+
+                if (status.code === 500) hasPermissionErrors = true;
+
+                html += '<tr>';
+                // Column 1: Virtual Input
+                html += '<td class="' + tdCls + '">';
+                html += '<span class="status-icon ' + status.cls + '">' + status.icon + '</span> ';
+                html += escapeHtml(entry.virtual_input);
+                html += '<button class="copy-btn" onclick="copyText(\'' + escapeHtml(entry.virtual_input).replace(/'/g, "\\'") + '\')">Copy</button>';
+
+                if (showAdvanced) {
+                    html += '<br><span class="topic-advanced">(Topic <em>' + escapeHtml(entry.original_topic) + '</em>)</span>';
+                    html += '<div class="topic-advanced">';
+                    // Per-topic setting checkboxes
+                    const vi = entry.virtual_input;
+                    const settings = relayData.topic_settings[vi] || {};
+                    html += '<label><input type="checkbox" ' + (settings.disable_cache ? 'checked' : '') + ' onchange="updateSetting(\'' + vi + '\', \'disable_cache\', this.checked)"> Disable cache</label>';
+                    html += '<label><input type="checkbox" ' + (settings.reset_after_send ? 'checked' : '') + ' onchange="updateSetting(\'' + vi + '\', \'reset_after_send\', this.checked)"> Reset after send</label>';
+                    html += '<label><input type="checkbox" ' + (entry.do_not_forward ? 'checked' : '') + ' onchange="updateSetting(\'' + vi + '\', \'do_not_forward\', this.checked)"> Do not forward</label>';
+                    html += '</div>';
+
+                    // Per-MS results
+                    if (entry.relay_results && entry.relay_results.length > 0 && !isFiltered) {
+                        html += '<div class="topic-advanced">';
+                        for (const r of entry.relay_results) {
+                            const t = formatTimestamp(r.last_sent);
+                            let rIcon, rText;
+                            switch (r.code) {
+                                case 200: rIcon = '&#10004;'; rText = 'MS' + r.ms_id + ': HTTP 200 Value submitted'; break;
+                                case 404: rIcon = '&#9888;'; rText = 'MS' + r.ms_id + ': HTTP 404 Input not available'; break;
+                                default: rIcon = '&#128274;'; rText = 'MS' + r.ms_id + ': HTTP ' + r.code; break;
+                            }
+                            html += rIcon + ' ' + rText + ' at ' + t + '<br>';
+                        }
+                        html += '</div>';
+                    }
+                }
+
+                html += '</td>';
+
+                // Column 2: Last value
+                html += '<td class="' + tdCls + ' topics-table-data">';
+                if (isFiltered) html += '<em class="strikethrough">';
+                html += escapeHtml(entry.last_value);
+                if (isFiltered) html += '</em>';
+                html += '</td>';
+
+                // Column 3: Last arrived
+                html += '<td class="' + tdCls + ' topics-table-status">';
+                html += formatTimestamp(entry.timestamp);
+                html += ' <button class="trash-btn" onclick="deleteTopic(\'' + escapeHtml(entry.original_topic).replace(/'/g, "\\'") + '\')">&#128465;</button>';
+                if (showAdvanced) {
+                    html += '<br><span class="topic-advanced">';
+                    if (entry.regex_filter_line) {
+                        html += 'Subscription filtered by RegEx line ' + entry.regex_filter_line + '<br>';
+                    }
+                    if (entry.do_not_forward) {
+                        html += '<em>Do not forward</em> is active<br>';
+                    }
+                    html += '</span>';
+                }
+                html += '</td>';
+
+                html += '</tr>';
+            }
+
+            tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;color:#666;">No HTTP transmissions yet</td></tr>';
+            document.getElementById('httpPermissionWarning').style.display = hasPermissionErrors ? 'inline' : 'none';
+        }
+
+        function renderUdpTable() {
+            if (!relayData) return;
+
+            const search = document.getElementById('udpSearch').value.toLowerCase();
+            const tbody = document.getElementById('udpTableBody');
+            let html = '';
+
+            const entries = [...relayData.udp].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            document.getElementById('udpCount').textContent = entries.length;
+
+            for (const entry of entries) {
+                if (search && !entry.topic.toLowerCase().includes(search)) continue;
+
+                const isFiltered = entry.regex_filter_line || entry.do_not_forward;
+                const tdCls = isFiltered ? 'subscription-filtered' : '';
+
+                html += '<tr>';
+                // Column 1: Data (topic=value)
+                html += '<td class="' + tdCls + ' topics-table-udp-data">';
+                html += escapeHtml(entry.topic) + '=' + escapeHtml(entry.last_value);
+                if (showAdvanced) {
+                    html += '<br><span class="topic-advanced">(Topic <em>' + escapeHtml(entry.original_topic) + '</em>)</span>';
+                    const settings = relayData.topic_settings[entry.topic.replace(/\//g, '_')] || {};
+                    html += '<div class="topic-advanced">';
+                    html += '<label><input type="checkbox" ' + (settings.disable_cache ? 'checked' : '') + ' onchange="updateSetting(\'' + entry.topic.replace(/\//g, '_') + '\', \'disable_cache\', this.checked)"> Disable cache</label>';
+                    html += '<label><input type="checkbox" ' + (settings.reset_after_send ? 'checked' : '') + ' onchange="updateSetting(\'' + entry.topic.replace(/\//g, '_') + '\', \'reset_after_send\', this.checked)"> Reset after send</label>';
+                    html += '<label><input type="checkbox" ' + (entry.do_not_forward ? 'checked' : '') + ' onchange="updateSetting(\'' + entry.topic.replace(/\//g, '_') + '\', \'do_not_forward\', this.checked)"> Do not forward</label>';
+                    html += '</div>';
+                }
+                html += '</td>';
+
+                // Column 2: Command Recognition
+                html += '<td style="font-size:80%;" class="' + tdCls + '">';
+                if (isFiltered) {
+                    if (entry.regex_filter_line) html += 'Filtered by RegEx line ' + entry.regex_filter_line + '<br>';
+                    if (entry.do_not_forward) html += '<em>Do not forward</em> is active';
+                } else {
+                    const cmdRec = 'MQTT:\\i' + entry.topic.replace(/\\/g, '\\\\') + '=\\i\\v';
+                    html += '<span class="mono" style="font-size:90%">' + escapeHtml(cmdRec) + '</span>';
+                    html += '<button class="copy-btn" onclick="copyText(\'' + cmdRec.replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')">Copy</button>';
+                }
+                html += '</td>';
+
+                // Column 3: Last arrived
+                html += '<td class="topics-table-status">';
+                html += formatTimestamp(entry.timestamp);
+                html += ' <button class="trash-btn" onclick="deleteTopic(\'' + escapeHtml(entry.topic).replace(/'/g, "\\'") + '\')">&#128465;</button>';
+                html += '</td>';
+
+                html += '</tr>';
+            }
+
+            tbody.innerHTML = html || '<tr><td colspan="3" style="text-align:center;color:#666;">No UDP transmissions yet</td></tr>';
+        }
+
+        function copyText(text) {
+            // Unescape the text first
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+
+        function updateSetting(topic, setting, enabled) {
+            fetch('/api/mqtt/topic-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topic, setting: setting, enabled: enabled })
+            }).then(r => r.json()).then(resp => {
+                // Update local cache for immediate UI feedback
+                if (relayData && relayData.topic_settings) {
+                    if (!relayData.topic_settings[topic]) relayData.topic_settings[topic] = {};
+                    relayData.topic_settings[topic][setting] = enabled;
+                }
+            });
+        }
+
+        function deleteTopic(topic) {
+            fetch('/api/mqtt/topic-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topic })
+            }).then(() => {
+                // Remove from local data
+                if (relayData) {
+                    relayData.http = relayData.http.filter(e => e.original_topic !== topic);
+                    relayData.udp = relayData.udp.filter(e => e.topic !== topic);
+                    renderHttpTable();
+                    renderUdpTable();
+                }
+            });
+        }
+
+        function clearCache() {
+            fetch('/api/mqtt/relay-cache/clear', { method: 'POST' }).then(() => {
+                relayData = { http: [], udp: [], http_count: 0, udp_count: 0, topic_settings: {} };
+                renderHttpTable();
+                renderUdpTable();
+            });
+        }
+
+        function updateTopics() {
+            if (getSelectedText()) return;
+            if (updateRunning) return;
+            updateRunning = true;
+
+            fetch('/api/mqtt/relayed-topics')
+                .then(r => r.json())
+                .then(data => {
+                    relayData = data;
+                    renderHttpTable();
+                    renderUdpTable();
+                })
+                .catch(err => console.error('Failed to fetch relayed topics:', err))
+                .finally(() => { updateRunning = false; });
+        }
+
+        // Dynamic refresh interval based on element count
+        function calcInterval() {
+            if (!relayData) return 1000;
+            const count = (relayData.http_count || 0) + (relayData.udp_count || 0);
+            let interval = count / 200 * 1000;
+            if (interval < 1000) interval = 1000;
+            if (interval > 10000) interval = 10000;
+            return interval;
+        }
+
+        // Start polling
+        function startPolling() {
+            updateTopics();
+            intervalID = setInterval(() => {
+                const newInterval = calcInterval();
+                if (newInterval !== refreshInterval) {
+                    refreshInterval = newInterval;
+                    clearInterval(intervalID);
+                    intervalID = setInterval(updateTopics, refreshInterval);
+                }
+                updateTopics();
+            }, refreshInterval);
+        }
+
+        startPolling();
     </script>
 </body>
 </html>
