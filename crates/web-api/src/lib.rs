@@ -99,6 +99,7 @@ pub fn create_router(state: AppState) -> Router {
             "/api/mqtt/relay-cache/clear",
             post(routes::mqtt::clear_relay_cache),
         )
+        .route("/api/mqtt/finder", get(routes::mqtt::get_finder_data))
         .route(
             "/api/mqtt/subscriptions/reload",
             post(routes::mqtt::reload_subscriptions),

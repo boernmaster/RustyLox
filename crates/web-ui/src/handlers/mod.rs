@@ -11,6 +11,7 @@ pub mod logs;
 pub mod miniserver;
 pub mod miniserver_backup;
 pub mod mqtt;
+pub mod mqtt_finder;
 pub mod mqtt_management;
 pub mod mqtt_stats;
 pub mod network;
