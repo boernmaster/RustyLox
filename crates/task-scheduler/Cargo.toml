@@ -13,7 +13,7 @@ tracing = { workspace = true }
 tokio = { workspace = true }
 
 # Cron expression parsing
-cron = "0.12"
+cron = "0.16"
 
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
