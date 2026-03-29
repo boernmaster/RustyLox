@@ -74,8 +74,8 @@ fn main() {
     // Build full version string
     let pkg_version = env!("CARGO_PKG_VERSION");
     let version_string = if let Some(ref tag) = git_tag {
-        // On a tag: just show the tag (should match pkg_version)
-        tag.clone()
+        // On a tag: strip leading 'v' so templates don't produce double-v (e.g. "vv0.7.0")
+        tag.trim_start_matches('v').to_string()
     } else {
         // Not on a tag: show version + commit
         let dirty_suffix = if git_dirty { "-dirty" } else { "" };
