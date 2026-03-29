@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **serde/serde_json** - Serialization (JSON config files)
 - **serde_ini** - INI file parsing (plugin configs)
 - **DashMap** - Concurrent hashmaps
-- **PostgreSQL/SQLite** - Database abstraction layer
+- **JSON file-backed stores** - All persistence via atomic temp-file-then-rename writes (no SQL/ORM)
 
 ### DevOps
 - **Docker** - Multi-stage builds
@@ -51,20 +51,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 loxberry-rust/
 ├── crates/                         # Rust workspace crates
-│   ├── loxberry-core/             # Common types, errors
-│   ├── loxberry-config/           # JSON config management
-│   ├── loxberry-logging/          # Logging framework
+│   ├── rustylox-core/             # Common types, errors
+│   ├── rustylox-config/           # JSON config management
+│   ├── rustylox-logging/          # Logging framework
 │   ├── miniserver-client/         # HTTP/UDP Miniserver client
 │   ├── mqtt-gateway/              # MQTT gateway with transformers
 │   ├── plugin-manager/            # Plugin lifecycle management
 │   ├── auth/                      # Authentication & authorization (JWT, RBAC)
-│   ├── database/                  # Database abstraction (PostgreSQL/SQLite)
+│   ├── metrics/                   # System info & metrics collection
 │   ├── email-manager/             # Email notifications (SMTP)
 │   ├── task-scheduler/            # Scheduled tasks (cron-like)
 │   ├── backup-manager/            # Backup/restore functionality
 │   ├── web-api/                   # REST API (Axum)
 │   ├── web-ui/                    # Server-rendered UI (Askama + HTMX)
-│   └── loxberry-daemon/           # Main binary orchestrator
+│   └── rustylox-daemon/           # Main binary orchestrator
 │
 ├── static/                         # Static assets (CSS, JS, icons)
 │   ├── css/style.css
@@ -128,7 +128,7 @@ cargo build
 cargo test
 
 # Run locally (without Docker)
-LBHOMEDIR=/tmp/loxberry cargo run --bin loxberry-daemon
+LBHOMEDIR=/tmp/loxberry cargo run --bin rustylox-daemon
 
 # Or build and run with Docker
 docker compose build
@@ -157,16 +157,17 @@ This is a **Cargo workspace** with multiple crates. Each crate is independent wi
 ### Crate Dependencies (Bottom-Up)
 
 ```
-loxberry-daemon (binary)
+rustylox-daemon (binary)
 ├── web-ui (templates, handlers)
 │   ├── web-api (REST API)
 │   │   ├── mqtt-gateway (MQTT client)
 │   │   ├── plugin-manager (plugin lifecycle)
 │   │   ├── miniserver-client (Miniserver communication)
-│   │   └── loxberry-config (config management)
-│   │       └── loxberry-core (types, errors)
-│   └── loxberry-core
-└── loxberry-logging (future)
+│   │   ├── metrics (system info)
+│   │   └── rustylox-config (config management)
+│   │       └── rustylox-core (types, errors)
+│   └── rustylox-core
+└── rustylox-logging
 ```
 
 ### When to Create a New Crate
@@ -178,7 +179,7 @@ Create a new crate when:
 - It represents a major feature area
 
 **Don't create** a crate for:
-- Small utility functions (add to loxberry-core)
+- Small utility functions (add to rustylox-core)
 - Single-use helpers
 - Tightly coupled code
 
@@ -257,7 +258,7 @@ Router::new()
 
 ### Modifying Configuration Structure
 
-1. **Update struct in `loxberry-config/src/general.rs`**:
+1. **Update struct in `rustylox-config/src/general.rs`**:
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewSection {
@@ -291,8 +292,10 @@ Plugin hooks are shell scripts executed at specific points:
 **Hook Types**:
 - `preroot.sh` - Runs as root before installation
 - `preinstall.sh` - Runs as loxberry user before installation
+- `preupgrade.sh` - Runs as loxberry user before upgrade
 - `postinstall.sh` - Runs after installation
-- `postroot.sh` - Runs as root after installation
+- `postupgrade.sh` - Runs after upgrade
+- `postroot.sh` - Runs as root after installation/upgrade
 - `uninstall.sh` - Runs during uninstallation
 
 **Hook Execution** (`plugin-manager/src/installer.rs`):
@@ -363,10 +366,10 @@ pub fn calculate_hash(data: &[u8]) -> String {
 **Examples**:
 ```toml
 [package]
-name = "loxberry-config"  # Kebab-case in Cargo.toml
+name = "rustylox-config"  # Kebab-case in Cargo.toml
 
 # In code:
-use loxberry_config::Config;  // Snake_case
+use rustylox_config::Config;  // Snake_case
 ```
 
 ### Documentation
@@ -446,7 +449,7 @@ docker compose up -d
 docker compose logs
 
 # Test API
-curl http://localhost:8080/health
+curl http://localhost/health
 
 # Cleanup
 docker compose down
@@ -464,7 +467,7 @@ docker compose down
 ✅ **Handle errors properly** with `Result<T, Error>`
 ✅ **Use async/await** for I/O operations
 ✅ **Keep functions focused** (single responsibility)
-✅ **Reuse existing types** from loxberry-core where possible
+✅ **Reuse existing types** from rustylox-core where possible
 
 ### DON'T
 
@@ -561,9 +564,13 @@ fn parse_subscriptions_cfg(content: &str) -> Vec<Subscription> {
 ```
 plugin-name/
 ├── plugin.cfg              # Required - plugin metadata
-├── preinstall.sh          # Optional - pre-installation hook
-├── postinstall.sh         # Optional - post-installation hook
-├── uninstall.sh           # Optional - uninstall hook
+├── preroot.sh             # Optional - runs as root before install
+├── preinstall.sh          # Optional - runs as loxberry before install
+├── preupgrade.sh          # Optional - runs as loxberry before upgrade
+├── postinstall.sh         # Optional - runs after install
+├── postupgrade.sh         # Optional - runs after upgrade
+├── postroot.sh            # Optional - runs as root after install/upgrade
+├── uninstall.sh           # Optional - runs during uninstall
 ├── daemon/                # Optional - background daemons
 │   └── daemon.pl
 └── webfrontend/           # Optional - web interface
@@ -690,44 +697,39 @@ docker compose build
 
 ### Workflows
 
-**ci.yml** - Continuous Integration:
+**test.yml** - Continuous Integration:
 - Runs on every push and PR
 - `cargo fmt --check`
 - `cargo clippy`
 - `cargo test --all`
-- `cargo build --release`
-- Docker build test
 
-**release.yml** - Release Build:
-- Triggered on tags (`v*`)
-- Multi-platform Docker builds (amd64, arm64)
-- Push to GitHub Container Registry
-- Create GitHub Release
+**security-scan.yml** - Security Scanning:
+- `cargo audit` via rustsec (continue-on-error, non-blocking)
 
-**security.yml** - Security Scanning:
-- `cargo audit` for vulnerabilities
-- `cargo deny` for license/security checks
-- Dependency review
+**docker-publish.yml** - Docker Builds:
+- Triggered on tags (`v*.*.*`)
+- Multi-platform builds (amd64, arm64 via QEMU)
+- Pushes to `ghcr.io/boernmaster/rustylox`
+
+**release.yml** - GitHub Release:
+- Triggered on tags (`v*.*.*`)
+- Builds x86_64 binary
+- Creates GitHub Release with release notes
 
 ## Docker Development
 
 ### Multi-Stage Dockerfile
 
-**Stage 1 - Builder**:
-```dockerfile
-FROM rust:bookworm AS builder
-WORKDIR /build
-COPY Cargo.toml Cargo.lock ./
-COPY crates ./crates
-RUN cargo build --release --bin loxberry-daemon
-```
+**Stages**: chef (cargo-chef planner) → builder (release compile) → runtime
 
-**Stage 2 - Runtime**:
+**Builder** uses prebuilt `lukemathwalker/cargo-chef` image and builds `rustylox-daemon`.
+
+**Runtime**:
 ```dockerfile
-FROM debian:bookworm-slim
+FROM debian:bullseye-slim
 RUN apt-get update && apt-get install -y \
-    perl php-cli bash ca-certificates
-COPY --from=builder /build/target/release/loxberry-daemon /usr/local/bin/
+    perl php7.4-cli bash ca-certificates
+COPY --from=builder /build/target/release/rustylox-daemon /usr/local/bin/
 COPY static /opt/loxberry/static
 COPY sdk /opt/loxberry/sdk
 ```
@@ -739,8 +741,10 @@ services:
   rustylox:
     build: .
     ports:
-      - "8080:8080"
-      - "11884:11884/udp"
+      - "80:80"           # Web UI & API
+      - "6066:6066/udp"   # Miniserver UDP in
+      - "8090:8090/udp"   # Miniserver UDP out
+      - "11884:11884/udp" # MQTT UDP
     volumes:
       - ./volumes/config:/opt/loxberry/config
       - ./volumes/data:/opt/loxberry/data
@@ -752,6 +756,7 @@ services:
     image: eclipse-mosquitto:2.0
     ports:
       - "1883:1883"
+      - "9001:9001"
 ```
 
 ### Common Docker Commands
@@ -815,9 +820,9 @@ error!("Error occurred: {}", err);
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug loxberry-daemon",
+      "name": "Debug rustylox-daemon",
       "cargo": {
-        "args": ["build", "--bin=loxberry-daemon"]
+        "args": ["build", "--bin=rustylox-daemon"]
       },
       "args": [],
       "cwd": "${workspaceFolder}",
@@ -846,7 +851,11 @@ error!("Error occurred: {}", err);
 
 ## Project Status
 
-**Current Status**: Production-ready. All core features are implemented — MQTT gateway, plugin system, web UI, security hardening (JWT/RBAC), monitoring, backup/restore, and admin panel.
+**Current Status**: Production-ready (v0.8.0). All core features are implemented — MQTT gateway, plugin system, web UI (31 Askama templates), security hardening (JWT/RBAC, API keys, audit log), monitoring, backup/restore, email, task scheduling, system updates, and admin panel.
+
+**MQTT UI**: Incoming Overview and MQTT Finder are tabs on `/mqtt/config` (not separate pages) since v0.8.0.
+
+**Storage**: All persistence is JSON file-backed (`auth.json`, `plugindatabase.json`, `task_history.json`, etc.) — no SQL database.
 
 Next planned work: advanced features & ecosystem expansion (plugin marketplace, Kubernetes, OAuth2/OIDC, PWA). See [ROADMAP.md](ROADMAP.md) for details.
 
