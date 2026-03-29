@@ -415,15 +415,12 @@ impl WeatherService {
     // Each batch is sent as one UDP datagram, mirroring what datatoloxone.pl does.
 
     fn push_udp(&self, data: &WeatherData, cfg: &WeatherConfig) -> Result<(), String> {
-        // We need the Miniserver IP – looked up from config via the key.
-        // Since we don't have direct access to GeneralConfig here we accept
-        // the caller passing the resolved IP in cfg.local_ip as a workaround.
-        // The caller (daemon / background task) must set resolved_ms_ip before calling.
-        // For now we store the IP in a field set by the task spawner.
-        let ip = if cfg.local_ip.is_empty() {
-            return Err("Miniserver IP not set (local_ip field)".into());
+        let ip = if cfg.miniserver_ip.is_empty() {
+            return Err(
+                "Miniserver IP not resolved – check MiniserverKey in weather config".into(),
+            );
         } else {
-            cfg.local_ip.clone() // repurposed field – set by daemon
+            cfg.miniserver_ip.clone()
         };
 
         let port = cfg.miniserver_udp_port;
@@ -558,9 +555,9 @@ impl WeatherService {
         std::fs::write("/etc/dnsmasq.d/rustylox-weather.conf", &content)
             .map_err(|e| format!("Cannot write dnsmasq config: {}", e))?;
 
-        // Restart dnsmasq (non-fatal if it fails – e.g. not installed)
-        let status = std::process::Command::new("service")
-            .args(["dnsmasq", "restart"])
+        // Reload dnsmasq config via SIGHUP (non-fatal if dnsmasq isn't running)
+        let status = std::process::Command::new("sudo")
+            .args(["service", "dnsmasq", "restart"])
             .status();
         match status {
             Ok(s) if s.success() => info!("dnsmasq restarted successfully"),
