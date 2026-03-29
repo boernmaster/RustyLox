@@ -6,7 +6,7 @@
 
 **Modern Rust rewrite of LoxBerry with Docker containerization**
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![Rust](https://img.shields.io/badge/Rust-1.80+-orange.svg)](https://www.rust-lang.org) [![Rust Edition](https://img.shields.io/badge/Edition-2021-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2021/index.html) [![Language](https://img.shields.io/github/languages/top/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox) [![CI](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml) [![Release](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/release.yml) [![Docker](https://ghcr-badge.egpl.dev/boernmaster/rustylox/latest_tag?trim=major&label=latest)](https://github.com/boernmaster/RustyLox/pkgs/container/rustylox) [![GitHub Stars](https://img.shields.io/github/stars/boernmaster/RustyLox?style=social)](https://github.com/boernmaster/RustyLox/stargazers) [![GitHub Forks](https://img.shields.io/github/forks/boernmaster/RustyLox?style=social)](https://github.com/boernmaster/RustyLox/network/members) [![GitHub Issues](https://img.shields.io/github/issues/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/issues) [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/pulls) [![Last Commit](https://img.shields.io/github/last-commit/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/commits/main) [![Contributors](https://img.shields.io/github/contributors/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/graphs/contributors) [![Docker Image Size](https://img.shields.io/docker/image-size/boernmaster/rustylox/latest)](https://ghcr.io/boernmaster/rustylox) [![Docker Pulls](https://img.shields.io/docker/pulls/boernmaster/rustylox)](https://ghcr.io/boernmaster/rustylox)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![Rust](https://img.shields.io/badge/Rust-1.80+-orange.svg)](https://www.rust-lang.org) [![Rust Edition](https://img.shields.io/badge/Edition-2021-orange.svg)](https://doc.rust-lang.org/edition-guide/rust-2021/index.html) [![Language](https://img.shields.io/github/languages/top/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox) [![CI](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/releases/latest) [![Docker](https://ghcr-badge.egpl.dev/boernmaster/rustylox/latest_tag?trim=major&label=latest)](https://github.com/boernmaster/RustyLox/pkgs/container/rustylox) [![GitHub Stars](https://img.shields.io/github/stars/boernmaster/RustyLox?style=social)](https://github.com/boernmaster/RustyLox/stargazers) [![GitHub Forks](https://img.shields.io/github/forks/boernmaster/RustyLox?style=social)](https://github.com/boernmaster/RustyLox/network/members) [![GitHub Issues](https://img.shields.io/github/issues/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/issues) [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/pulls) [![Last Commit](https://img.shields.io/github/last-commit/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/commits/main) [![Contributors](https://img.shields.io/github/contributors/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/graphs/contributors)
 
 </div>
 
@@ -46,23 +46,23 @@ This project is a complete rewrite of [LoxBerry](https://github.com/mschlenstedt
 ```
 loxberry-rust/
 ├── crates/
-│   ├── loxberry-core/       - Common types and errors
-│   ├── loxberry-config/     - JSON config management
+│   ├── rustylox-core/       - Common types and errors
+│   ├── rustylox-config/     - JSON config management
 │   ├── miniserver-client/   - HTTP/UDP Miniserver communication
 │   ├── mqtt-gateway/        - MQTT Gateway with transformers
 │   ├── plugin-manager/      - Plugin lifecycle management
 │   ├── auth/                - JWT authentication & RBAC
-│   ├── database/            - PostgreSQL/SQLite abstraction
+│   ├── metrics/             - System info & metrics collection
 │   ├── email-manager/       - SMTP email notifications
 │   ├── task-scheduler/      - Cron-like task scheduling
 │   ├── backup-manager/      - Backup & restore
 │   ├── web-api/             - REST API with Axum
 │   ├── web-ui/              - Server-rendered web interface (Askama + HTMX)
-│   └── loxberry-daemon/     - Main orchestrator binary
+│   └── rustylox-daemon/     - Main orchestrator binary
 ├── static/                  - CSS and JavaScript assets
 ├── volumes/                 - Docker volume mounts
 │   ├── config/              - Configuration files
-│   ├── data/                - Data storage
+│   ├── data/                - Data storage (JSON file-backed)
 │   └── log/                 - Log files
 ├── sdk/                     - Perl/PHP/Bash SDK compatibility layer
 ├── Dockerfile               - Multi-stage build
@@ -93,7 +93,7 @@ loxberry-rust/
 - Install/uninstall/upgrade plugins from ZIP archives
 - Plugin database (JSON at `data/system/plugindatabase.json`)
 - MD5-based plugin identity (author + name + folder)
-- Lifecycle hooks with script execution (preroot, preinstall, postinstall, postroot, uninstall)
+- Lifecycle hooks with script execution (preroot, preinstall, preupgrade, postinstall, postupgrade, postroot, uninstall)
 - Directory isolation per plugin
 - Environment variable injection for full SDK compatibility
 
@@ -212,12 +212,12 @@ docker compose logs -f rustylox
 
 ### Access the Web UI
 
-Open **http://localhost:8080/** in your browser.
+Open **http://localhost/** in your browser.
 
-- Dashboard: http://localhost:8080/
-- MQTT Monitor: http://localhost:8080/mqtt/monitor
-- Miniserver Management: http://localhost:8080/miniserver
-- Settings: http://localhost:8080/settings
+- Dashboard: http://localhost/
+- MQTT Monitor: http://localhost/mqtt/monitor
+- Miniserver Management: http://localhost/miniserver
+- Settings: http://localhost/settings
 
 ## Configuration
 
@@ -273,30 +273,30 @@ MQTT subscriptions are configured in `volumes/config/system/mqtt_subscriptions.c
 ### Web UI
 ```bash
 # Open browser to:
-http://localhost:8080/
+http://localhost/
 
 # Test MQTT monitor real-time streaming:
-http://localhost:8080/mqtt/monitor
+http://localhost/mqtt/monitor
 ```
 
 ### REST API
 ```bash
 # Health check
-curl http://localhost:8080/health
+curl http://localhost/health
 
 # System status
-curl http://localhost:8080/api/system/status
+curl http://localhost/api/system/status
 
 # MQTT Gateway status
-curl http://localhost:8080/api/mqtt/status
+curl http://localhost/api/mqtt/status
 
 # Send command to Miniserver
-curl -X POST http://localhost:8080/api/miniserver/1/send \
+curl -X POST http://localhost/api/miniserver/1/send \
   -H "Content-Type: application/json" \
   -d '{"params": [{"V1": "100"}]}'
 
 # List plugins
-curl http://localhost:8080/api/plugins
+curl http://localhost/api/plugins
 ```
 
 ### MQTT Testing
@@ -316,7 +316,9 @@ echo '{"topic":"home/sensor1","value":"25.5"}' | nc -u localhost 11884
 The `docker-compose.yml` defines two services:
 
 1. **rustylox** - Main RustyLox application
-   - Port 8080: Web UI and REST API
+   - Port 80: Web UI and REST API
+   - Port 6066/udp: Miniserver UDP in
+   - Port 8090/udp: Miniserver UDP out
    - Port 11884/udp: MQTT UDP input
 
 2. **mosquitto** - Eclipse Mosquitto MQTT broker
@@ -343,7 +345,7 @@ cargo build
 cargo test
 
 # Run daemon locally
-LBHOMEDIR=/tmp/loxberry cargo run --bin loxberry-daemon
+LBHOMEDIR=/tmp/loxberry cargo run --bin rustylox-daemon
 ```
 
 ### Docker Build
@@ -358,19 +360,19 @@ docker compose down && docker compose up -d
 ### Project Structure
 Each crate is independent with its own Cargo.toml:
 
-- **loxberry-core**: Common types, errors, results
-- **loxberry-config**: JSON config parsing and management
+- **rustylox-core**: Common types, errors, results
+- **rustylox-config**: JSON config parsing and management
 - **miniserver-client**: HTTP/UDP client for Loxone Miniserver
 - **mqtt-gateway**: MQTT broker client, UDP listener, transformers
 - **plugin-manager**: ZIP extraction, database, lifecycle hooks
 - **auth**: JWT authentication and RBAC
-- **database**: PostgreSQL/SQLite abstraction layer
+- **metrics**: System info & metrics collection
 - **email-manager**: SMTP email notification system
 - **task-scheduler**: Cron-like task scheduling
 - **backup-manager**: Backup and restore functionality
 - **web-api**: REST API routes and handlers (Axum)
 - **web-ui**: Server-rendered templates and UI handlers (Askama)
-- **loxberry-daemon**: Main binary that orchestrates all services
+- **rustylox-daemon**: Main binary that orchestrates all services
 
 ## Differences from Original LoxBerry
 
