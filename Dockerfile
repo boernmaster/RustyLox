@@ -70,6 +70,8 @@ RUN apt-get update && apt-get install -y \
     php-curl \
     php-sqlite3 \
     bash \
+    dnsmasq \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # Create loxberry user
@@ -128,13 +130,19 @@ RUN cpanm --notest List::MoreUtils 2>/dev/null
 
 RUN chown -R loxberry:loxberry /opt/loxberry
 
+# Copy entrypoint script (runs as root, sets up dnsmasq, then drops to loxberry)
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose ports
 EXPOSE 8080
+EXPOSE 6066
+EXPOSE 53/udp
 
 # Set environment variables
 ENV LBHOMEDIR=/opt/loxberry
 ENV RUST_LOG=info
 
-USER loxberry
+# Note: USER is not set here; docker-entrypoint.sh drops to loxberry after root setup
 
-ENTRYPOINT ["/usr/local/bin/rustylox-daemon"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
