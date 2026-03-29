@@ -100,6 +100,7 @@ pub async fn config_submit(
         cloud_emu: form.cloud_emu.as_deref() == Some("on"),
         dnsmasq_enabled: form.dnsmasq_enabled.as_deref() == Some("on"),
         local_ip: form.local_ip.clone(),
+        miniserver_ip: String::new(), // runtime-only, re-resolved by daemon on next start
         send_mqtt: form.send_mqtt.as_deref() == Some("on"),
         mqtt_topic: form.mqtt_topic.clone(),
     };
