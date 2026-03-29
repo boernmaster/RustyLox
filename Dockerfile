@@ -130,6 +130,22 @@ RUN cpanm --notest List::MoreUtils 2>/dev/null
 
 RUN chown -R loxberry:loxberry /opt/loxberry
 
+# ── dnsmasq setup (done at build time as root) ────────────────────────────────
+# Create the drop-in config dir and make it writable by the loxberry group so
+# the running daemon can write weather redirect configs without root.
+RUN mkdir -p /etc/dnsmasq.d \
+    && chown root:loxberry /etc/dnsmasq.d \
+    && chmod 775 /etc/dnsmasq.d
+
+# Allow loxberry to restart dnsmasq without a password via sudo
+RUN echo "loxberry ALL=(root) NOPASSWD: /usr/sbin/service dnsmasq restart" \
+        > /etc/sudoers.d/loxberry-dnsmasq \
+    && chmod 440 /etc/sudoers.d/loxberry-dnsmasq
+
+# Write the base dnsmasq config: forward everything except the weather override
+RUN printf '# RustyLox dnsmasq – DNS redirect for Loxone Cloud Emulator\nno-resolv\nserver=8.8.8.8\nserver=8.8.4.4\nconf-dir=/etc/dnsmasq.d/,*.conf\n' \
+        > /etc/dnsmasq.conf
+
 # Copy entrypoint script (runs as root, sets up dnsmasq, then drops to loxberry)
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
