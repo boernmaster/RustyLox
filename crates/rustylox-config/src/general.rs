@@ -117,6 +117,10 @@ pub struct WeatherConfig {
     #[serde(rename = "LocalIp", default)]
     pub local_ip: String,
 
+    /// Resolved Miniserver IP for UDP push — not persisted, injected at runtime by the daemon.
+    #[serde(skip)]
+    pub miniserver_ip: String,
+
     // ── MQTT ───────────────────────────────────────────────────────────────
     /// Publish weather data to MQTT after each refresh
     #[serde(rename = "SendMqtt", default)]
@@ -161,6 +165,7 @@ impl Default for WeatherConfig {
             cloud_emu: false,
             dnsmasq_enabled: false,
             local_ip: String::new(),
+            miniserver_ip: String::new(),
             send_mqtt: false,
             mqtt_topic: "weather".to_string(),
         }
