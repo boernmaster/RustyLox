@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-03-29
+
+### Changed
+- CI pipeline now runs lint and tests on every push to `main` and on pull requests (not just tags)
+- arm64 Docker builds use a native `ubuntu-24.04-arm` runner instead of QEMU emulation
+- Docker build split into per-arch matrix jobs that push by digest, assembled by a manifest job
+- Per-platform GHA cache scopes prevent cross-architecture cache pollution
+- `lint` and `test` are now separate jobs; `cargo test --all` was previously missing
+- Removed `--release` flag from clippy (incorrect for linting)
+- Release job extracts the binary from the published Docker image instead of rebuilding from source
+- All runners pinned to `ubuntu-24.04` instead of `ubuntu-latest`
+
 ## [0.8.0] - 2026-03-28
 
 ### Changed
