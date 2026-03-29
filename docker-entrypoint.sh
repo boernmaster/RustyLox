@@ -8,4 +8,11 @@ dnsmasq --keep-in-foreground &
 echo "dnsmasq started (pid $!)"
 
 # ─── Run daemon as loxberry ───────────────────────────────────────────────────
-exec runuser -u loxberry -- /usr/local/bin/rustylox-daemon
+# Prefer runuser (requires real root), fall back to su, fall back to exec
+# directly when already running as loxberry (rootless container runtimes).
+if [ "$(id -u)" -eq 0 ]; then
+    exec runuser -u loxberry -- /usr/local/bin/rustylox-daemon
+else
+    echo "Warning: entrypoint not running as root, skipping privilege drop"
+    exec /usr/local/bin/rustylox-daemon
+fi

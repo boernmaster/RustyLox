@@ -71,6 +71,7 @@ RUN apt-get update && apt-get install -y \
     php-sqlite3 \
     bash \
     dnsmasq \
+    procps \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
@@ -137,8 +138,8 @@ RUN mkdir -p /etc/dnsmasq.d \
     && chown root:loxberry /etc/dnsmasq.d \
     && chmod 775 /etc/dnsmasq.d
 
-# Allow loxberry to restart dnsmasq without a password via sudo
-RUN echo "loxberry ALL=(root) NOPASSWD: /usr/sbin/service dnsmasq restart" \
+# Allow loxberry to send SIGHUP to dnsmasq without a password via sudo
+RUN echo "loxberry ALL=(root) NOPASSWD: /usr/bin/pkill -HUP dnsmasq" \
         > /etc/sudoers.d/loxberry-dnsmasq \
     && chmod 440 /etc/sudoers.d/loxberry-dnsmasq
 

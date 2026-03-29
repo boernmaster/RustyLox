@@ -555,14 +555,16 @@ impl WeatherService {
         std::fs::write("/etc/dnsmasq.d/rustylox-weather.conf", &content)
             .map_err(|e| format!("Cannot write dnsmasq config: {}", e))?;
 
-        // Reload dnsmasq config via SIGHUP (non-fatal if dnsmasq isn't running)
+        // Reload dnsmasq config via SIGHUP (non-fatal if dnsmasq isn't running).
+        // dnsmasq is started directly in docker-entrypoint.sh (not via a service
+        // manager), so we send SIGHUP via sudo+pkill rather than `service restart`.
         let status = std::process::Command::new("sudo")
-            .args(["service", "dnsmasq", "restart"])
+            .args(["pkill", "-HUP", "dnsmasq"])
             .status();
         match status {
-            Ok(s) if s.success() => info!("dnsmasq restarted successfully"),
-            Ok(s) => warn!("dnsmasq restart exited with status {}", s),
-            Err(e) => warn!("Could not restart dnsmasq: {}", e),
+            Ok(s) if s.success() => info!("dnsmasq reloaded (SIGHUP)"),
+            Ok(s) => warn!("pkill -HUP dnsmasq exited with status {}", s),
+            Err(e) => warn!("Could not send SIGHUP to dnsmasq: {}", e),
         }
         Ok(())
     }
