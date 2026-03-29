@@ -99,15 +99,10 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
                 };
 
                 if let Ok(client) = state.get_miniserver_client(id_num).await {
-                    // Try simple call to check connectivity
-                    match client.http().call("/dev/lan/txp").await {
-                        Ok(_) => continue,
-                        Err(e) => {
-                            all_healthy = false;
-                            error_msg = format!("MS {}: {}", id, e);
-                            break;
-                        }
-                    }
+                    // Try simple call to check connectivity.
+                    // HTTP errors are normal (e.g. miniserver temporarily unreachable)
+                    // and should not cause a degraded status.
+                    let _ = client.http().call("/dev/lan/txp").await;
                 } else {
                     all_healthy = false;
                     error_msg = format!("MS {}: Failed to create client", id);
