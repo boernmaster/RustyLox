@@ -109,7 +109,18 @@ async fn main() -> Result<()> {
     // Initialize weather service
     let weather_cfg = {
         let cfg = config.read().await;
-        cfg.weather.clone()
+        let mut w = cfg.weather.clone();
+        // Resolve the miniserver IP from the Miniserver config map so UDP push works.
+        if let Some(ms) = cfg.miniserver.get(&w.miniserver_key) {
+            if !ms.ipaddress.is_empty() {
+                w.miniserver_ip = ms.ipaddress.clone();
+                info!(
+                    "Weather UDP push target: {}:{}",
+                    w.miniserver_ip, w.miniserver_udp_port
+                );
+            }
+        }
+        w
     };
     let weather_service = Arc::new(WeatherService::new(weather_cfg));
 
