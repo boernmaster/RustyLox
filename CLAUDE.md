@@ -697,24 +697,14 @@ docker compose build
 
 ### Workflows
 
-**test.yml** - Continuous Integration:
-- Runs on every push and PR
-- `cargo fmt --check`
-- `cargo clippy`
-- `cargo test --all`
+Everything lives in a single **`ci.yml`** with these jobs:
 
-**security-scan.yml** - Security Scanning:
-- `cargo audit` via rustsec (continue-on-error, non-blocking)
-
-**docker-publish.yml** - Docker Builds:
-- Triggered on tags (`v*.*.*`)
-- Multi-platform builds (amd64, arm64 via QEMU)
-- Pushes to `ghcr.io/boernmaster/rustylox`
-
-**release.yml** - GitHub Release:
-- Triggered on tags (`v*.*.*`)
-- Builds x86_64 binary
-- Creates GitHub Release with release notes
+- **lint** — `cargo fmt --check` + `cargo clippy` (push/PR to main)
+- **test** — `cargo test --all` (push/PR to main)
+- **security-scan** — `cargo audit` via rustsec (continue-on-error, non-blocking)
+- **docker-build** — Multi-platform builds (amd64, arm64 native runner), triggered on `v*.*.*` tags
+- **docker-manifest** — Merges platform digests and pushes to `ghcr.io/boernmaster/rustylox`
+- **release** — Extracts binary from published Docker image, creates GitHub Release with tarball
 
 ## Docker Development
 
