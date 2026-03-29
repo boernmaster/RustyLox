@@ -14,7 +14,7 @@ services:
     ports:
       - "80:80"           # Web UI / API + Virtual HTTP Input from Miniserver
       - "6066:6066"       # Loxone Cloud Emulator (weather.loxone.com)
-      - "53:53/udp"       # DNS (dnsmasq) – redirect weather.loxone.com to this host
+      - "53:5353/udp"     # DNS (dnsmasq) – redirect weather.loxone.com to this host
       - "8090:8090/udp"   # Miniserver Virtual UDP Output receiver
       - "11884:11884/udp" # MQTT UDP input
     volumes:
