@@ -10,6 +10,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use tracing::{debug, info, warn};
 
 use crate::AppState;
 
@@ -208,13 +209,20 @@ pub async fn loxone_forecast(
     State(state): State<AppState>,
     Query(params): Query<ForecastQuery>,
 ) -> Response {
+    info!("loxone_forecast: handler entered, coord={:?}", params.coord);
+
     match &state.weather_service {
-        None => (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Weather service not initialised",
-        )
-            .into_response(),
+        None => {
+            warn!("loxone_forecast: weather_service is None");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Weather service not initialised",
+            )
+                .into_response()
+        }
         Some(svc) => {
+            info!("loxone_forecast: weather_service is Some");
+
             // If coord query param is set, honour it (override config)
             if let Some(coord) = &params.coord {
                 let parts: Vec<&str> = coord.split(',').collect();
@@ -223,7 +231,9 @@ pub async fn loxone_forecast(
                         parts[0].trim().parse::<f64>(),
                         parts[1].trim().parse::<f64>(),
                     ) {
+                        debug!("loxone_forecast: acquiring config write lock");
                         let mut cfg = svc.config.write().await;
+                        debug!("loxone_forecast: acquired config write lock");
                         if cfg.latitude == 0.0 || cfg.longitude == 0.0 {
                             cfg.latitude = lat;
                             cfg.longitude = lon;
@@ -238,25 +248,40 @@ pub async fn loxone_forecast(
             }
 
             // Ensure we have data
+            debug!("loxone_forecast: acquiring data read lock (1)");
             {
                 let data = svc.data.read().await;
+                debug!("loxone_forecast: data is_none={}", data.is_none());
                 if data.is_none() {
                     drop(data);
+                    info!("loxone_forecast: no data, calling refresh()");
                     if let Err(e) = svc.refresh().await {
+                        warn!("loxone_forecast: refresh failed: {}", e);
                         return (
                             StatusCode::BAD_GATEWAY,
                             format!("Weather fetch failed: {}", e),
                         )
                             .into_response();
                     }
+                    info!("loxone_forecast: refresh() done");
                 }
             }
 
+            debug!("loxone_forecast: acquiring data read lock (2)");
             let data_guard = svc.data.read().await;
+            debug!("loxone_forecast: got data guard");
             match data_guard.as_ref() {
-                None => (StatusCode::NO_CONTENT, "No weather data available").into_response(),
+                None => {
+                    warn!("loxone_forecast: still no data after refresh");
+                    (StatusCode::NO_CONTENT, "No weather data available").into_response()
+                }
                 Some(data) => {
+                    info!(
+                        "loxone_forecast: building response, hourly rows={}",
+                        data.hourly.len()
+                    );
                     let body = svc.loxone_emu_response(data);
+                    info!("loxone_forecast: body built, {} bytes", body.len());
                     (
                         StatusCode::OK,
                         [(

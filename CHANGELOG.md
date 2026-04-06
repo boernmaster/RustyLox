@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.10] - 2026-04-06
+
+### Fixed
+- Add detailed tracing/debug logging to `loxone_forecast` handler to diagnose empty-reply issue on port 6066
+- Upstream fix: correct hourly weather rows showing hour "00" for all entries (use NaiveDateTime instead of NaiveDate)
+- Upstream fix: add `shortwave_radiation` and `dew_point` fields to weather data
+
 ## [0.8.9] - 2026-04-06
 
 ### Fixed
