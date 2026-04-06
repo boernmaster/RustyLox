@@ -205,10 +205,8 @@ jobs:
           body: |
             ## RustyLox ${{ steps.version.outputs.version }}
 
-            ### Fixed
-            - Add detailed tracing logs to `loxone_forecast` handler to diagnose empty-reply issue on port 6066
-            - Upstream fix: correct hourly rows showing hour "00" for all entries (NaiveDate → NaiveDateTime)
-            - Upstream fix: add `shortwave_radiation` and `dew_point` fields to weather data
+            ### Changed
+            - Weather config UI: add warning banner that the cloud emulator is Miniserver Gen 1 only
 
             ### Installation
             ```bash

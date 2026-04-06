@@ -183,6 +183,13 @@
             <div class="card" style="margin-bottom:1.5rem;">
                 <div class="card-header"><h2 style="margin:0;">Loxone Cloud Emulator</h2></div>
                 <div class="card-body">
+                    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:flex-start;gap:0.6rem;">
+                        <span style="font-size:1.1rem;">⚠️</span>
+                        <span><strong>Miniserver Gen 1 only.</strong> The cloud emulator uses the legacy
+                        <code>weather.loxone.com:6066</code> weather protocol which is only supported by
+                        Loxone Miniserver Generation 1. Gen 2 and newer Miniservers use a different
+                        weather API and are not compatible with this feature.</span>
+                    </div>
                     <p class="text-muted" style="margin-bottom:1rem;">
                         Serves the <code>weather.loxone.com:6066</code> REST API format so the
                         Miniserver can poll RustyLox instead of the real Loxone cloud.
