@@ -11,7 +11,9 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use web_api::{create_emu_router, create_router, weather::WeatherService, AppState, MiniserverEvent};
+use web_api::{
+    create_emu_router, create_router, weather::WeatherService, AppState, MiniserverEvent,
+};
 
 /// Default UDP port for receiving Miniserver Virtual UDP Output data.
 /// Users point their Miniserver Virtual Output to `/dev/udp/<RustyLox-IP>/8090`.
