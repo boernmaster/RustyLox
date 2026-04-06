@@ -206,8 +206,8 @@ jobs:
             ## RustyLox ${{ steps.version.outputs.version }}
 
             ### Fixed
-            - dnsmasq now binds all interfaces (`listen-address=0.0.0.0` + `bind-interfaces`) so Docker port mapping host:53→container:5353 works correctly
-            - Added TCP port mapping `53:5353/tcp` to docker-compose.yml for DNS over TCP
+            - Port 6066 (Loxone Cloud Emulator) no longer requires authentication — the Miniserver connects without credentials
+            - Replaced full app router on port 6066 with a minimal `create_emu_router` serving only `/forecast/` without auth middleware
 
             ### Installation
             ```bash

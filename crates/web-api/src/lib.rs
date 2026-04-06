@@ -222,3 +222,14 @@ pub fn create_router(state: AppState) -> Router {
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
 }
+
+/// Minimal router for the Loxone Cloud Emulator on port 6066.
+/// No authentication — the Miniserver connects here without credentials.
+pub fn create_emu_router(state: AppState) -> Router {
+    Router::new()
+        .route("/forecast/", get(routes::weather::loxone_forecast))
+        .route("/forecast", get(routes::weather::loxone_forecast))
+        .with_state(state)
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http())
+}

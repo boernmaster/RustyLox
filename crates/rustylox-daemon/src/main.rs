@@ -11,7 +11,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use web_api::{create_router, weather::WeatherService, AppState, MiniserverEvent};
+use web_api::{create_emu_router, create_router, weather::WeatherService, AppState, MiniserverEvent};
 
 /// Default UDP port for receiving Miniserver Virtual UDP Output data.
 /// Users point their Miniserver Virtual Output to `/dev/udp/<RustyLox-IP>/8090`.
@@ -317,8 +317,7 @@ async fn main() -> Result<()> {
     match tokio::net::TcpListener::bind(emu_addr).await {
         Ok(emu_listener) => {
             info!("Loxone Cloud Emulator listening on port 6066");
-            let app_emu =
-                create_router(state.clone()).merge(web_ui::create_ui_router(state.clone()));
+            let app_emu = create_emu_router(state.clone());
             tokio::spawn(async move {
                 if let Err(e) = axum::serve(emu_listener, app_emu).await {
                     error!("Port 6066 server error: {}", e);
