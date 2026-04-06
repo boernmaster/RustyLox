@@ -206,8 +206,10 @@ jobs:
             ## RustyLox ${{ steps.version.outputs.version }}
 
             ### Fixed
-            - Port 6066 (Loxone Cloud Emulator) no longer requires authentication — the Miniserver connects without credentials
-            - Replaced full app router on port 6066 with a minimal `create_emu_router` serving only `/forecast/` without auth middleware
+            - Port 6066 (Loxone Cloud Emulator) no longer requires authentication
+            - dnsmasq binds all interfaces for correct Docker port mapping
+            - dnsmasq config written immediately on weather settings save
+            - Both weather.loxone.com and weather-beta.loxone.com redirected
 
             ### Installation
             ```bash
