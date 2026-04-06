@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.7] - 2026-04-06
+
+### Fixed
+- Port 6066 (Loxone Cloud Emulator) no longer requires authentication — the Miniserver connects without credentials
+- Replaced full app router on port 6066 with a minimal `create_emu_router` serving only `/forecast/` without auth middleware
+
 ## [0.8.6] - 2026-04-06
 
 ### Fixed
@@ -320,7 +326,8 @@ This is the first stable release of RustyLox, a complete rewrite of LoxBerry in 
 
 ---
 
-[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v0.8.6...HEAD
+[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v0.8.7...HEAD
+[0.8.7]: https://github.com/boernmaster/RustyLox/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/boernmaster/RustyLox/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/boernmaster/RustyLox/compare/v0.8.4...v0.8.5
 [0.7.0]: https://github.com/boernmaster/RustyLox/releases/tag/v0.7.0
