@@ -205,8 +205,9 @@ jobs:
           body: |
             ## RustyLox ${{ steps.version.outputs.version }}
 
-            ### What's New
-            - See commit history for details
+            ### Fixed
+            - dnsmasq config now includes `address=/weather-beta.loxone.com/<ip>` alongside `weather.loxone.com` so both Loxone weather endpoints are redirected to this host
+            - dnsmasq config is now written immediately when weather settings are saved via the UI, not only during the next weather refresh cycle
 
             ### Installation
             ```bash

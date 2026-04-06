@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- dnsmasq config now includes `address=/weather-beta.loxone.com/<ip>` alongside `weather.loxone.com` so both Loxone weather endpoints are redirected correctly
+- dnsmasq config is now written immediately when weather settings are saved via the UI (previously only written on next weather refresh cycle)
+
 ## [0.8.2] - 2026-03-29
 
 ### Changed
@@ -310,7 +314,8 @@ This is the first stable release of RustyLox, a complete rewrite of LoxBerry in 
 
 ---
 
-[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/boernmaster/RustyLox/compare/v0.8.4...v0.8.5
 [0.7.0]: https://github.com/boernmaster/RustyLox/releases/tag/v0.7.0
 [0.6.22]: https://github.com/boernmaster/RustyLox/releases/tag/v0.6.22
 [1.3.0]: https://github.com/boernmaster/RustyLox/releases/tag/v1.3.0

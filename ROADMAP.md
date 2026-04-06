@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Project Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
-![Version](https://img.shields.io/badge/Current-v0.7.0-blue)
+![Version](https://img.shields.io/badge/Current-v0.8.2-blue)
 
 </div>
 
@@ -15,7 +15,7 @@ Transform LoxBerry into a modern, secure, and scalable smart home platform built
 
 ## Current State
 
-RustyLox is production-ready. The full core platform is implemented and stable:
+RustyLox is production-ready at **v0.8.2**. The full core platform is implemented and stable:
 
 | Area | Status | Details |
 |------|--------|---------|
@@ -40,6 +40,8 @@ RustyLox is production-ready. The full core platform is implemented and stable:
 | 1.3.0 | 2026-03 | Monitoring, task scheduler, email, JWT/RBAC security hardening |
 | 0.6.x | 2026-03 | Miniserver backup with SSE progress, log viewer, CI improvements |
 | 0.7.0 | 2026-03 | Admin UI, system update page, email/task history, CSS polish, accessibility |
+| 0.8.0 | 2026-03 | MQTT nav refactor; Incoming Overview & MQTT Finder as tabs on /mqtt/config |
+| 0.8.2 | 2026-03 | Native weather service, CI multi-arch builds, dnsmasq DNS redirect |
 
 ---
 
