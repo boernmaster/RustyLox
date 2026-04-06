@@ -206,8 +206,8 @@ jobs:
             ## RustyLox ${{ steps.version.outputs.version }}
 
             ### Fixed
-            - dnsmasq config now includes `address=/weather-beta.loxone.com/<ip>` alongside `weather.loxone.com` so both Loxone weather endpoints are redirected to this host
-            - dnsmasq config is now written immediately when weather settings are saved via the UI, not only during the next weather refresh cycle
+            - dnsmasq now binds all interfaces (`listen-address=0.0.0.0` + `bind-interfaces`) so Docker port mapping host:53→container:5353 works correctly
+            - Added TCP port mapping `53:5353/tcp` to docker-compose.yml for DNS over TCP
 
             ### Installation
             ```bash

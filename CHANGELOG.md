@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.6] - 2026-04-06
+
+### Fixed
+- dnsmasq now binds all interfaces (`listen-address=0.0.0.0` + `bind-interfaces`) so Docker port mapping host:53→container:5353 works correctly
+- Added TCP port mapping `53:5353/tcp` to docker-compose.yml for DNS over TCP
+
 ### Fixed
 - dnsmasq config now includes `address=/weather-beta.loxone.com/<ip>` alongside `weather.loxone.com` so both Loxone weather endpoints are redirected correctly
 - dnsmasq config is now written immediately when weather settings are saved via the UI (previously only written on next weather refresh cycle)
@@ -314,7 +320,8 @@ This is the first stable release of RustyLox, a complete rewrite of LoxBerry in 
 
 ---
 
-[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/boernmaster/RustyLox/compare/v0.8.6...HEAD
+[0.8.6]: https://github.com/boernmaster/RustyLox/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/boernmaster/RustyLox/compare/v0.8.4...v0.8.5
 [0.7.0]: https://github.com/boernmaster/RustyLox/releases/tag/v0.7.0
 [0.6.22]: https://github.com/boernmaster/RustyLox/releases/tag/v0.6.22
