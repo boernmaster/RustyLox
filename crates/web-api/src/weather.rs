@@ -688,7 +688,11 @@ fn build_udp_payload(data: &WeatherData) -> String {
         parts.push(format!("hfc{}_prec@{:.1}", i, h.precipitation));
         parts.push(format!("hfc{}_pop@{}", i, h.precipitation_probability));
         parts.push(format!("hfc{}_we_code@{}", i, h.weather_code));
-        parts.push(format!("hfc{}_we_des@{}", i, wmo_description(h.weather_code, true)));
+        parts.push(format!(
+            "hfc{}_we_des@{}",
+            i,
+            wmo_description(h.weather_code, true)
+        ));
         parts.push(format!("hfc{}_we_icon@{}", i, h.loxone_code));
     }
 

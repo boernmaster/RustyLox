@@ -206,9 +206,9 @@ jobs:
             ## RustyLox ${{ steps.version.outputs.version }}
 
             ### Fixed
-            - `/forecast/` endpoint (Loxone Cloud Emulator) now returns data correctly
-            - Replaced `Response::builder().unwrap()` with safe `into_response()` in loxone_forecast handler
-            - Port 6066 emu router includes `/ping` diagnostic route
+            - Add detailed tracing logs to `loxone_forecast` handler to diagnose empty-reply issue on port 6066
+            - Upstream fix: correct hourly rows showing hour "00" for all entries (NaiveDate → NaiveDateTime)
+            - Upstream fix: add `shortwave_radiation` and `dew_point` fields to weather data
 
             ### Installation
             ```bash
