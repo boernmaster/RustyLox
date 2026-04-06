@@ -254,14 +254,18 @@ pub async fn loxone_forecast(
 
             let data_guard = svc.data.read().await;
             match data_guard.as_ref() {
-                None => (StatusCode::NO_CONTENT, "No weather data").into_response(),
+                None => (StatusCode::NO_CONTENT, "No weather data available").into_response(),
                 Some(data) => {
-                    let body = svc.loxone_emu_response(data); // format=2 not used by current Loxone FW
-                    axum::response::Response::builder()
-                        .status(StatusCode::OK)
-                        .header("Content-Type", "text/plain; charset=utf-8")
-                        .body(axum::body::Body::from(body))
-                        .unwrap()
+                    let body = svc.loxone_emu_response(data);
+                    (
+                        StatusCode::OK,
+                        [(
+                            axum::http::header::CONTENT_TYPE,
+                            "text/plain; charset=utf-8",
+                        )],
+                        body,
+                    )
+                        .into_response()
                 }
             }
         }

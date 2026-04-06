@@ -206,10 +206,9 @@ jobs:
             ## RustyLox ${{ steps.version.outputs.version }}
 
             ### Fixed
-            - Port 6066 (Loxone Cloud Emulator) no longer requires authentication
-            - dnsmasq binds all interfaces for correct Docker port mapping
-            - dnsmasq config written immediately on weather settings save
-            - Both weather.loxone.com and weather-beta.loxone.com redirected
+            - `/forecast/` endpoint (Loxone Cloud Emulator) now returns data correctly
+            - Replaced `Response::builder().unwrap()` with safe `into_response()` in loxone_forecast handler
+            - Port 6066 emu router includes `/ping` diagnostic route
 
             ### Installation
             ```bash

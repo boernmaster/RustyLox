@@ -229,6 +229,7 @@ pub fn create_emu_router(state: AppState) -> Router {
     Router::new()
         .route("/forecast/", get(routes::weather::loxone_forecast))
         .route("/forecast", get(routes::weather::loxone_forecast))
+        .route("/ping", get(|| async { "pong" }))
         .with_state(state)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
