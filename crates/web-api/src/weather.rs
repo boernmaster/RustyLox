@@ -62,6 +62,8 @@ pub struct CurrentWeather {
     pub uv_index: f64,
     /// metres
     pub visibility: f64,
+    /// °C dew point (calculated from temp + humidity)
+    pub dew_point: f64,
     /// Loxone picto code (1-25)
     pub loxone_code: u8,
     /// Sunrise ISO datetime
@@ -101,6 +103,8 @@ pub struct HourlyForecast {
     pub wind_gusts: f64,
     pub pressure: f64,
     pub visibility: f64,
+    /// W/m² (from Open-Meteo shortwave_radiation)
+    pub shortwave_radiation: f64,
     pub loxone_code: u8,
 }
 
@@ -135,6 +139,7 @@ struct OpenMeteoCurrent {
     temperature_2m: f64,
     apparent_temperature: f64,
     relative_humidity_2m: u8,
+    dew_point_2m: f64,
     surface_pressure: f64,
     wind_speed_10m: f64,
     wind_direction_10m: u16,
@@ -174,6 +179,7 @@ struct OpenMeteoHourly {
     wind_gusts_10m: Vec<f64>,
     surface_pressure: Vec<f64>,
     visibility: Vec<f64>,
+    shortwave_radiation: Vec<f64>,
 }
 
 // ─── WeatherService ───────────────────────────────────────────────────────────
@@ -218,15 +224,15 @@ impl WeatherService {
             "https://api.open-meteo.com/v1/forecast?\
              latitude={lat}&longitude={lon}\
              &current=temperature_2m,apparent_temperature,relative_humidity_2m,\
-             surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,\
-             precipitation,weather_code,is_day,uv_index,visibility\
+             dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,\
+             wind_gusts_10m,precipitation,weather_code,is_day,uv_index,visibility\
              &daily=weather_code,temperature_2m_max,temperature_2m_min,\
              precipitation_sum,precipitation_probability_max,wind_speed_10m_max,\
              uv_index_max,sunrise,sunset\
              &hourly=temperature_2m,apparent_temperature,relative_humidity_2m,\
              precipitation,precipitation_probability,weather_code,\
              wind_speed_10m,wind_direction_10m,wind_gusts_10m,\
-             surface_pressure,visibility\
+             surface_pressure,visibility,shortwave_radiation\
              &timezone=auto&forecast_days=7&wind_speed_unit=kmh",
             lat = cfg.latitude,
             lon = cfg.longitude,
@@ -293,6 +299,7 @@ impl WeatherService {
             temperature: cur.temperature_2m,
             feels_like: cur.apparent_temperature,
             humidity: cur.relative_humidity_2m,
+            dew_point: cur.dew_point_2m,
             pressure: cur.surface_pressure,
             wind_speed: cur.wind_speed_10m,
             wind_direction: cur.wind_direction_10m,
@@ -388,6 +395,12 @@ impl WeatherService {
                     wind_gusts: raw.hourly.wind_gusts_10m.get(i).copied().unwrap_or(0.0),
                     pressure: raw.hourly.surface_pressure.get(i).copied().unwrap_or(0.0),
                     visibility: raw.hourly.visibility.get(i).copied().unwrap_or(0.0),
+                    shortwave_radiation: raw
+                        .hourly
+                        .shortwave_radiation
+                        .get(i)
+                        .copied()
+                        .unwrap_or(0.0),
                     loxone_code: wmo_to_loxone(code, is_day),
                 }
             })
@@ -434,8 +447,7 @@ impl WeatherService {
             .connect(format!("{}:{}", ip, port))
             .map_err(|e| format!("UDP connect failed: {}", e))?;
 
-        let c = &data.current;
-        let payload = build_udp_payload(c);
+        let payload = build_udp_payload(data);
         socket
             .send(payload.as_bytes())
             .map_err(|e| format!("UDP send failed: {}", e))?;
@@ -523,11 +535,11 @@ impl WeatherService {
                 0.0f64
             };
             out.push_str(&format!(
-                "{};\t{};\t{};\t{:.1};\t{:.1};\t{:.0};\t{};\t{:.0};\t0;\t0;\t0;\t{:.1};\t{};\t{:.1};\t{:.0};\t{};\t0;\t{};\t0;\n",
+                "{};\t{};\t{};\t{:.2};\t{:.1};\t{:.0};\t{};\t{:.0};\t0;\t0;\t0;\t{:.1};\t{};\t{:.1};\t{:.0};\t{};\t0;\t{};\t{:.2};\n",
                 date_str,
                 day_abbr,
                 hour_str,
-                h.temperature,
+                h.temperature,      // %1.2f – matches weather4lox datatoloxone.pl
                 h.feels_like,
                 h.wind_speed,
                 h.wind_direction,
@@ -538,6 +550,7 @@ impl WeatherService {
                 h.pressure,
                 h.humidity,
                 h.loxone_code,
+                h.shortwave_radiation, // W/m² – actual value, not 0
             ));
         }
 
@@ -601,14 +614,34 @@ impl WeatherService {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /// Build the UDP payload for Loxone virtual inputs.
+///
+/// Mirrors the full variable set that weather4lox datatoloxone.pl sends:
+/// - cur_* current conditions
+/// - dfc1..7 daily forecasts
+/// - hfc0..23 first 24 hourly forecasts
+///
 /// Format: "name@value; name2@value2; …"
-fn build_udp_payload(c: &CurrentWeather) -> String {
+fn build_udp_payload(data: &WeatherData) -> String {
+    let c = &data.current;
     let dir_des = wind_dir_abbr(c.wind_direction);
-    let we_des = c.weather_description.clone();
 
-    [
+    // Timestamp fields (Loxone epoch = 2009-01-01 00:00:00 UTC = 1230764400)
+    const LOX_EPOCH: i64 = 1230764400;
+    let lox_ts = c.timestamp - LOX_EPOCH;
+
+    let mut parts: Vec<String> = vec![
+        // ── Date / time ──────────────────────────────────────────────────
+        format!("cur_date@{}", c.timestamp),
+        format!("cur_date_lox@{}", lox_ts),
+        // ── Location ─────────────────────────────────────────────────────
+        format!("cur_loc_n@{}", data.location.name),
+        format!("cur_loc_lat@{:.4}", data.location.latitude),
+        format!("cur_loc_long@{:.4}", data.location.longitude),
+        format!("cur_loc_el@{:.0}", data.location.elevation),
+        // ── Current conditions ────────────────────────────────────────────
         format!("cur_tt@{:.1}", c.temperature),
         format!("cur_tt_fl@{:.1}", c.feels_like),
+        format!("cur_dp@{:.1}", c.dew_point),
         format!("cur_hu@{}", c.humidity),
         format!("cur_pr@{:.1}", c.pressure),
         format!("cur_w_sp@{:.1}", c.wind_speed),
@@ -617,13 +650,49 @@ fn build_udp_payload(c: &CurrentWeather) -> String {
         format!("cur_w_gu@{:.1}", c.wind_gusts),
         format!("cur_prec_1hr@{:.1}", c.precipitation),
         format!("cur_we_code@{}", c.weather_code),
-        format!("cur_we_des@{}", we_des),
+        format!("cur_we_des@{}", c.weather_description),
         format!("cur_we_icon@{}", c.loxone_code),
         format!("cur_uvi@{:.1}", c.uv_index),
-        format!("cur_vis@{:.0}", c.visibility / 1000.0), // metres → km
-    ]
-    .join("; ")
-        + "; "
+        format!("cur_vis@{:.1}", c.visibility / 1000.0), // metres → km
+        format!("cur_sun_r@{}", time_hm(&c.sunrise)),
+        format!("cur_sun_s@{}", time_hm(&c.sunset)),
+    ];
+
+    // ── Daily forecasts dfc1..7 ───────────────────────────────────────────
+    for (i, d) in data.daily.iter().take(7).enumerate() {
+        let n = i + 1;
+        parts.push(format!("dfc{}_date@{}", n, d.date));
+        parts.push(format!("dfc{}_tt@{:.1}", n, d.temp_mean));
+        parts.push(format!("dfc{}_tt_min@{:.1}", n, d.temp_min));
+        parts.push(format!("dfc{}_tt_max@{:.1}", n, d.temp_max));
+        parts.push(format!("dfc{}_we_code@{}", n, d.weather_code));
+        parts.push(format!("dfc{}_we_des@{}", n, d.weather_description));
+        parts.push(format!("dfc{}_we_icon@{}", n, d.loxone_code));
+        parts.push(format!("dfc{}_prec@{:.1}", n, d.precipitation_sum));
+        parts.push(format!("dfc{}_pop@{}", n, d.precipitation_probability));
+        parts.push(format!("dfc{}_w_sp@{:.1}", n, d.wind_speed_max));
+        parts.push(format!("dfc{}_uvi@{:.1}", n, d.uv_index_max));
+        parts.push(format!("dfc{}_sr@{}", n, time_hm(&d.sunrise)));
+        parts.push(format!("dfc{}_ss@{}", n, time_hm(&d.sunset)));
+    }
+
+    // ── Hourly forecasts hfc0..23 (first 24 hours) ────────────────────────
+    for (i, h) in data.hourly.iter().take(24).enumerate() {
+        parts.push(format!("hfc{}_tt@{:.1}", i, h.temperature));
+        parts.push(format!("hfc{}_tt_fl@{:.1}", i, h.feels_like));
+        parts.push(format!("hfc{}_hu@{}", i, h.humidity));
+        parts.push(format!("hfc{}_pr@{:.1}", i, h.pressure));
+        parts.push(format!("hfc{}_w_sp@{:.1}", i, h.wind_speed));
+        parts.push(format!("hfc{}_w_dir@{}", i, h.wind_direction));
+        parts.push(format!("hfc{}_w_gu@{:.1}", i, h.wind_gusts));
+        parts.push(format!("hfc{}_prec@{:.1}", i, h.precipitation));
+        parts.push(format!("hfc{}_pop@{}", i, h.precipitation_probability));
+        parts.push(format!("hfc{}_we_code@{}", i, h.weather_code));
+        parts.push(format!("hfc{}_we_des@{}", i, wmo_description(h.weather_code, true)));
+        parts.push(format!("hfc{}_we_icon@{}", i, h.loxone_code));
+    }
+
+    parts.join("; ") + "; "
 }
 
 /// Convert WMO weather code to Loxone picto code (1-25).
