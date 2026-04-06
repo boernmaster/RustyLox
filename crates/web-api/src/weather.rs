@@ -14,7 +14,7 @@
 use std::net::UdpSocket;
 use std::sync::Arc;
 
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Utc};
 use rustylox_config::WeatherConfig;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -512,7 +512,7 @@ impl WeatherService {
                 Some(d) => (
                     d.format("%d.%m.%Y").to_string(),
                     d.format("%a").to_string(),
-                    d.format("%H").to_string(),
+                    d.format("%H").to_string(), // correct: NaiveDateTime has hour info
                 ),
                 None => ("01.01.2009".into(), "Mon".into(), "00".into()),
             };
@@ -523,7 +523,7 @@ impl WeatherService {
                 0.0f64
             };
             out.push_str(&format!(
-                "{};\t{};\t{};\t{:.2};\t{:.1};\t{:.0};\t{};\t{:.0};\t0;\t0;\t0;\t{:.1};\t{};\t{:.1};\t{:.0};\t{};\t0;\t{};\t0;\n",
+                "{};\t{};\t{};\t{:.1};\t{:.1};\t{:.0};\t{};\t{:.0};\t0;\t0;\t0;\t{:.1};\t{};\t{:.1};\t{:.0};\t{};\t0;\t{};\t0;\n",
                 date_str,
                 day_abbr,
                 hour_str,
@@ -746,10 +746,9 @@ fn parse_iso_dt(s: &str) -> Option<DateTime<Utc>> {
         .ok()
 }
 
-fn parse_iso_dt_naive(s: &str) -> Option<NaiveDate> {
-    // "2024-03-19T14:00" → NaiveDate
-    s.get(..10)
-        .and_then(|d| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+fn parse_iso_dt_naive(s: &str) -> Option<chrono::NaiveDateTime> {
+    // "2024-03-19T14:00" → NaiveDateTime (preserves hour info for emulator rows)
+    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M").ok()
 }
 
 /// Extract "HH:MM" from an ISO datetime string like "2024-03-19T06:32".
