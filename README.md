@@ -123,41 +123,94 @@ loxberry-rust/
 
 ### REST API
 
-#### Configuration
-- `GET /api/config/general` - Get general.json
-- `PUT /api/config/general` - Update configuration
+Full interactive docs are available at `/api-docs` in the web UI.
 
-#### Miniserver
-- `GET /api/miniserver` - List all Miniservers
-- `GET /api/miniserver/:id` - Get Miniserver details
-- `POST /api/miniserver/:id/send` - Send HTTP command
-- `POST /api/miniserver/:id/get` - Get values
-- `POST /api/miniserver/:id/udp` - Send UDP command
-- `GET /api/miniserver/:id/status` - Check connection status
-
-#### Plugins
-- `GET /api/plugins` - List all installed plugins
-- `GET /api/plugins/:md5` - Get plugin details
-- `POST /api/plugins/install` - Install plugin from ZIP
-- `DELETE /api/plugins/:md5` - Uninstall plugin
-- `POST /api/plugins/:md5/upgrade` - Upgrade plugin
-
-#### MQTT Gateway
-- `GET /api/mqtt/status` - Gateway status (connected, subscriptions, transformers)
-- `POST /api/mqtt/subscriptions/reload` - Hot-reload subscriptions
-- `POST /api/mqtt/transformers/reload` - Hot-reload transformers
-
-#### Authentication
-- `POST /api/auth/login` - Login, receive JWT
-- `POST /api/auth/logout` - Logout
-- `GET /api/users` - List users (admin)
-- `POST /api/users` - Create user (admin)
+#### Health & Metrics
+- `GET /health` — Service health check
+- `GET /api/health/detail` — Per-component health (config, MQTT, Miniserver, disk, CPU, memory)
+- `GET /metrics` — Prometheus metrics
+- `GET /api/system/metrics` — System metrics as JSON
 
 #### System
-- `GET /health` - Health check
-- `GET /api/system/status` - System status
-- `POST /api/backup/create` - Create backup
-- `GET /api/backup/list` - List backups
+- `GET /api/system/status` — System status and version
+- `GET /api/system/log-level` — Get current log level
+- `PUT /api/system/log-level` — Set log level
+- `GET /api/system/update/check` — Check for a newer GitHub release
+- `POST /api/system/update/apply` — Apply pending update
+
+#### Configuration
+- `GET /api/config/general` — Get general.json
+- `PUT /api/config/general` — Update configuration
+
+#### Miniserver
+- `GET /api/miniserver` — List all Miniservers
+- `GET /api/miniserver/:id` — Get Miniserver details
+- `GET /api/miniserver/:id/status` — Check connection status
+- `POST /api/miniserver/:id/send` — Send HTTP command
+- `POST /api/miniserver/:id/get` — Get values
+
+#### Plugins
+- `GET /api/plugins` — List all installed plugins
+- `GET /api/plugins/:md5` — Get plugin details
+- `POST /api/plugins/install` — Install plugin from ZIP
+- `DELETE /api/plugins/:md5` — Uninstall plugin
+- `POST /api/plugins/:md5/upgrade` — Upgrade plugin
+- `GET /api/plugins/:folder/daemon/status` — Plugin daemon status
+- `POST /api/plugins/:folder/daemon/start|stop|restart` — Control plugin daemon
+
+#### MQTT Gateway
+- `GET /api/mqtt/status` — Gateway status
+- `GET /api/mqtt/relayed-topics` — Relay cache entries
+- `GET /api/mqtt/finder` — Recent messages per topic (MQTT Finder)
+- `POST /api/mqtt/subscriptions/reload` — Hot-reload subscriptions
+- `POST /api/mqtt/transformers/reload` — Hot-reload transformers
+- `GET /api/mqtt/stats` — Message statistics
+- `POST /api/mqtt/stats/reset` — Reset statistics
+
+#### Backup
+- `GET /api/backup` — List backups
+- `POST /api/backup/create` — Create backup
+- `GET /api/backup/:name/download` — Download backup
+- `POST /api/backup/:name/restore` — Restore from backup
+- `DELETE /api/backup/:name` — Delete backup
+- `GET|PUT /api/backup/schedule` — Backup schedule config
+
+#### Scheduled Tasks
+- `GET /api/tasks` — List scheduled tasks
+- `POST /api/tasks` — Create task
+- `PUT /api/tasks/:id` — Update task
+- `DELETE /api/tasks/:id` — Delete task
+- `POST /api/tasks/:id/run` — Trigger task immediately
+- `GET /api/tasks/history` — Execution history
+
+#### Network Diagnostics
+- `POST /api/network/ping` — Ping a host
+- `GET /api/network/interfaces` — List interfaces with IP/MAC/status
+- `POST /api/network/test/connection` — TCP connectivity test
+- `POST /api/network/test/miniserver` — Test Miniserver connectivity
+- `POST /api/network/test/mqtt` — Test MQTT broker connectivity
+
+#### Email
+- `GET|PUT /api/email/config` — SMTP configuration
+- `POST /api/email/test` — Send test email
+- `POST /api/email/send` — Send notification email
+- `GET /api/email/history` — Send history
+
+#### Weather
+- `GET /api/weather/current|forecast|hourly|all` — Weather data
+- `GET|PUT /api/weather/config` — Weather service configuration
+- `POST /api/weather/refresh` — Force data refresh
+
+#### Authentication & Users
+- `POST /api/auth/login` — Login, receive JWT cookie
+- `POST /api/auth/logout` — Logout
+- `GET /api/auth/me` — Current user info
+- `GET|POST /api/auth/keys` — API key management
+- `DELETE /api/auth/keys/:id` — Revoke API key
+- `GET /api/auth/audit` — Audit log
+- `GET|POST /api/users` — User management (admin)
+- `DELETE /api/users/:id` — Delete user (admin)
+- `PUT /api/users/:id/password` — Change password
 
 ## Quick Start
 

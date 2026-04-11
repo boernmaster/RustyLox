@@ -10,7 +10,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, error};
 
 use crate::AppState;
 
@@ -28,6 +28,7 @@ pub struct WeatherStatusResponse {
 
 /// GET /api/weather/status – is the service enabled and when was data last fetched?
 pub async fn status(State(state): State<AppState>) -> impl IntoResponse {
+    debug!("GET /api/weather/status");
     if let Some(svc) = &state.weather_service {
         let cfg = svc.config.read().await;
         let data = svc.data.read().await;
@@ -145,6 +146,10 @@ pub async fn update_config(
     State(state): State<AppState>,
     Json(new_cfg): Json<rustylox_config::WeatherConfig>,
 ) -> Response {
+    info!(
+        "Weather config update requested: location='{}' lat={} lon={} enabled={}",
+        new_cfg.location_name, new_cfg.latitude, new_cfg.longitude, new_cfg.enabled
+    );
     // Save to GeneralConfig
     {
         let mut config = state.config.write().await;
@@ -155,6 +160,7 @@ pub async fn update_config(
         .save_general(&*state.config.read().await)
         .await
     {
+        error!("Failed to save weather config: {}", e);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Failed to save config: {}", e),
@@ -167,20 +173,31 @@ pub async fn update_config(
         svc.update_config(new_cfg).await;
     }
 
+    info!("Weather configuration saved successfully");
     (StatusCode::OK, "Weather configuration updated").into_response()
 }
 
 /// POST /api/weather/refresh – trigger an immediate refresh
 pub async fn refresh(State(state): State<AppState>) -> Response {
+    info!("Manual weather refresh triggered via API");
     match &state.weather_service {
-        None => (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Weather service not initialised",
-        )
-            .into_response(),
+        None => {
+            warn!("Manual weather refresh: service not initialised");
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Weather service not initialised",
+            )
+                .into_response()
+        }
         Some(svc) => match svc.refresh().await {
-            Ok(()) => (StatusCode::OK, "Weather data refreshed").into_response(),
-            Err(e) => (StatusCode::BAD_GATEWAY, format!("Refresh failed: {}", e)).into_response(),
+            Ok(()) => {
+                info!("Manual weather refresh completed successfully");
+                (StatusCode::OK, "Weather data refreshed").into_response()
+            }
+            Err(e) => {
+                error!("Manual weather refresh failed: {}", e);
+                (StatusCode::BAD_GATEWAY, format!("Refresh failed: {}", e)).into_response()
+            }
         },
     }
 }

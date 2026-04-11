@@ -2526,6 +2526,7 @@ dependencies = [
  "task-scheduler",
  "tokio",
  "tracing",
+ "tracing-appender",
  "tracing-subscriber",
  "web-api",
  "web-ui",

@@ -847,6 +847,14 @@ error!("Error occurred: {}", err);
 
 **Storage**: All persistence is JSON file-backed (`auth.json`, `plugindatabase.json`, `task_history.json`, etc.) — no SQL database.
 
+**Health endpoint** (`/api/health/detail`): Reports per-component status for `config`, `mqtt_broker`, `miniserver`, `disk_space`, `cpu`, and `memory`.
+
+**Task Scheduler**: Built-in tasks are `backup`, `log_rotation`, `health_check`, and `miniserver_backup`. On load, any missing built-in tasks are automatically merged into existing configs so users don't lose pre-existing tasks but still get new defaults after upgrade.
+
+**Network diagnostics** (`/network`): Interface `is_up` is determined by whether the interface has at least one assigned IP address — not by traffic counters.
+
+**API Documentation**: Full endpoint reference is available at `/api-docs` in the web UI, covering all endpoint groups (health, system, config, miniserver, MQTT, plugins, backup, tasks, network, email, weather, auth, virtual inputs).
+
 Next planned work: advanced features & ecosystem expansion (plugin marketplace, Kubernetes, OAuth2/OIDC, PWA). See [ROADMAP.md](ROADMAP.md) for details.
 
 Historical phase documentation is archived in [docs/archive/](docs/archive/).

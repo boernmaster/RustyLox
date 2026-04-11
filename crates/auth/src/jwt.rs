@@ -11,7 +11,7 @@ use crate::models::{Claims, Role};
 #[derive(Debug, Clone)]
 pub struct JwtConfig {
     pub secret: String,
-    /// Token lifetime in seconds (default 3600 = 1 hour)
+    /// Token lifetime in seconds (default 2_592_000 = 30 days)
     pub expiry_seconds: i64,
 }
 
@@ -19,7 +19,7 @@ impl JwtConfig {
     pub fn new(secret: impl Into<String>) -> Self {
         Self {
             secret: secret.into(),
-            expiry_seconds: 3600,
+            expiry_seconds: 30 * 24 * 3600, // 30 days
         }
     }
 
