@@ -13,6 +13,8 @@ rustylox-core = { path = "../rustylox-core" }
 rustylox-config = { path = "../rustylox-config" }
 miniserver-client = { path = "../miniserver-client" }
 mqtt-gateway = { path = "../mqtt-gateway" }
+backup-manager = { path = "../backup-manager" }
+task-scheduler = { path = "../task-scheduler" }
 web-api = { path = "../web-api" }
 web-ui = { path = "../web-ui" }
 
