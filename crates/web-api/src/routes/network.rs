@@ -275,7 +275,7 @@ async fn get_network_interfaces() -> Vec<NetworkInterface> {
                 .map(|ip| ip.addr.to_string())
                 .collect(),
             mac_address: Some(data.mac_address().to_string()),
-            is_up: data.received() > 0 || data.transmitted() > 0,
+            is_up: !data.ip_networks().is_empty(),
         })
         .collect()
 }

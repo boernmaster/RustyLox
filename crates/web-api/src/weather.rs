@@ -18,7 +18,7 @@ use chrono::{DateTime, Utc};
 use rustylox_config::WeatherConfig;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 // ─── Public data structures ───────────────────────────────────────────────────
 
@@ -205,6 +205,10 @@ impl WeatherService {
 
     /// Update the running config and immediately trigger a refresh.
     pub async fn update_config(&self, new_cfg: WeatherConfig) {
+        info!(
+            "Weather config updated: location='{}' lat={} lon={} enabled={}",
+            new_cfg.location_name, new_cfg.latitude, new_cfg.longitude, new_cfg.enabled
+        );
         if new_cfg.dnsmasq_enabled {
             if let Err(e) = self.write_dnsmasq_config(&new_cfg) {
                 warn!("dnsmasq config write failed on settings save: {}", e);
@@ -216,9 +220,19 @@ impl WeatherService {
     /// Fetch weather data from Open-Meteo and store it. Returns error string on failure.
     pub async fn refresh(&self) -> Result<(), String> {
         let cfg = self.config.read().await.clone();
-        if !cfg.enabled || cfg.latitude == 0.0 && cfg.longitude == 0.0 {
-            return Ok(()); // not configured
+        if !cfg.enabled {
+            debug!("Weather refresh skipped: service is disabled");
+            return Ok(());
         }
+        if cfg.latitude == 0.0 && cfg.longitude == 0.0 {
+            debug!("Weather refresh skipped: coordinates not configured");
+            return Ok(());
+        }
+
+        info!(
+            "Weather refresh starting: location='{}' lat={} lon={}",
+            cfg.location_name, cfg.latitude, cfg.longitude
+        );
 
         let url = format!(
             "https://api.open-meteo.com/v1/forecast?\
@@ -238,6 +252,8 @@ impl WeatherService {
             lon = cfg.longitude,
         );
 
+        debug!("Weather fetch URL: {}", url);
+
         let resp = self
             .client
             .get(&url)
@@ -245,9 +261,11 @@ impl WeatherService {
             .await
             .map_err(|e| format!("HTTP request failed: {}", e))?;
 
-        if !resp.status().is_success() {
-            return Err(format!("Open-Meteo returned HTTP {}", resp.status()));
+        let http_status = resp.status();
+        if !http_status.is_success() {
+            return Err(format!("Open-Meteo returned HTTP {}", http_status));
         }
+        debug!("Weather fetch HTTP {}", http_status);
 
         let raw: OpenMeteoResponse = resp
             .json()
@@ -255,6 +273,15 @@ impl WeatherService {
             .map_err(|e| format!("Failed to parse Open-Meteo response: {}", e))?;
 
         let data = self.parse_response(raw, &cfg);
+        debug!(
+            "Weather parsed: temp={:.1}°C feels={:.1}°C humidity={}% wind={:.0}km/h condition='{}' code={}",
+            data.current.temperature,
+            data.current.feels_like,
+            data.current.humidity,
+            data.current.wind_speed,
+            data.current.weather_description,
+            data.current.weather_code,
+        );
 
         // Optional: push to Miniserver via UDP
         if cfg.push_udp {
@@ -590,6 +617,7 @@ impl WeatherService {
 
     /// Spawn the background refresh loop. Must be called once at startup.
     pub fn spawn_background_task(self: Arc<Self>) {
+        info!("Weather background refresh task started");
         tokio::spawn(async move {
             loop {
                 let interval = {
@@ -605,6 +633,7 @@ impl WeatherService {
                     error!("Weather refresh failed: {}", e);
                 }
 
+                debug!("Weather: next refresh in {} minute(s)", interval);
                 tokio::time::sleep(tokio::time::Duration::from_secs(interval as u64 * 60)).await;
             }
         });

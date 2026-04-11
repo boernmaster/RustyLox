@@ -22,23 +22,37 @@ const MINISERVER_UDP_RECV_PORT: u16 = 8090;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
+    // Determine home dir early so we can set up file logging before any other init.
+    let lbhomedir = std::env::var("LBHOMEDIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("/opt/loxberry"));
+
+    let log_dir = lbhomedir.join("log/system");
+    // Create log directory on first boot before writing to it.
+    let _ = std::fs::create_dir_all(&log_dir);
+
+    // Non-rolling file appender → log/system/rustylox.log.
+    // Rotation is handled by the existing log-rotation task.
+    let file_appender = tracing_appender::rolling::never(&log_dir, "rustylox.log");
+    let (non_blocking_file, _file_guard) = tracing_appender::non_blocking(file_appender);
+
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| "rustylox_daemon=info,web_api=info,miniserver_client=info".into());
+
     tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                "rustylox_daemon=info,web_api=info,miniserver_client=info".into()
-            }),
-        )
+        .with(env_filter)
+        // Console layer: coloured output visible in `docker logs`
         .with(tracing_subscriber::fmt::layer())
+        // File layer: plain text written to rustylox.log for the web log viewer
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(non_blocking_file)
+                .with_ansi(false),
+        )
         .init();
 
     let version = env!("BUILD_VERSION");
     info!("Starting LoxBerry Daemon v{}", version);
-
-    // Get LoxBerry home directory from environment or use default
-    let lbhomedir = std::env::var("LBHOMEDIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("/opt/loxberry"));
 
     let config_dir = lbhomedir.join("config/system");
 
@@ -100,7 +114,6 @@ async fn main() -> Result<()> {
 
     // Initialize authentication service
     let data_dir = lbhomedir.join("data/system");
-    let log_dir = lbhomedir.join("log/system");
     let auth_store = AuthStore::new(&data_dir);
     let audit_logger = AuditLogger::new(&log_dir);
     let auth_service = AuthService::new(auth_store, audit_logger);

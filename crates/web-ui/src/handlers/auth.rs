@@ -56,20 +56,13 @@ pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<Login
         .await
     {
         Ok(token_response) => {
-            // Build cookie: persistent (30 days) if remember_me checked, session cookie otherwise
-            let cookie = if creds.remember_me.is_some() {
-                // 30 days = 30 * 24 * 3600 = 2_592_000 seconds
-                format!(
-                    "lb_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000",
-                    token_response.access_token
-                )
-            } else {
-                // Session cookie - no Max-Age/Expires, cleared when browser closes
-                format!(
-                    "lb_token={}; Path=/; HttpOnly; SameSite=Strict",
-                    token_response.access_token
-                )
-            };
+            // Always set a 30-day persistent cookie (2_592_000 s) so the session
+            // survives browser restarts.  The JWT itself also expires after 30 days.
+            let _ = creds.remember_me; // field kept for forward-compatibility
+            let cookie = format!(
+                "lb_token={}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000",
+                token_response.access_token
+            );
 
             // Redirect to original destination or dashboard
             let destination = creds

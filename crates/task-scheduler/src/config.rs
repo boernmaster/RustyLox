@@ -163,7 +163,9 @@ impl ScheduledTasksConfigManager {
         }
     }
 
-    /// Load config from disk (returns defaults if not found)
+    /// Load config from disk (returns defaults if not found).
+    /// Merges any built-in tasks that are missing from an existing config so
+    /// that newly-added defaults (e.g. MiniserverBackup) appear after upgrades.
     pub async fn load(&self) -> Result<ScheduledTasksConfig> {
         if !self.config_path.exists() {
             return Ok(ScheduledTasksConfig {
@@ -175,8 +177,18 @@ impl ScheduledTasksConfigManager {
             .await
             .map_err(|e| Error::config(format!("Failed to read tasks config: {}", e)))?;
 
-        serde_json::from_str(&content)
-            .map_err(|e| Error::config(format!("Failed to parse tasks config: {}", e)))
+        let mut config: ScheduledTasksConfig = serde_json::from_str(&content)
+            .map_err(|e| Error::config(format!("Failed to parse tasks config: {}", e)))?;
+
+        // Merge built-in tasks that are absent from the on-disk config so that
+        // newly-added defaults become visible without wiping user data.
+        for default_task in ScheduledTasksConfig::default_tasks() {
+            if !config.tasks.iter().any(|t| t.id == default_task.id) {
+                config.tasks.push(default_task);
+            }
+        }
+
+        Ok(config)
     }
 
     /// Save config to disk

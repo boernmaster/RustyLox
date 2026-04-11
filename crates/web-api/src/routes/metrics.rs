@@ -139,6 +139,21 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
         components.push(ComponentStatus::ok("disk_space"));
     }
 
+    // CPU check
+    if sys_metrics.cpu_usage_percent > 95.0 {
+        components.push(ComponentStatus::unhealthy(
+            "cpu",
+            format!("CPU usage critical: {:.1}%", sys_metrics.cpu_usage_percent),
+        ));
+    } else if sys_metrics.cpu_usage_percent > 85.0 {
+        components.push(ComponentStatus::degraded(
+            "cpu",
+            format!("CPU usage high: {:.1}%", sys_metrics.cpu_usage_percent),
+        ));
+    } else {
+        components.push(ComponentStatus::ok("cpu"));
+    }
+
     // Memory check
     if sys_metrics.memory_usage_percent > 95.0 {
         components.push(ComponentStatus::unhealthy(

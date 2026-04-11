@@ -57,7 +57,15 @@ pub fn get_log_files(log_dir: &PathBuf) -> Result<Vec<LogFile>> {
         let entry = entry?;
         let path = entry.path();
 
-        if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("log") {
+        // Accept plain *.log files AND date-suffixed rotated files like
+        // "loxberry.log.2026-04-11" (tracing_appender rolling daily format).
+        let is_log = path.is_file() && {
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            name.ends_with(".log")
+                || name.contains(".log.")
+                || path.extension().and_then(|s| s.to_str()) == Some("log")
+        };
+        if is_log {
             let metadata = std::fs::metadata(&path)?;
             files.push(LogFile {
                 name: path.file_name().unwrap().to_string_lossy().to_string(),
