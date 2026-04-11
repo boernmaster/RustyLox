@@ -217,24 +217,24 @@ impl Cron {
 /// ```
 #[derive(Debug, Clone)]
 pub struct CronBuilder {
-    second:       Field,
-    minute:       Field,
-    hour:         Field,
+    second: Field,
+    minute: Field,
+    hour: Field,
     day_of_month: Field,
-    month:        Field,
-    day_of_week:  Field,
+    month: Field,
+    day_of_week: Field,
 }
 
 impl Default for CronBuilder {
     /// Defaults to second = 0, all other fields = `*` (fires every minute).
     fn default() -> Self {
         Self {
-            second:       Field::Value(0),
-            minute:       Field::Any,
-            hour:         Field::Any,
+            second: Field::Value(0),
+            minute: Field::Any,
+            hour: Field::Any,
             day_of_month: Field::Any,
-            month:        Field::Any,
-            day_of_week:  Field::Any,
+            month: Field::Any,
+            day_of_week: Field::Any,
         }
     }
 }
@@ -320,12 +320,7 @@ impl CronBuilder {
     pub fn build(self) -> CronExpr {
         let expr = format!(
             "{} {} {} {} {} {}",
-            self.second,
-            self.minute,
-            self.hour,
-            self.day_of_month,
-            self.month,
-            self.day_of_week,
+            self.second, self.minute, self.hour, self.day_of_month, self.month, self.day_of_week,
         );
         debug_assert!(
             Schedule::from_str(&expr).is_ok(),
@@ -410,11 +405,8 @@ pub fn describe_cron(expr: &str) -> String {
 
     // Weekly
     if dom == "*" && month == "*" {
-        if let (Ok(d), Ok(h), Ok(m)) = (
-            dow.parse::<u32>(),
-            hour.parse::<u32>(),
-            min.parse::<u32>(),
-        ) {
+        if let (Ok(d), Ok(h), Ok(m)) = (dow.parse::<u32>(), hour.parse::<u32>(), min.parse::<u32>())
+        {
             let day_name = weekday_name(d);
             return format!("every {} at {:02}:{:02}", day_name, h, m);
         }
@@ -437,11 +429,8 @@ pub fn describe_cron(expr: &str) -> String {
 
     // Monthly
     if month == "*" && dow == "*" {
-        if let (Ok(d), Ok(h), Ok(m)) = (
-            dom.parse::<u32>(),
-            hour.parse::<u32>(),
-            min.parse::<u32>(),
-        ) {
+        if let (Ok(d), Ok(h), Ok(m)) = (dom.parse::<u32>(), hour.parse::<u32>(), min.parse::<u32>())
+        {
             return format!("on day {} of every month at {:02}:{:02}", d, h, m);
         }
     }
@@ -452,9 +441,7 @@ pub fn describe_cron(expr: &str) -> String {
 }
 
 fn step_value(field: &str) -> Option<u32> {
-    field
-        .strip_prefix("*/")
-        .and_then(|n| n.parse::<u32>().ok())
+    field.strip_prefix("*/").and_then(|n| n.parse::<u32>().ok())
 }
 
 fn weekday_name(n: u32) -> String {
