@@ -99,10 +99,11 @@
                 <div class="form-group">
                     <label for="new-task-type">Task Type</label>
                     <select id="new-task-type">
-                        <option value="Backup">Backup</option>
-                        <option value="LogRotation">Log Rotation</option>
-                        <option value="HealthCheck">Health Check</option>
-                        <option value="Custom">Custom Script</option>
+                        <option value="backup">System Backup</option>
+                        <option value="miniserver_backup">Miniserver Backup</option>
+                        <option value="log_rotation">Log Rotation</option>
+                        <option value="health_check">Health Check</option>
+                        <option value="custom">Custom Script</option>
                     </select>
                 </div>
                 <div class="form-group" id="script-path-group" style="display: none;">
@@ -279,7 +280,7 @@
 
     document.getElementById('new-task-type').addEventListener('change', function() {
         document.getElementById('script-path-group').style.display =
-            this.value === 'Custom' ? 'block' : 'none';
+            this.value === 'custom' ? 'block' : 'none';
     });
 
     function createTask() {
@@ -288,9 +289,8 @@
         const payload = {
             name: document.getElementById('new-task-name').value,
             schedule: document.getElementById('new-task-schedule').value,
-            task_type: taskType === 'Custom'
-                ? { Custom: { script_path: scriptPath } }
-                : taskType,
+            task_type: taskType,
+            script_path: taskType === 'custom' ? scriptPath : undefined,
             enabled: true,
         };
         fetch('/api/tasks', {

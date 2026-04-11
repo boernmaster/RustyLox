@@ -2517,11 +2517,13 @@ dependencies = [
  "anyhow",
  "auth",
  "axum",
+ "backup-manager",
  "chrono",
  "miniserver-client",
  "mqtt-gateway",
  "rustylox-config",
  "rustylox-core",
+ "task-scheduler",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -2908,8 +2910,11 @@ dependencies = [
 name = "task-scheduler"
 version = "0.1.0"
 dependencies = [
+ "backup-manager",
  "chrono",
  "cron",
+ "miniserver-client",
+ "rustylox-config",
  "rustylox-core",
  "serde",
  "serde_json",
@@ -2917,6 +2922,7 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tracing",
+ "zip",
 ]
 
 [[package]]

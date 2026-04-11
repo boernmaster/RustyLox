@@ -5,6 +5,9 @@ edition = "2021"
 
 [dependencies]
 rustylox-core = { path = "../rustylox-core" }
+rustylox-config = { path = "../rustylox-config" }
+backup-manager = { path = "../backup-manager" }
+miniserver-client = { path = "../miniserver-client" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -17,6 +20,9 @@ cron = "0.12"
 
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
+
+# ZIP archive creation (for miniserver backup)
+zip = "2"
 
 [dev-dependencies]
 tempfile = { workspace = true }

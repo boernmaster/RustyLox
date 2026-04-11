@@ -34,7 +34,7 @@ pub struct UpdateTaskRequest {
 ///
 /// GET /api/tasks
 pub async fn list_tasks(State(state): State<AppState>) -> impl IntoResponse {
-    let scheduler = TaskScheduler::new(&state.lbhomedir);
+    let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     match scheduler.load_config().await {
         Ok(config) => {
             // Enrich with next run time
@@ -80,7 +80,7 @@ pub async fn get_task(
     State(state): State<AppState>,
     Path(task_id): Path<String>,
 ) -> impl IntoResponse {
-    let scheduler = TaskScheduler::new(&state.lbhomedir);
+    let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     match scheduler.load_config().await {
         Ok(config) => match config.tasks.iter().find(|t| t.id == task_id) {
             Some(task) => Json(task).into_response(),
@@ -114,12 +114,13 @@ pub async fn create_task(
             .into_response();
     }
 
-    // Parse task type
+    // Parse task type (values are snake_case to match the serde rename_all = "snake_case" on TaskType)
     let task_type = match req.task_type.as_str() {
         "backup" => TaskType::Backup,
         "log_rotation" => TaskType::LogRotation,
         "health_check" => TaskType::HealthCheck,
         "custom" => TaskType::Custom,
+        "miniserver_backup" => TaskType::MiniserverBackup,
         other => {
             return (
                 StatusCode::BAD_REQUEST,
@@ -133,7 +134,7 @@ pub async fn create_task(
     task.script_path = req.script_path;
     task.enabled = req.enabled.unwrap_or(true);
 
-    let scheduler = TaskScheduler::new(&state.lbhomedir);
+    let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let mut config = match scheduler.load_config().await {
         Ok(c) => c,
         Err(e) => {
@@ -169,7 +170,7 @@ pub async fn update_task(
     Path(task_id): Path<String>,
     Json(req): Json<UpdateTaskRequest>,
 ) -> impl IntoResponse {
-    let scheduler = TaskScheduler::new(&state.lbhomedir);
+    let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let mut config = match scheduler.load_config().await {
         Ok(c) => c,
         Err(e) => {
@@ -233,7 +234,7 @@ pub async fn delete_task(
     State(state): State<AppState>,
     Path(task_id): Path<String>,
 ) -> impl IntoResponse {
-    let scheduler = TaskScheduler::new(&state.lbhomedir);
+    let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let mut config = match scheduler.load_config().await {
         Ok(c) => c,
         Err(e) => {
@@ -277,7 +278,7 @@ pub async fn run_task(
     Path(task_id): Path<String>,
 ) -> impl IntoResponse {
     info!("Manually triggering task: {}", task_id);
-    let scheduler = TaskScheduler::new(&state.lbhomedir);
+    let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
 
     match scheduler.run_task_by_id(&task_id).await {
         Ok(execution) => Json(execution).into_response(),
@@ -296,7 +297,7 @@ pub async fn run_task(
 ///
 /// GET /api/tasks/history
 pub async fn get_history(State(state): State<AppState>) -> impl IntoResponse {
-    let scheduler = TaskScheduler::new(&state.lbhomedir);
+    let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let history = scheduler.get_recent_history(50).await;
     Json(serde_json::to_value(history).unwrap_or_default())
 }
