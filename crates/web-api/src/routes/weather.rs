@@ -10,7 +10,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 
 use crate::AppState;
 
