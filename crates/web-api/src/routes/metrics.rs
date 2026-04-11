@@ -7,20 +7,20 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use rustylox_metrics::{
-    collector::MetricsCollector,
-    health::{ComponentStatus, HealthCheck, HealthMetrics},
-};
+use rustylox_metrics::health::{ComponentStatus, HealthCheck, HealthMetrics};
 use tracing::error;
 
 /// Prometheus metrics endpoint
 ///
 /// GET /metrics
-pub async fn prometheus_metrics(State(_state): State<AppState>) -> Response {
-    let mut collector = MetricsCollector::with_default_counters();
-    let system = collector.collect_system();
-    let app = collector.collect_app();
-    let uptime = collector.daemon_uptime_seconds();
+pub async fn prometheus_metrics(State(state): State<AppState>) -> Response {
+    let (system, app, uptime) = {
+        let mut collector = state.metrics_collector.lock().await;
+        let system = collector.collect_system();
+        let app = collector.collect_app();
+        let uptime = collector.daemon_uptime_seconds();
+        (system, app, uptime)
+    };
 
     let output = rustylox_metrics::PrometheusExporter::export(&system, &app, uptime);
 
@@ -35,9 +35,8 @@ pub async fn prometheus_metrics(State(_state): State<AppState>) -> Response {
 /// System metrics as JSON
 ///
 /// GET /api/system/metrics
-pub async fn system_metrics(State(_state): State<AppState>) -> impl IntoResponse {
-    let mut collector = MetricsCollector::with_default_counters();
-    let metrics = collector.collect_system();
+pub async fn system_metrics(State(state): State<AppState>) -> impl IntoResponse {
+    let metrics = state.metrics_collector.lock().await.collect_system();
     Json(metrics)
 }
 
@@ -119,8 +118,7 @@ pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse
     }
 
     // Disk space check
-    let mut sys_collector = MetricsCollector::with_default_counters();
-    let sys_metrics = sys_collector.collect_system();
+    let sys_metrics = state.metrics_collector.lock().await.collect_system();
 
     if sys_metrics.disk_usage_percent > 95.0 {
         components.push(ComponentStatus::unhealthy(
