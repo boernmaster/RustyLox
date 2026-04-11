@@ -14,6 +14,10 @@ use crate::weather::WeatherService;
 /// Current active log level (stored as string for runtime mutation)
 pub type LogLevelHandle = Arc<RwLock<String>>;
 
+/// Callback that actually reloads the tracing filter at runtime.
+/// Returns `true` on success, `false` on failure.
+pub type LogLevelUpdater = Option<Arc<dyn Fn(&str) -> bool + Send + Sync>>;
+
 /// Miniserver communication event for monitoring
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct MiniserverEvent {
@@ -55,6 +59,10 @@ pub struct AppState {
 
     /// Current log level (runtime-adjustable)
     pub log_level: LogLevelHandle,
+
+    /// Callback that reloads the tracing EnvFilter at runtime.
+    /// Set by the daemon binary after it initialises the subscriber.
+    pub log_level_updater: LogLevelUpdater,
 
     /// Authentication service (optional - disabled if not configured)
     pub auth_service: Option<Arc<AuthService>>,
@@ -108,6 +116,7 @@ impl AppState {
             mqtt_gateway,
             miniserver_monitor: monitor_tx,
             log_level: Arc::new(RwLock::new(initial_level)),
+            log_level_updater: None,
             auth_service: None,
             weather_service: None,
             metrics_collector: Arc::new(Mutex::new(MetricsCollector::with_default_counters())),
@@ -117,6 +126,15 @@ impl AppState {
     /// Attach an AuthService to the application state
     pub fn with_auth(mut self, auth_service: AuthService) -> Self {
         self.auth_service = Some(Arc::new(auth_service));
+        self
+    }
+
+    /// Attach a runtime log-level updater callback.
+    pub fn with_log_level_updater(
+        mut self,
+        updater: Arc<dyn Fn(&str) -> bool + Send + Sync>,
+    ) -> Self {
+        self.log_level_updater = Some(updater);
         self
     }
 

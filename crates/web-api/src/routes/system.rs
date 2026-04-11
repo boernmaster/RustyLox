@@ -81,10 +81,25 @@ pub async fn set_log_level(
         );
     }
 
+    // Attempt to reload the live tracing filter via the injected updater.
+    let filter_reloaded = state
+        .log_level_updater
+        .as_ref()
+        .map(|f| f(directive))
+        .unwrap_or(false);
+
+    if !filter_reloaded {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": "Log level string is valid but the filter could not be reloaded. \
+                          The subscriber may not have been initialised with a reload layer."
+            })),
+        );
+    }
+
     let mut current = state.log_level.write().await;
     *current = directive.to_string();
-
-    std::env::set_var("RUST_LOG", directive);
 
     tracing::info!("Log level changed to: {}", directive);
 
