@@ -109,11 +109,8 @@ impl ScheduledTasksConfig {
     pub fn default_tasks() -> Vec<ScheduledTask> {
         vec![
             {
-                let mut t = ScheduledTask::new(
-                    "Daily Backup",
-                    Cron::daily_at(2, 0),
-                    TaskType::Backup,
-                );
+                let mut t =
+                    ScheduledTask::new("Daily Backup", Cron::daily_at(2, 0), TaskType::Backup);
                 t.id = "builtin_backup".to_string();
                 t.enabled = false; // Disabled by default
                 t
