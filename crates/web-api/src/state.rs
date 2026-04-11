@@ -4,9 +4,10 @@ use auth::AuthService;
 use dashmap::DashMap;
 use miniserver_client::MiniserverClient;
 use rustylox_config::{ConfigManager, GeneralConfig};
+use rustylox_metrics::collector::MetricsCollector;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::{broadcast, RwLock};
+use tokio::sync::{broadcast, Mutex, RwLock};
 
 use crate::weather::WeatherService;
 
@@ -60,6 +61,10 @@ pub struct AppState {
 
     /// Native weather service (optional - only if enabled in config)
     pub weather_service: Option<Arc<WeatherService>>,
+
+    /// Long-lived metrics collector — kept alive so sysinfo has a prior
+    /// measurement interval and can return real CPU usage values.
+    pub metrics_collector: Arc<Mutex<MetricsCollector>>,
 }
 
 impl AppState {
@@ -105,6 +110,7 @@ impl AppState {
             log_level: Arc::new(RwLock::new(initial_level)),
             auth_service: None,
             weather_service: None,
+            metrics_collector: Arc::new(Mutex::new(MetricsCollector::with_default_counters())),
         }
     }
 
