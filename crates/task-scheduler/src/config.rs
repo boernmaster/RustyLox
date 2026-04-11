@@ -225,6 +225,8 @@ mod tests {
         assert!(tasks.iter().any(|t| t.task_type == TaskType::Backup));
         assert!(tasks.iter().any(|t| t.task_type == TaskType::LogRotation));
         assert!(tasks.iter().any(|t| t.task_type == TaskType::HealthCheck));
-        assert!(tasks.iter().any(|t| t.task_type == TaskType::MiniserverBackup));
+        assert!(tasks
+            .iter()
+            .any(|t| t.task_type == TaskType::MiniserverBackup));
     }
 }

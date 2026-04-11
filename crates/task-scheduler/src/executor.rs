@@ -135,9 +135,11 @@ impl TaskExecutor {
     /// Run a system backup using the backup-manager
     async fn run_backup(&self) -> Result<String> {
         info!("Running scheduled system backup");
-        let manager = backup_manager::BackupManager::new(self.lbhomedir.clone(), self.version.clone());
+        let manager =
+            backup_manager::BackupManager::new(self.lbhomedir.clone(), self.version.clone());
         let backup_path = manager.create_backup(true).await?;
-        let size = tokio::fs::metadata(&backup_path).await
+        let size = tokio::fs::metadata(&backup_path)
+            .await
             .map(|m| m.len())
             .unwrap_or(0);
         let name = backup_path
@@ -272,7 +274,13 @@ impl TaskExecutor {
         let safe_name: String = ms_config
             .name
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         let filename = format!("Backup_{}_{}.zip", safe_name, timestamp);
 
@@ -388,10 +396,7 @@ async fn check_disk_space(path: &PathBuf) -> String {
 }
 
 /// Recursively list all files under `dir` on the Miniserver via /dev/fslist.
-async fn walk_ms_dir(
-    client: &miniserver_client::MiniserverClient,
-    dir: &str,
-) -> Vec<String> {
+async fn walk_ms_dir(client: &miniserver_client::MiniserverClient, dir: &str) -> Vec<String> {
     let mut all_files = Vec::new();
     let mut queue = std::collections::VecDeque::new();
     queue.push_back(dir.to_string());
@@ -427,7 +432,13 @@ async fn walk_ms_dir(
 fn ms_backup_dir(base_dir: &std::path::Path, id: &str, name: &str) -> PathBuf {
     let safe_name: String = name
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     base_dir.join(format!("{}-{}", id, safe_name))
 }
