@@ -39,8 +39,12 @@ async fn main() -> Result<()> {
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| "rustylox_daemon=info,web_api=info,miniserver_client=info".into());
 
+    // Wrap the filter in a reload layer so it can be swapped at runtime via the API.
+    let (reload_filter, reload_handle) = tracing_subscriber::reload::Layer::new(env_filter);
+    let reload_handle = std::sync::Arc::new(reload_handle);
+
     tracing_subscriber::registry()
-        .with(env_filter)
+        .with(reload_filter)
         // Console layer: coloured output visible in `docker logs`
         .with(tracing_subscriber::fmt::layer())
         // File layer: plain text written to rustylox.log for the web log viewer
@@ -143,6 +147,15 @@ async fn main() -> Result<()> {
     // Spawn background refresh loop (shares the same Arc)
     Arc::clone(&weather_service).spawn_background_task();
 
+    // Build a closure that the API can call to hot-reload the tracing filter.
+    let log_level_updater: std::sync::Arc<dyn Fn(&str) -> bool + Send + Sync> =
+        std::sync::Arc::new(move |directive: &str| {
+            match directive.parse::<tracing_subscriber::EnvFilter>() {
+                Ok(new_filter) => reload_handle.reload(new_filter).is_ok(),
+                Err(_) => false,
+            }
+        });
+
     // Create application state
     let state = AppState::new_with_shared_config(
         lbhomedir,
@@ -151,6 +164,7 @@ async fn main() -> Result<()> {
         config,
         mqtt_gateway,
     )
+    .with_log_level_updater(log_level_updater)
     .with_auth(auth_service)
     .with_weather(Arc::clone(&weather_service));
 
