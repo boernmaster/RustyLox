@@ -4,6 +4,7 @@
 
 use anyhow::Result;
 use auth::{AuditLogger, AuthService, AuthStore};
+use backup_manager::{scheduler::BackupSchedule as BmBackupSchedule, BackupScheduler};
 use mqtt_gateway::MqttGateway;
 use rustylox_config::{ConfigManager, GeneralConfig};
 use std::path::PathBuf;
@@ -14,7 +15,6 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use web_api::{
     create_emu_router, create_router, weather::WeatherService, AppState, MiniserverEvent,
 };
-use backup_manager::{BackupScheduler, scheduler::BackupSchedule as BmBackupSchedule};
 
 /// Default UDP port for receiving Miniserver Virtual UDP Output data.
 /// Users point their Miniserver Virtual Output to `/dev/udp/<RustyLox-IP>/8090`.
@@ -298,11 +298,8 @@ async fn main() -> Result<()> {
                 max_backups: cfg.backup.schedule.keep_backups,
             }
         };
-        let backup_scheduler = BackupScheduler::new(
-            state.lbhomedir.clone(),
-            version.to_string(),
-            sched_cfg,
-        );
+        let backup_scheduler =
+            BackupScheduler::new(state.lbhomedir.clone(), version.to_string(), sched_cfg);
         tokio::spawn(async move {
             if let Err(e) = backup_scheduler.run().await {
                 error!("Backup scheduler error: {}", e);
