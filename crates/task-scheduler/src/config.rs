@@ -1,5 +1,6 @@
 //! Task scheduler configuration
 
+use crate::cron::{Cron, Weekday};
 use chrono::{DateTime, Utc};
 use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
@@ -110,7 +111,7 @@ impl ScheduledTasksConfig {
             {
                 let mut t = ScheduledTask::new(
                     "Daily Backup",
-                    "0 0 2 * * *", // 2am daily (cron crate uses seconds-first format)
+                    Cron::daily_at(2, 0),
                     TaskType::Backup,
                 );
                 t.id = "builtin_backup".to_string();
@@ -120,7 +121,7 @@ impl ScheduledTasksConfig {
             {
                 let mut t = ScheduledTask::new(
                     "Log Rotation",
-                    "0 0 0 * * 0", // Midnight every Sunday
+                    Cron::weekly_on(Weekday::Sunday, 0, 0),
                     TaskType::LogRotation,
                 );
                 t.id = "builtin_log_rotation".to_string();
@@ -130,7 +131,7 @@ impl ScheduledTasksConfig {
             {
                 let mut t = ScheduledTask::new(
                     "Health Check",
-                    "0 0 */6 * * *", // Every 6 hours
+                    Cron::every_n_hours(6),
                     TaskType::HealthCheck,
                 );
                 t.id = "builtin_health_check".to_string();
@@ -140,7 +141,7 @@ impl ScheduledTasksConfig {
             {
                 let mut t = ScheduledTask::new(
                     "Miniserver Backup",
-                    "0 0 3 * * *", // 3am daily
+                    Cron::daily_at(3, 0),
                     TaskType::MiniserverBackup,
                 );
                 t.id = "builtin_miniserver_backup".to_string();

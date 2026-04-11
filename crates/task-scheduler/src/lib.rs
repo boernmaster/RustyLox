@@ -8,9 +8,11 @@
 //! - Persistent configuration (scheduled_tasks.json)
 
 pub mod config;
+pub mod cron;
 pub mod executor;
 pub mod scheduler;
 
 pub use config::{ScheduledTask, ScheduledTasksConfig, TaskType};
+pub use cron::{describe_cron, Cron, CronBuilder, CronExpr, Weekday};
 pub use executor::{ExecutionStatus, TaskExecution, TaskExecutor};
 pub use scheduler::TaskScheduler;
