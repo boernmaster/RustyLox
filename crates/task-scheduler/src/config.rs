@@ -17,6 +17,8 @@ pub enum TaskType {
     HealthCheck,
     /// Execute a custom script
     Custom,
+    /// Back up all configured Miniservers
+    MiniserverBackup,
 }
 
 impl std::fmt::Display for TaskType {
@@ -26,6 +28,7 @@ impl std::fmt::Display for TaskType {
             TaskType::LogRotation => write!(f, "Log Rotation"),
             TaskType::HealthCheck => write!(f, "Health Check"),
             TaskType::Custom => write!(f, "Custom Script"),
+            TaskType::MiniserverBackup => write!(f, "Miniserver Backup"),
         }
     }
 }
@@ -134,6 +137,16 @@ impl ScheduledTasksConfig {
                 t.enabled = true; // Enabled by default
                 t
             },
+            {
+                let mut t = ScheduledTask::new(
+                    "Miniserver Backup",
+                    "0 0 3 * * *", // 3am daily
+                    TaskType::MiniserverBackup,
+                );
+                t.id = "builtin_miniserver_backup".to_string();
+                t.enabled = false; // Disabled by default
+                t
+            },
         ]
     }
 }
@@ -208,9 +221,10 @@ mod tests {
     #[test]
     fn test_default_tasks() {
         let tasks = ScheduledTasksConfig::default_tasks();
-        assert_eq!(tasks.len(), 3);
+        assert_eq!(tasks.len(), 4);
         assert!(tasks.iter().any(|t| t.task_type == TaskType::Backup));
         assert!(tasks.iter().any(|t| t.task_type == TaskType::LogRotation));
         assert!(tasks.iter().any(|t| t.task_type == TaskType::HealthCheck));
+        assert!(tasks.iter().any(|t| t.task_type == TaskType::MiniserverBackup));
     }
 }

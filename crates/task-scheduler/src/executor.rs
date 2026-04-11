@@ -1,9 +1,10 @@
 //! Task execution engine
 
 use crate::config::{ScheduledTask, TaskType};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 use std::path::PathBuf;
 use tracing::{error, info, warn};
 
@@ -79,15 +80,22 @@ impl TaskExecution {
     }
 }
 
+/// Miniserver filesystem directories included in a full backup
+const MS_BACKUP_DIRS: &[&str] = &[
+    "log", "prog", "sys", "stats", "temp", "update", "web", "user",
+];
+
 /// Executes scheduled tasks
 pub struct TaskExecutor {
     lbhomedir: PathBuf,
+    version: String,
 }
 
 impl TaskExecutor {
-    pub fn new(lbhomedir: impl Into<PathBuf>) -> Self {
+    pub fn new(lbhomedir: impl Into<PathBuf>, version: impl Into<String>) -> Self {
         Self {
             lbhomedir: lbhomedir.into(),
+            version: version.into(),
         }
     }
 
@@ -100,6 +108,7 @@ impl TaskExecutor {
             TaskType::Backup => self.run_backup().await,
             TaskType::LogRotation => self.run_log_rotation().await,
             TaskType::HealthCheck => self.run_health_check().await,
+            TaskType::MiniserverBackup => self.run_miniserver_backup().await,
             TaskType::Custom => {
                 if let Some(script) = &task.script_path {
                     self.run_custom_script(script).await
@@ -123,13 +132,22 @@ impl TaskExecutor {
         execution
     }
 
-    /// Run a system backup
+    /// Run a system backup using the backup-manager
     async fn run_backup(&self) -> Result<String> {
-        info!("Running scheduled backup");
-        // Delegate to backup-manager by invoking the create_backup logic
-        // For now, just mark as success with a placeholder message.
-        // In production, this would call BackupManager::create().
-        Ok("Backup task scheduled. Use the Backup page to create manual backups or configure automatic backups.".to_string())
+        info!("Running scheduled system backup");
+        let manager = backup_manager::BackupManager::new(self.lbhomedir.clone(), self.version.clone());
+        let backup_path = manager.create_backup(true).await?;
+        let size = tokio::fs::metadata(&backup_path).await
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let name = backup_path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| backup_path.display().to_string());
+        Ok(format!(
+            "System backup created: {} ({} bytes). Use the Backup page to manage backups.",
+            name, size
+        ))
     }
 
     /// Rotate log files
@@ -186,6 +204,134 @@ impl TaskExecutor {
         Ok(format!("Health check completed. {}", disk_info))
     }
 
+    /// Run backups for all configured Miniservers
+    async fn run_miniserver_backup(&self) -> Result<String> {
+        info!("Running scheduled Miniserver backup");
+
+        // Load general config to get Miniserver list
+        let config_dir = self.lbhomedir.join("config/system");
+        let config_manager = rustylox_config::ConfigManager::new(&config_dir);
+        let config = config_manager
+            .load_general()
+            .await
+            .map_err(|e| Error::plugin(format!("Failed to load config: {}", e)))?;
+
+        if config.miniserver.is_empty() {
+            return Ok("No Miniservers configured — nothing to back up.".to_string());
+        }
+
+        let base_dir = self.lbhomedir.join("data/system/miniserver-backups");
+        let mut results: Vec<String> = Vec::new();
+
+        for (id, ms_config) in &config.miniserver {
+            if ms_config.ipaddress.is_empty() {
+                info!("Miniserver '{}' has no IP — skipping", ms_config.name);
+                results.push(format!("'{}': no IP configured, skipped", ms_config.name));
+                continue;
+            }
+
+            match self.backup_one_miniserver(id, ms_config, &base_dir).await {
+                Ok(msg) => {
+                    info!("Miniserver '{}' backup OK: {}", ms_config.name, msg);
+                    results.push(format!("'{}': {}", ms_config.name, msg));
+                }
+                Err(e) => {
+                    error!("Miniserver '{}' backup failed: {}", ms_config.name, e);
+                    results.push(format!("'{}': FAILED — {}", ms_config.name, e));
+                }
+            }
+        }
+
+        Ok(results.join("\n"))
+    }
+
+    /// Back up a single Miniserver and return a short summary.
+    async fn backup_one_miniserver(
+        &self,
+        id: &str,
+        ms_config: &rustylox_config::MiniserverConfig,
+        base_dir: &std::path::Path,
+    ) -> Result<String> {
+        let client = miniserver_client::MiniserverClient::new(ms_config.clone())
+            .map_err(|e| Error::plugin(format!("Cannot create client: {}", e)))?;
+
+        // Walk all backup directories
+        let mut all_files: Vec<String> = Vec::new();
+        for dir in MS_BACKUP_DIRS {
+            let dir_path = format!("/{}/", dir);
+            let files = walk_ms_dir(&client, &dir_path).await;
+            all_files.extend(files);
+        }
+
+        if all_files.is_empty() {
+            return Err(Error::plugin("No files found on Miniserver"));
+        }
+
+        // Build ZIP in memory
+        let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
+        let safe_name: String = ms_config
+            .name
+            .chars()
+            .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '_' })
+            .collect();
+        let filename = format!("Backup_{}_{}.zip", safe_name, timestamp);
+
+        let mut cursor = std::io::Cursor::new(Vec::<u8>::new());
+        let mut downloaded = 0usize;
+        {
+            let mut zip = zip::ZipWriter::new(&mut cursor);
+            let options = zip::write::SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Stored);
+
+            for file in &all_files {
+                let download_url = format!("/dev/fsget{}", file);
+                let zip_entry = file.trim_start_matches('/');
+                match client.http().download_bytes(&download_url).await {
+                    Ok((bytes, _)) => {
+                        if zip.start_file(zip_entry, options).is_ok()
+                            && zip.write_all(&bytes).is_ok()
+                        {
+                            downloaded += 1;
+                        }
+                    }
+                    Err(e) => {
+                        warn!("Skipping '{}' in Miniserver backup: {}", file, e);
+                    }
+                }
+            }
+
+            zip.finish()
+                .map_err(|e| Error::plugin(format!("Failed to finalise ZIP: {}", e)))?;
+        }
+
+        if downloaded == 0 {
+            return Err(Error::plugin("No files could be downloaded"));
+        }
+
+        let zip_bytes = cursor.into_inner();
+
+        // Save to disk
+        let dir = ms_backup_dir(base_dir, id, &ms_config.name);
+        tokio::fs::create_dir_all(&dir)
+            .await
+            .map_err(|e| Error::plugin(format!("Failed to create backup dir: {}", e)))?;
+
+        let backup_path = dir.join(&filename);
+        tokio::fs::write(&backup_path, &zip_bytes)
+            .await
+            .map_err(|e| Error::plugin(format!("Failed to write backup: {}", e)))?;
+
+        // Rotate old backups (keep last 7)
+        rotate_ms_backups(&dir, 7).await;
+
+        Ok(format!(
+            "{} files → {} ({} bytes)",
+            downloaded,
+            filename,
+            zip_bytes.len()
+        ))
+    }
+
     /// Run a custom script
     async fn run_custom_script(&self, script_path: &str) -> Result<String> {
         let full_path = self.lbhomedir.join(script_path);
@@ -238,5 +384,78 @@ async fn check_disk_space(path: &PathBuf) -> String {
             format!("Disk: {}", last_line)
         }
         _ => "Disk check unavailable.".to_string(),
+    }
+}
+
+/// Recursively list all files under `dir` on the Miniserver via /dev/fslist.
+async fn walk_ms_dir(
+    client: &miniserver_client::MiniserverClient,
+    dir: &str,
+) -> Vec<String> {
+    let mut all_files = Vec::new();
+    let mut queue = std::collections::VecDeque::new();
+    queue.push_back(dir.to_string());
+
+    while let Some(dir) = queue.pop_front() {
+        let url = format!("/dev/fslist{}", dir);
+        let listing = match client.http().call(&url).await {
+            Ok((_, _, body)) => body,
+            Err(e) => {
+                warn!("Failed to list Miniserver dir '{}': {}", dir, e);
+                continue;
+            }
+        };
+        for line in listing.lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            if let Some(name) = line.split_whitespace().last() {
+                if line.starts_with("d ") {
+                    queue.push_back(format!("{}{}/", dir, name));
+                } else {
+                    all_files.push(format!("{}{}", dir, name));
+                }
+            }
+        }
+    }
+
+    all_files
+}
+
+/// Build the per-Miniserver backup directory path.
+fn ms_backup_dir(base_dir: &std::path::Path, id: &str, name: &str) -> PathBuf {
+    let safe_name: String = name
+        .chars()
+        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '_' })
+        .collect();
+    base_dir.join(format!("{}-{}", id, safe_name))
+}
+
+/// Delete oldest backups keeping only `keep` most recent ZIP files.
+async fn rotate_ms_backups(dir: &std::path::Path, keep: usize) {
+    let mut files: Vec<PathBuf> = Vec::new();
+
+    let Ok(mut rd) = tokio::fs::read_dir(dir).await else {
+        return;
+    };
+    while let Ok(Some(entry)) = rd.next_entry().await {
+        let path = entry.path();
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        if matches!(ext, "loxone" | "zip") {
+            files.push(path);
+        }
+    }
+
+    if files.len() <= keep {
+        return;
+    }
+
+    files.sort();
+    let to_delete = files.len() - keep;
+    for path in files.iter().take(to_delete) {
+        if let Err(e) = tokio::fs::remove_file(path).await {
+            warn!("Failed to rotate old MS backup {:?}: {}", path, e);
+        }
     }
 }

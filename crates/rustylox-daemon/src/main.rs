@@ -14,6 +14,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use web_api::{
     create_emu_router, create_router, weather::WeatherService, AppState, MiniserverEvent,
 };
+use backup_manager::{BackupScheduler, scheduler::BackupSchedule as BmBackupSchedule};
 
 /// Default UDP port for receiving Miniserver Virtual UDP Output data.
 /// Users point their Miniserver Virtual Output to `/dev/udp/<RustyLox-IP>/8090`.
@@ -285,6 +286,38 @@ async fn main() -> Result<()> {
 
     // Create API router
     let api_router = create_router(state.clone());
+
+    // Spawn system backup scheduler (reads schedule from general.json config)
+    {
+        let sched_cfg = {
+            let cfg = state.config.read().await;
+            BmBackupSchedule {
+                enabled: cfg.backup.schedule.active == "true",
+                interval_hours: cfg.backup.schedule.interval_hours,
+                include_plugins: cfg.backup.schedule.include_plugins,
+                max_backups: cfg.backup.schedule.keep_backups,
+            }
+        };
+        let backup_scheduler = BackupScheduler::new(
+            state.lbhomedir.clone(),
+            version.to_string(),
+            sched_cfg,
+        );
+        tokio::spawn(async move {
+            if let Err(e) = backup_scheduler.run().await {
+                error!("Backup scheduler error: {}", e);
+            }
+        });
+    }
+
+    // Spawn the cron-based task scheduler background loop
+    {
+        let task_scheduler = Arc::new(task_scheduler::TaskScheduler::new(
+            &state.lbhomedir,
+            version,
+        ));
+        task_scheduler.start_background_scheduler();
+    }
 
     // Spawn Miniserver backup scheduler
     web_ui::handlers::miniserver_backup::spawn_ms_backup_scheduler(state.clone());

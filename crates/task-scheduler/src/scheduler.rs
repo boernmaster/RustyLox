@@ -24,12 +24,12 @@ pub struct TaskScheduler {
 
 impl TaskScheduler {
     /// Create a new task scheduler
-    pub fn new(lbhomedir: impl Into<PathBuf>) -> Self {
+    pub fn new(lbhomedir: impl Into<PathBuf>, version: impl Into<String>) -> Self {
         let lbhomedir = lbhomedir.into();
         let history_path = lbhomedir.join("data/system/task_history.json");
         Self {
             config_manager: ScheduledTasksConfigManager::new(&lbhomedir),
-            executor: TaskExecutor::new(&lbhomedir),
+            executor: TaskExecutor::new(&lbhomedir, version),
             history: Arc::new(RwLock::new(VecDeque::new())),
             history_path,
         }
@@ -196,7 +196,7 @@ mod tests {
     #[tokio::test]
     async fn test_load_default_config() {
         let temp = TempDir::new().unwrap();
-        let scheduler = TaskScheduler::new(temp.path());
+        let scheduler = TaskScheduler::new(temp.path(), "test");
         let config = scheduler.load_config().await.unwrap();
         assert!(!config.tasks.is_empty());
     }
@@ -204,7 +204,7 @@ mod tests {
     #[tokio::test]
     async fn test_history_empty_initially() {
         let temp = TempDir::new().unwrap();
-        let scheduler = TaskScheduler::new(temp.path());
+        let scheduler = TaskScheduler::new(temp.path(), "test");
         let history = scheduler.get_history().await;
         assert!(history.is_empty());
     }
