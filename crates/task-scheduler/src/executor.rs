@@ -152,29 +152,81 @@ impl TaskExecutor {
         ))
     }
 
-    /// Rotate log files
+    /// Rotate log files.
+    ///
+    /// Rules enforced:
+    /// - Active log file (`rustylox.log`) is truncated to 5 MB when it exceeds 10 MB,
+    ///   keeping the most recent (tail) content.
+    /// - Other `.log` files older than 30 days are deleted.
     async fn run_log_rotation(&self) -> Result<String> {
         info!("Running log rotation");
+
+        const MAX_LOG_BYTES: u64 = 10 * 1024 * 1024; // 10 MB
+        const KEEP_BYTES: u64 = 5 * 1024 * 1024; // keep 5 MB of tail after truncation
 
         let log_dir = self.lbhomedir.join("log");
         if !log_dir.exists() {
             return Ok("Log directory not found, nothing to rotate.".to_string());
         }
 
-        let mut rotated = 0u32;
+        let mut removed = 0u32;
+        let mut truncated = 0u32;
         let mut errors = 0u32;
-
-        // Find log files older than 30 days and remove them
         let cutoff = Utc::now() - chrono::Duration::days(30);
 
-        let mut entries = tokio::fs::read_dir(&log_dir)
-            .await
-            .map_err(|e| Error::plugin(format!("Failed to read log directory: {}", e)))?;
+        // Walk both log/ and log/system/ so we catch all log files.
+        let dirs: Vec<PathBuf> = vec![log_dir.clone(), log_dir.join("system")];
 
-        while let Ok(Some(entry)) = entries.next_entry().await {
-            let path = entry.path();
-            if path.is_file() {
-                if let Ok(metadata) = tokio::fs::metadata(&path).await {
+        for dir in &dirs {
+            let mut entries = match tokio::fs::read_dir(dir).await {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+
+            while let Ok(Some(entry)) = entries.next_entry().await {
+                let path = entry.path();
+                if !path.is_file() {
+                    continue;
+                }
+
+                let name = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("")
+                    .to_string();
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                let is_log = ext == "log" || name.contains(".log");
+                if !is_log {
+                    continue;
+                }
+
+                let metadata = match tokio::fs::metadata(&path).await {
+                    Ok(m) => m,
+                    Err(_) => continue,
+                };
+
+                let is_active = name == "rustylox.log";
+
+                if is_active {
+                    // Never delete the active log — only truncate if too large.
+                    if metadata.len() > MAX_LOG_BYTES {
+                        match truncate_log_tail(&path, KEEP_BYTES).await {
+                            Ok(()) => {
+                                info!(
+                                    "Truncated {} to last {} MB",
+                                    path.display(),
+                                    KEEP_BYTES / (1024 * 1024)
+                                );
+                                truncated += 1;
+                            }
+                            Err(e) => {
+                                warn!("Failed to truncate {}: {}", path.display(), e);
+                                errors += 1;
+                            }
+                        }
+                    }
+                } else {
+                    // Rotated / old log files: delete when older than 30 days.
                     if let Ok(modified) = metadata.modified() {
                         let modified: DateTime<Utc> = modified.into();
                         if modified < cutoff {
@@ -182,7 +234,8 @@ impl TaskExecutor {
                                 warn!("Failed to remove old log {}: {}", path.display(), e);
                                 errors += 1;
                             } else {
-                                rotated += 1;
+                                info!("Removed old log file: {}", path.display());
+                                removed += 1;
                             }
                         }
                     }
@@ -191,8 +244,8 @@ impl TaskExecutor {
         }
 
         Ok(format!(
-            "Log rotation complete: {} files removed, {} errors.",
-            rotated, errors
+            "Log rotation complete: {} old file(s) removed, {} file(s) truncated, {} error(s).",
+            removed, truncated, errors
         ))
     }
 
@@ -373,6 +426,38 @@ impl TaskExecutor {
             Err(Error::plugin(format!("Script failed: {}", stderr)))
         }
     }
+}
+
+/// Truncate a log file to its most-recent `keep_bytes` bytes, aligned to a line boundary.
+///
+/// The oldest content (the beginning of the file) is discarded so the file never grows beyond
+/// the configured limit while still retaining the most recent log lines.
+async fn truncate_log_tail(path: &PathBuf, keep_bytes: u64) -> Result<()> {
+    let content = tokio::fs::read(path)
+        .await
+        .map_err(|e| Error::plugin(format!("read failed: {}", e)))?;
+
+    let total = content.len() as u64;
+    if total <= keep_bytes {
+        return Ok(());
+    }
+
+    let start_idx = (total - keep_bytes) as usize;
+    let tail = &content[start_idx..];
+
+    // Advance past the first partial line so we start on a clean line boundary.
+    let line_start = tail
+        .iter()
+        .position(|&b| b == b'\n')
+        .map(|i| i + 1)
+        .unwrap_or(0);
+    let trimmed = &tail[line_start..];
+
+    tokio::fs::write(path, trimmed)
+        .await
+        .map_err(|e| Error::plugin(format!("write failed: {}", e)))?;
+
+    Ok(())
 }
 
 /// Check available disk space
