@@ -19,6 +19,7 @@ pub struct MqttStatsTemplate {
     pub messages_per_second: String,
     pub uptime: String,
     pub rejected_params: Vec<RejectedParamDisplay>,
+    pub lang: String,
 }
 
 #[derive(Debug, Clone)]
@@ -53,6 +54,7 @@ pub async fn stats(State(state): State<AppState>) -> Html<String> {
         })
         .collect();
 
+    let lang = state.config.read().await.base.lang.clone();
     let success_rate = snapshot.success_rate();
     let template = MqttStatsTemplate {
         version: state.version.clone(),
@@ -66,6 +68,7 @@ pub async fn stats(State(state): State<AppState>) -> Html<String> {
         messages_per_second: format!("{:.2}", snapshot.messages_per_second()),
         uptime: format_uptime(snapshot.uptime_seconds),
         rejected_params,
+        lang,
     };
 
     Html(

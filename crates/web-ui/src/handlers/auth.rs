@@ -32,10 +32,12 @@ pub async fn show_login(
     State(state): State<AppState>,
     Query(params): Query<LoginQuery>,
 ) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = LoginTemplate {
         error: params.error,
         redirect: params.redirect,
         version: state.version.clone(),
+        lang,
     };
     Html(
         template
@@ -107,8 +109,10 @@ pub async fn handle_logout() -> Response {
 
 /// GET /admin/users - user management page
 pub async fn users(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = AdminUsersTemplate {
         version: state.version.clone(),
+        lang,
     };
     Html(
         template
@@ -119,8 +123,10 @@ pub async fn users(State(state): State<AppState>) -> Html<String> {
 
 /// GET /admin/api-keys - API key management page
 pub async fn api_keys(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = AdminApiKeysTemplate {
         version: state.version.clone(),
+        lang,
     };
     Html(
         template
@@ -131,8 +137,10 @@ pub async fn api_keys(State(state): State<AppState>) -> Html<String> {
 
 /// GET /admin/audit - audit log viewer
 pub async fn audit_log(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = AdminAuditTemplate {
         version: state.version.clone(),
+        lang,
     };
     Html(
         template

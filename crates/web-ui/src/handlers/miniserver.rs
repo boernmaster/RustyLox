@@ -61,9 +61,11 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
         });
     }
 
+    let lang = state.config.read().await.base.lang.clone();
     let template = MiniserverListTemplate {
         miniservers,
         version: state.version.clone(),
+        lang,
     };
 
     Html(
@@ -75,10 +77,12 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
 
 /// Show add Miniserver form
 pub async fn add_form(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = MiniserverEditTemplate {
         miniserver: None,
         is_new: true,
         version: state.version.clone(),
+        lang,
     };
 
     Html(
@@ -187,10 +191,12 @@ pub async fn edit_form(State(state): State<AppState>, Path(id): Path<String>) ->
         udpport: ms.udpport.clone(),
     });
 
+    let lang = config.base.lang.clone();
     let template = MiniserverEditTemplate {
         miniserver,
         is_new: false,
         version: state.version.clone(),
+        lang,
     };
 
     Html(
@@ -342,9 +348,11 @@ pub async fn test_connection(
 
 /// Miniserver Monitor page (displays the UI)
 pub async fn monitor(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = MiniserverMonitorTemplate {
         title: "Miniserver Monitor - Real-time Communication Viewer".to_string(),
         version: state.version.clone(),
+        lang,
     };
 
     Html(

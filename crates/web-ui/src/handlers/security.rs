@@ -8,12 +8,17 @@ use web_api::AppState;
 #[template(path = "admin/security.html")]
 pub struct SecurityTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// GET /admin/security - security settings page
 pub async fn index(State(state): State<AppState>) -> Html<String> {
+    let config = state.config.read().await;
+    let lang = config.base.lang.clone();
+    drop(config);
     let template = SecurityTemplate {
         version: state.version.clone(),
+        lang,
     };
     Html(
         template

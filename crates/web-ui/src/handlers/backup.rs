@@ -22,6 +22,7 @@ pub struct BackupDisplay {
 pub struct BackupTemplate {
     pub backups: Vec<BackupDisplay>,
     pub version: String,
+    pub lang: String,
 }
 
 fn format_size(bytes: u64) -> String {
@@ -53,9 +54,11 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         }
     };
 
+    let lang = state.config.read().await.base.lang.clone();
     let template = BackupTemplate {
         backups,
         version: state.version.clone(),
+        lang,
     };
     Html(
         template

@@ -8,12 +8,17 @@ use web_api::AppState;
 #[template(path = "profile.html")]
 pub struct ProfileTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// GET /profile - current user profile page
 pub async fn index(State(state): State<AppState>) -> Html<String> {
+    let config = state.config.read().await;
+    let lang = config.base.lang.clone();
+    drop(config);
     let template = ProfileTemplate {
         version: state.version.clone(),
+        lang,
     };
     Html(
         template

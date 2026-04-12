@@ -22,11 +22,13 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         (None, cfg)
     };
 
+    let lang = state.config.read().await.base.lang.clone();
     let template = WeatherIndexTemplate {
         version: state.version.clone(),
         weather: weather_data,
         enabled: cfg.enabled,
         location_name: cfg.location_name.clone(),
+        lang,
     };
 
     Html(
@@ -44,9 +46,11 @@ pub async fn config(State(state): State<AppState>) -> Html<String> {
         state.config.read().await.weather.clone()
     };
 
+    let lang = state.config.read().await.base.lang.clone();
     let template = WeatherConfigTemplate {
         version: state.version.clone(),
         cfg,
+        lang,
     };
 
     Html(

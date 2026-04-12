@@ -16,6 +16,7 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         masked_pass = "********".to_string();
     }
 
+    let lang = state.config.read().await.base.lang.clone();
     let template = EmailTemplate {
         smtp_host: config.smtp_host,
         smtp_port: config.smtp_port,
@@ -27,6 +28,7 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         notification_addresses: config.notification_addresses.join("\n"),
         enabled: config.enabled,
         version: state.version.clone(),
+        lang,
     };
 
     Html(

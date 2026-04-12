@@ -7,9 +7,11 @@ use web_api::AppState;
 
 /// GET /mqtt/finder - MQTT Finder page
 pub async fn index(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = MqttFinderTemplate {
         title: "MQTT Finder".to_string(),
         version: state.version.clone(),
+        lang,
     };
 
     Html(

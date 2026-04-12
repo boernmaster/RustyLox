@@ -8,12 +8,17 @@ use web_api::AppState;
 #[template(path = "admin/database.html")]
 pub struct DatabaseTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// GET /admin/database - data management page
 pub async fn index(State(state): State<AppState>) -> Html<String> {
+    let config = state.config.read().await;
+    let lang = config.base.lang.clone();
+    drop(config);
     let template = DatabaseTemplate {
         version: state.version.clone(),
+        lang,
     };
     Html(
         template
