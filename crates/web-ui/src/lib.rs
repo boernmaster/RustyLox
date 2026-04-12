@@ -73,8 +73,17 @@ pub fn create_ui_router(state: AppState) -> Router {
             post(handlers::mqtt_management::add_conversion),
         )
         .route(
+            "/mqtt/conversions/:id/edit",
+            get(handlers::mqtt_management::get_edit_conversion),
+        )
+        .route(
+            "/mqtt/conversions/:id/view",
+            get(handlers::mqtt_management::get_conversion_view),
+        )
+        .route(
             "/mqtt/conversions/:id",
-            axum::routing::delete(handlers::mqtt_management::delete_conversion),
+            axum::routing::delete(handlers::mqtt_management::delete_conversion)
+                .put(handlers::mqtt_management::update_conversion),
         )
         // Plugin management
         .route("/plugins", get(handlers::plugins::list))
