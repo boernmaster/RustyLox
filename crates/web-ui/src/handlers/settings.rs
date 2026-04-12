@@ -36,10 +36,7 @@ pub struct SettingsFormData {
 }
 
 /// Submit settings
-pub async fn submit(
-    State(state): State<AppState>,
-    Form(form): Form<SettingsFormData>,
-) -> Response {
+pub async fn submit(State(state): State<AppState>, Form(form): Form<SettingsFormData>) -> Response {
     // Get mutable config
     let mut config = state.config.write().await;
 
