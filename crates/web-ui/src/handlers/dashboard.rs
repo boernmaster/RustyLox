@@ -56,11 +56,13 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         false
     };
 
+    let lang = config.base.lang.clone();
     let template = DashboardTemplate {
         system_status,
         miniserver_count,
         plugin_count,
         mqtt_connected,
+        lang,
     };
 
     Html(

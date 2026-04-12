@@ -8,12 +8,15 @@ use web_api::AppState;
 #[template(path = "health.html")]
 pub struct HealthTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// GET /system-health - system health dashboard
 pub async fn index(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = HealthTemplate {
         version: state.version.clone(),
+        lang,
     };
     Html(
         template
