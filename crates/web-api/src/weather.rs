@@ -609,8 +609,8 @@ impl WeatherService {
             .status();
         match status {
             Ok(s) if s.success() => info!("dnsmasq reloaded (SIGHUP)"),
-            Ok(s) => warn!("pkill -HUP dnsmasq exited with status {}", s),
-            Err(e) => warn!("Could not send SIGHUP to dnsmasq: {}", e),
+            Ok(s) => debug!("pkill -HUP dnsmasq exited with status {}", s),
+            Err(e) => debug!("Could not send SIGHUP to dnsmasq: {}", e),
         }
         Ok(())
     }
