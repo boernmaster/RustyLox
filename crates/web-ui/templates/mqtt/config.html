@@ -720,16 +720,20 @@
         const CONV_TYPE_HINTS = {
             bool_to_int: `<div style="padding: 10px; background: #e8f5e9; border-left: 3px solid #4caf50; border-radius: 3px; font-size: 0.9em;">
                 <strong>Boolean to 0/1</strong><br>
-                Converts boolean-like values to numeric 0 or 1.<br>
-                <code>true</code>, <code>on</code>, <code>yes</code>, <code>1</code> &rarr; <code>1</code><br>
-                <code>false</code>, <code>off</code>, <code>no</code>, <code>0</code> &rarr; <code>0</code><br>
+                Converts boolean-like string values to numeric 0 or 1.<br>
+                <code>true</code>, <code>on</code>, <code>yes</code> &rarr; <code>1</code><br>
+                <code>false</code>, <code>off</code>, <code>no</code> &rarr; <code>0</code><br>
                 <em>No configuration needed.</em>
             </div>`,
             json_expand: `<div style="padding: 10px; background: #e3f2fd; border-left: 3px solid #1976D2; border-radius: 3px; font-size: 0.9em;">
                 <strong>Expand JSON</strong><br>
-                Expands a JSON object payload into separate sub-topics, one per key.<br>
-                Example: payload <code>{"temp": 21, "hum": 65}</code> on topic <code>home/sensor</code><br>
-                creates &rarr; <code>home/sensor/temp = 21</code> and <code>home/sensor/hum = 65</code><br>
+                Flattens a JSON object or array into one sub-topic per value (same as LoxBerry V1 <em>expand_json</em>).<br>
+                <strong>Flat object:</strong> <code>{"temp": 21, "hum": 65}</code> on <code>home/sensor</code><br>
+                &nbsp;&nbsp;&rarr; <code>home/sensor/temp = 21</code> &nbsp; <code>home/sensor/hum = 65</code><br>
+                <strong>Nested object</strong> (keys joined with <code>_</code>): <code>{"meta": {"unit": "C"}}</code><br>
+                &nbsp;&nbsp;&rarr; <code>home/sensor/meta_unit = C</code><br>
+                <strong>Array</strong> (indices as keys): <code>[10, 20]</code><br>
+                &nbsp;&nbsp;&rarr; <code>home/sensor/0 = 10</code> &nbsp; <code>home/sensor/1 = 20</code><br>
                 <em>No configuration needed.</em>
             </div>`,
             json_extract: `<div style="padding: 10px; background: #fff8e1; border-left: 3px solid #f9a825; border-radius: 3px; font-size: 0.9em;">

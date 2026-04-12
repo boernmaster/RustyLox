@@ -286,44 +286,48 @@ impl MqttGateway {
                 // Record in MQTT Finder (all messages, regardless of relay)
                 self.mqtt_finder.record(&topic, &value);
 
-                // Apply transformers
-                let result = self.transformer_registry.transform(&topic, &value).await?;
+                // Apply transformers — may produce multiple results (e.g. JSON expansion)
+                let results = self.transformer_registry.transform(&topic, &value).await?;
 
-                // Check per-topic "do not forward" setting
-                if self.relay_tracker.is_do_not_forward(&result.topic) {
-                    self.relay_tracker
-                        .record_http_cached(&result.topic, &result.value);
-                    self.stats.inc_filtered();
-                    return Ok(());
-                }
+                for result in results {
+                    // Check per-topic "do not forward" setting
+                    if self.relay_tracker.is_do_not_forward(&result.topic) {
+                        self.relay_tracker
+                            .record_http_cached(&result.topic, &result.value);
+                        self.stats.inc_filtered();
+                        continue;
+                    }
 
-                // Relay to Miniserver if configured
-                if result.relay_to_miniserver {
-                    self.stats.inc_relayed();
-                    self.relay
-                        .send_to_miniserver(&result.topic, &result.value)
-                        .await?;
-                } else {
-                    self.stats.inc_filtered();
-                    self.relay_tracker
-                        .record_http_cached(&result.topic, &result.value);
+                    // Relay to Miniserver if configured
+                    if result.relay_to_miniserver {
+                        self.stats.inc_relayed();
+                        self.relay
+                            .send_to_miniserver(&result.topic, &result.value)
+                            .await?;
+                    } else {
+                        self.stats.inc_filtered();
+                        self.relay_tracker
+                            .record_http_cached(&result.topic, &result.value);
+                    }
                 }
             }
             GatewayMessage::UdpReceived { topic, value } => {
-                // Apply transformers (may rewrite topic/value)
-                let result = self.transformer_registry.transform(&topic, &value).await?;
+                // Apply transformers — may produce multiple results
+                let results = self.transformer_registry.transform(&topic, &value).await?;
 
-                // UDP input always publishes to MQTT — that is the purpose of the UDP gateway
-                // (equivalent to original LoxBerry MQTT Gateway UDP interface on port 11884)
-                self.broker_client
-                    .publish(&result.topic, &result.value)
-                    .await?;
-
-                // Also relay to Miniserver if configured
-                if result.relay_to_miniserver {
-                    self.relay
-                        .send_to_miniserver(&result.topic, &result.value)
+                for result in results {
+                    // UDP input always publishes to MQTT — that is the purpose of the UDP gateway
+                    // (equivalent to original LoxBerry MQTT Gateway UDP interface on port 11884)
+                    self.broker_client
+                        .publish(&result.topic, &result.value)
                         .await?;
+
+                    // Also relay to Miniserver if configured
+                    if result.relay_to_miniserver {
+                        self.relay
+                            .send_to_miniserver(&result.topic, &result.value)
+                            .await?;
+                    }
                 }
             }
             GatewayMessage::ReadyForRelay {
