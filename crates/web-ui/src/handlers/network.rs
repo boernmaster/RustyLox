@@ -7,8 +7,10 @@ use web_api::AppState;
 
 /// Network diagnostics page
 pub async fn index(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = NetworkTemplate {
         version: state.version.clone(),
+        lang,
     };
 
     Html(

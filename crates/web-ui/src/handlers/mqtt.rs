@@ -17,9 +17,11 @@ use web_api::AppState;
 
 /// MQTT Monitor page — "Incoming Overview" showing relay state to Miniserver
 pub async fn monitor(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = MqttMonitorTemplate {
         title: "Incoming Overview".to_string(),
         version: state.version.clone(),
+        lang,
     };
 
     Html(
@@ -125,9 +127,11 @@ pub async fn config(State(state): State<AppState>) -> Html<String> {
         topicfilter: config.mqtt.topicfilter.clone(),
     };
 
+    let lang = config.base.lang.clone();
     let template = MqttConfigTemplate {
         config: mqtt_config,
         version: state.version.clone(),
+        lang,
     };
 
     Html(

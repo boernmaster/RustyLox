@@ -156,6 +156,7 @@ pub struct MiniserverBackupEntry {
 pub struct MiniserverBackupTemplate {
     pub entries: Vec<MiniserverBackupEntry>,
     pub version: String,
+    pub lang: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -273,13 +274,14 @@ async fn rotate_backups(dir: &StdPath) {
 pub async fn index(State(state): State<AppState>) -> Html<String> {
     let base_dir = state.lbhomedir.join("data/system/miniserver-backups");
 
-    let ms_entries: Vec<(String, String, String)> = {
+    let (ms_entries, lang) = {
         let config = state.config.read().await;
-        config
+        let entries: Vec<(String, String, String)> = config
             .miniserver
             .iter()
             .map(|(id, ms)| (id.clone(), ms.name.clone(), ms.ipaddress.clone()))
-            .collect()
+            .collect();
+        (entries, config.base.lang.clone())
     };
 
     let schedules = load_ms_schedules(&state.lbhomedir).await;
@@ -308,6 +310,7 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
     let template = MiniserverBackupTemplate {
         entries,
         version: state.version.clone(),
+        lang,
     };
     Html(
         template

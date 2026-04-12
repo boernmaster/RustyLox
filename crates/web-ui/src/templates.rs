@@ -12,6 +12,7 @@ pub struct BaseTemplate<'a> {
     pub title: &'a str,
     pub content: String,
     pub version: String,
+    pub lang: String,
 }
 
 /// Dashboard template
@@ -22,6 +23,7 @@ pub struct DashboardTemplate {
     pub miniserver_count: usize,
     pub plugin_count: usize,
     pub mqtt_connected: bool,
+    pub lang: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,6 +39,7 @@ pub struct SystemStatus {
 pub struct MqttMonitorTemplate {
     pub title: String,
     pub version: String,
+    pub lang: String,
 }
 
 /// MQTT Finder template
@@ -45,6 +48,7 @@ pub struct MqttMonitorTemplate {
 pub struct MqttFinderTemplate {
     pub title: String,
     pub version: String,
+    pub lang: String,
 }
 
 /// MQTT Message for display
@@ -63,6 +67,7 @@ pub struct MqttMessage {
 pub struct MiniserverMonitorTemplate {
     pub title: String,
     pub version: String,
+    pub lang: String,
 }
 
 /// Miniserver communication message for display
@@ -85,6 +90,7 @@ pub struct MiniserverMessage {
 pub struct MiniserverListTemplate {
     pub miniservers: Vec<MiniserverDisplay>,
     pub version: String,
+    pub lang: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,6 +109,7 @@ pub struct MiniserverEditTemplate {
     pub miniserver: Option<MiniserverForm>,
     pub is_new: bool,
     pub version: String,
+    pub lang: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -123,6 +130,7 @@ pub struct MiniserverForm {
 pub struct PluginListTemplate {
     pub plugins: Vec<PluginDisplay>,
     pub version: String,
+    pub lang: String,
 }
 
 /// Plugin details template
@@ -131,6 +139,7 @@ pub struct PluginListTemplate {
 pub struct PluginDetailsTemplate {
     pub plugin: PluginDisplay,
     pub version: String,
+    pub lang: String,
 }
 
 /// Plugin install template
@@ -138,6 +147,7 @@ pub struct PluginDetailsTemplate {
 #[template(path = "plugins/install.html")]
 pub struct PluginInstallTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -161,6 +171,7 @@ pub struct PluginDisplay {
 pub struct MqttConfigTemplate {
     pub config: MqttConfigForm,
     pub version: String,
+    pub lang: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -180,6 +191,7 @@ pub struct SettingsTemplate {
     pub language: String,
     pub timezone: String,
     pub version: String,
+    pub lang: String,
 }
 
 /// Email configuration template
@@ -196,6 +208,7 @@ pub struct EmailTemplate {
     pub notification_addresses: String,
     pub enabled: bool,
     pub version: String,
+    pub lang: String,
 }
 
 /// Scheduled tasks template
@@ -203,6 +216,7 @@ pub struct EmailTemplate {
 #[template(path = "tasks.html")]
 pub struct TasksTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// Network diagnostics template
@@ -210,6 +224,7 @@ pub struct TasksTemplate {
 #[template(path = "network.html")]
 pub struct NetworkTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// Login page template
@@ -219,6 +234,7 @@ pub struct LoginTemplate {
     pub error: Option<String>,
     pub redirect: Option<String>,
     pub version: String,
+    pub lang: String,
 }
 
 /// Admin user management template
@@ -226,6 +242,7 @@ pub struct LoginTemplate {
 #[template(path = "admin/users.html")]
 pub struct AdminUsersTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// Admin API keys template
@@ -233,6 +250,7 @@ pub struct AdminUsersTemplate {
 #[template(path = "admin/api_keys.html")]
 pub struct AdminApiKeysTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// Admin audit log template
@@ -240,6 +258,7 @@ pub struct AdminApiKeysTemplate {
 #[template(path = "admin/audit.html")]
 pub struct AdminAuditTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// Weather main page template
@@ -250,6 +269,7 @@ pub struct WeatherIndexTemplate {
     pub weather: Option<WeatherData>,
     pub enabled: bool,
     pub location_name: String,
+    pub lang: String,
 }
 
 /// Weather configuration template
@@ -258,6 +278,7 @@ pub struct WeatherIndexTemplate {
 pub struct WeatherConfigTemplate {
     pub version: String,
     pub cfg: WeatherConfig,
+    pub lang: String,
 }
 
 /// System update template
@@ -265,6 +286,7 @@ pub struct WeatherConfigTemplate {
 #[template(path = "system_update.html")]
 pub struct SystemUpdateTemplate {
     pub version: String,
+    pub lang: String,
 }
 
 /// API documentation template
@@ -273,6 +295,7 @@ pub struct SystemUpdateTemplate {
 pub struct ApiDocsTemplate {
     pub groups: Vec<ApiGroup>,
     pub version: String,
+    pub lang: String,
 }
 
 #[derive(Debug, Clone)]

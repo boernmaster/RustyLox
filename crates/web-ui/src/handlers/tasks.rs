@@ -7,8 +7,10 @@ use web_api::AppState;
 
 /// Scheduled tasks page
 pub async fn index(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = TasksTemplate {
         version: state.version.clone(),
+        lang,
     };
 
     Html(

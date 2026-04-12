@@ -236,9 +236,11 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         },
     ];
 
+    let lang = state.config.read().await.base.lang.clone();
     let template = ApiDocsTemplate {
         groups,
         version: state.version.clone(),
+        lang,
     };
     Html(
         template

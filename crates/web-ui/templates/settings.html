@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/i18n.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -89,6 +90,8 @@
                             <option value="de" {% if language == "de" %}selected{% endif %}>Deutsch</option>
                             <option value="fr" {% if language == "fr" %}selected{% endif %}>Français</option>
                             <option value="es" {% if language == "es" %}selected{% endif %}>Español</option>
+                            <option value="it" {% if language == "it" %}selected{% endif %}>Italiano</option>
+                            <option value="zh" {% if language == "zh" %}selected{% endif %}>中文</option>
                         </select>
                     </div>
 

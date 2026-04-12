@@ -69,9 +69,11 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
         Err(_) => Vec::new(),
     };
 
+    let lang = state.config.read().await.base.lang.clone();
     let template = PluginListTemplate {
         plugins,
         version: state.version.clone(),
+        lang,
     };
 
     Html(
@@ -83,8 +85,10 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
 
 /// Show plugin install form
 pub async fn install_form(State(state): State<AppState>) -> Html<String> {
+    let lang = state.config.read().await.base.lang.clone();
     let template = PluginInstallTemplate {
         version: state.version.clone(),
+        lang,
     };
 
     Html(
@@ -227,9 +231,11 @@ pub async fn details(State(state): State<AppState>, Path(md5): Path<String>) -> 
                 install_date,
             };
 
+            let lang = state.config.read().await.base.lang.clone();
             let template = PluginDetailsTemplate {
                 plugin: plugin_display,
                 version: state.version.clone(),
+                lang,
             };
 
             Html(
