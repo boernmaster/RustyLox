@@ -168,6 +168,19 @@ async fn main() -> Result<()> {
     .with_auth(auth_service)
     .with_weather(Arc::clone(&weather_service));
 
+    // Apply the log level that was persisted in general.json (if any).
+    // Legacy numeric values (e.g. "6") are not valid EnvFilter directives and
+    // will be silently ignored, leaving the RUST_LOG default in place.
+    {
+        let saved_level = state.config.read().await.base.systemloglevel.clone();
+        if let Some(ref updater) = state.log_level_updater {
+            if updater(&saved_level) {
+                *state.log_level.write().await = saved_level.clone();
+                info!("Applied persisted log level from config: {}", saved_level);
+            }
+        }
+    }
+
     // Wire MQTT gateway relay to the miniserver monitor so outbound sends appear in the UI
     if let Some(gw) = &state.mqtt_gateway {
         let tx = state.miniserver_monitor.clone();
