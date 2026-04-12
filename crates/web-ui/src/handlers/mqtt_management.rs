@@ -23,9 +23,174 @@ pub struct ConversionForm {
     pub enabled: Option<String>,
 }
 
+// Escape HTML special characters to prevent XSS
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+fn conversion_type_label(t: &str) -> &str {
+    match t {
+        "bool_to_int" => "Boolean to 0/1",
+        "json_expand" => "Expand JSON",
+        "json_extract" => "Extract JSON Field",
+        "regex" => "Regex Replace",
+        _ => t,
+    }
+}
+
+/// Render a single conversion item as read-only HTML
+fn render_conversion_item_html(idx: usize, conv: &ParsedConversion) -> String {
+    let enabled_class = if conv.enabled {
+        "conversion-item"
+    } else {
+        "conversion-item disabled"
+    };
+    let type_label = conversion_type_label(&conv.conversion_type);
+    let config_html = if !conv.config.is_empty() {
+        format!(
+            "<br><small style='color: #666;'>Config: {}</small>",
+            html_escape(&conv.config)
+        )
+    } else {
+        String::new()
+    };
+    let status_badge = if conv.enabled {
+        "<span class='badge badge-success'>Active</span>"
+    } else {
+        "<span class='badge badge-warning'>Disabled</span>"
+    };
+    // Use r##"..."## so that "# inside hx-target="#..." does not terminate the raw string
+    format!(
+        r##"<div class="{enabled_class}" id="conversion-item-{idx}">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <strong>{type_label}</strong>
+            <br><code style="color: #1976D2;">{topic}</code>
+            {config_html}
+            {status_badge}
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary btn-sm"
+                    hx-get="/mqtt/conversions/{idx}/edit"
+                    hx-target="#conversion-item-{idx}"
+                    hx-swap="outerHTML">
+                Edit
+            </button>
+            <button class="btn btn-danger btn-sm"
+                    hx-delete="/mqtt/conversions/{idx}"
+                    hx-target="#conversion-item-{idx}"
+                    hx-swap="outerHTML">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>"##,
+        enabled_class = enabled_class,
+        idx = idx,
+        type_label = html_escape(type_label),
+        topic = html_escape(&conv.topic_pattern),
+        config_html = config_html,
+        status_badge = status_badge,
+    )
+}
+
+/// Render an inline edit form for a conversion item
+fn render_edit_form_html(idx: usize, conv: &ParsedConversion) -> String {
+    let s_bool = if conv.conversion_type == "bool_to_int" {
+        "selected"
+    } else {
+        ""
+    };
+    let s_expand = if conv.conversion_type == "json_expand" {
+        "selected"
+    } else {
+        ""
+    };
+    let s_extract = if conv.conversion_type == "json_extract" {
+        "selected"
+    } else {
+        ""
+    };
+    let s_regex = if conv.conversion_type == "regex" {
+        "selected"
+    } else {
+        ""
+    };
+    let checked = if conv.enabled { "checked" } else { "" };
+    // Use r##"..."## so that "# inside hx-target="#..." does not terminate the raw string
+    format!(
+        r##"<div class="conversion-item" id="conversion-item-{idx}">
+    <form hx-put="/mqtt/conversions/{idx}"
+          hx-target="#conversion-item-{idx}"
+          hx-swap="outerHTML"
+          style="width: 100%;">
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start;">
+            <div>
+                <div class="form-group">
+                    <label>Topic Pattern *</label>
+                    <input type="text" name="topic_pattern" value="{topic}"
+                           required placeholder="home/sensor/+" style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label>Conversion Type *</label>
+                    <select name="conversion_type" required style="width: 100%;"
+                            onchange="updateConvTypeHint(this)">
+                        <option value="bool_to_int" {s_bool}>Boolean to 0/1</option>
+                        <option value="json_expand" {s_expand}>Expand JSON</option>
+                        <option value="json_extract" {s_extract}>Extract JSON Field</option>
+                        <option value="regex" {s_regex}>Regex Replace</option>
+                    </select>
+                </div>
+                <div class="conv-hint-box" style="margin-bottom: 10px;"></div>
+                <div class="form-group">
+                    <label>Configuration (JSON)</label>
+                    <textarea name="config" rows="2" style="width: 100%;"
+                              placeholder="Optional JSON config">{config}</textarea>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" name="enabled" {checked}> Enabled</label>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        hx-get="/mqtt/conversions/{idx}/view"
+                        hx-target="#conversion-item-{idx}"
+                        hx-swap="outerHTML">Cancel</button>
+            </div>
+        </div>
+    </form>
+</div>"##,
+        idx = idx,
+        topic = html_escape(&conv.topic_pattern),
+        s_bool = s_bool,
+        s_expand = s_expand,
+        s_extract = s_extract,
+        s_regex = s_regex,
+        config = html_escape(&conv.config),
+        checked = checked,
+    )
+}
+
+/// Render full list HTML (used by list, add, and update handlers)
+fn render_full_list(conversions: &[ParsedConversion]) -> String {
+    if conversions.is_empty() {
+        return "<p style='text-align: center; color: #999; padding: 20px;'>No conversions configured</p>".to_string();
+    }
+    conversions
+        .iter()
+        .enumerate()
+        .map(|(idx, conv)| render_conversion_item_html(idx, conv))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// List all MQTT subscriptions
 pub async fn list_subscriptions(State(state): State<AppState>) -> Html<String> {
-    // Read subscriptions from config
     let config_path = state.lbhomedir.join("config/system/mqtt_subscriptions.cfg");
 
     let subscriptions = match tokio::fs::read_to_string(&config_path).await {
@@ -86,19 +251,16 @@ pub async fn add_subscription(
 ) -> Html<String> {
     let config_path = state.lbhomedir.join("config/system/mqtt_subscriptions.cfg");
 
-    // Read existing subscriptions
     let mut content = tokio::fs::read_to_string(&config_path)
         .await
         .unwrap_or_default();
 
-    // Generate section name from topic
     let section_name = form
         .name
         .chars()
         .filter(|c| c.is_alphanumeric())
         .collect::<String>();
 
-    // Append new subscription
     content.push_str(&format!(
         "\n[{}]\nTOPIC={}\nNAME={}\nENABLED={}\n",
         section_name,
@@ -107,7 +269,6 @@ pub async fn add_subscription(
         if form.enabled.is_some() { "1" } else { "0" }
     ));
 
-    // Save
     if let Err(e) = tokio::fs::write(&config_path, content).await {
         return Html(format!(
             "<div class='alert alert-danger'>Error saving subscription: {}</div>",
@@ -115,7 +276,6 @@ pub async fn add_subscription(
         ));
     }
 
-    // Return new subscription HTML
     let enabled = form.enabled.is_some();
     let enabled_class = if enabled {
         "subscription-item"
@@ -170,7 +330,6 @@ pub async fn delete_subscription(
         subscriptions.remove(idx);
     }
 
-    // Rebuild config file
     let mut new_content = String::new();
     for (i, sub) in subscriptions.iter().enumerate() {
         let section_name = format!("Subscription{}", i + 1);
@@ -198,55 +357,102 @@ pub async fn list_conversions(State(state): State<AppState>) -> Html<String> {
         Err(_) => Vec::new(),
     };
 
-    let mut html = String::new();
-
-    if conversions.is_empty() {
-        html.push_str("<p style='text-align: center; color: #999; padding: 20px;'>No conversions configured</p>");
-    } else {
-        for (idx, conv) in conversions.iter().enumerate() {
-            let enabled_class = if conv.enabled {
-                "conversion-item"
-            } else {
-                "conversion-item disabled"
-            };
-
-            html.push_str(&format!(
-                r#"<div class="{}">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>{}</strong>
-                            <br><code style="color: #1976D2;">{}</code>
-                            <br><small style="color: #666;">{}</small>
-                            {}
-                        </div>
-                        <div>
-                            <button class="btn btn-danger btn-sm"
-                                    hx-delete="/mqtt/conversions/{}"
-                                    hx-target="closest .conversion-item"
-                                    hx-swap="outerHTML">
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>"#,
-                enabled_class,
-                conv.conversion_type,
-                conv.topic_pattern,
-                conv.config,
-                if conv.enabled {
-                    "<span class='badge badge-success'>Active</span>"
-                } else {
-                    "<span class='badge badge-warning'>Disabled</span>"
-                },
-                idx
-            ));
-        }
-    }
-
-    Html(html)
+    Html(render_full_list(&conversions))
 }
 
-/// Add a new conversion
+/// Return the read-only view for a single conversion (used by Cancel in edit form)
+pub async fn get_conversion_view(
+    State(state): State<AppState>,
+    Path(idx): Path<usize>,
+) -> Html<String> {
+    let config_path = state.lbhomedir.join("config/system/mqtt_transformers.cfg");
+
+    let conversions = match tokio::fs::read_to_string(&config_path).await {
+        Ok(content) => parse_conversions_cfg(&content),
+        Err(_) => Vec::new(),
+    };
+
+    if let Some(conv) = conversions.get(idx) {
+        Html(render_conversion_item_html(idx, conv))
+    } else {
+        Html(String::new())
+    }
+}
+
+/// Return the inline edit form for a conversion
+pub async fn get_edit_conversion(
+    State(state): State<AppState>,
+    Path(idx): Path<usize>,
+) -> Html<String> {
+    let config_path = state.lbhomedir.join("config/system/mqtt_transformers.cfg");
+
+    let conversions = match tokio::fs::read_to_string(&config_path).await {
+        Ok(content) => parse_conversions_cfg(&content),
+        Err(_) => Vec::new(),
+    };
+
+    if let Some(conv) = conversions.get(idx) {
+        Html(render_edit_form_html(idx, conv))
+    } else {
+        Html(format!(
+            "<div class='alert alert-danger'>Conversion {} not found</div>",
+            idx
+        ))
+    }
+}
+
+/// Update an existing conversion (PUT handler)
+pub async fn update_conversion(
+    State(state): State<AppState>,
+    Path(idx): Path<usize>,
+    Form(form): Form<ConversionForm>,
+) -> Html<String> {
+    let config_path = state.lbhomedir.join("config/system/mqtt_transformers.cfg");
+
+    let content = tokio::fs::read_to_string(&config_path)
+        .await
+        .unwrap_or_default();
+
+    let mut conversions = parse_conversions_cfg(&content);
+
+    if idx >= conversions.len() {
+        return Html(format!(
+            "<div class='alert alert-danger'>Conversion {} not found</div>",
+            idx
+        ));
+    }
+
+    conversions[idx] = ParsedConversion {
+        topic_pattern: form.topic_pattern.clone(),
+        conversion_type: form.conversion_type.clone(),
+        config: form.config.clone(),
+        enabled: form.enabled.is_some(),
+    };
+
+    let mut new_content = String::new();
+    for (i, conv) in conversions.iter().enumerate() {
+        let section_name = format!("Conversion{}", i + 1);
+        new_content.push_str(&format!(
+            "[{}]\nTOPIC_PATTERN={}\nTYPE={}\nCONFIG={}\nENABLED={}\n\n",
+            section_name,
+            conv.topic_pattern,
+            conv.conversion_type,
+            conv.config,
+            if conv.enabled { "1" } else { "0" }
+        ));
+    }
+
+    if let Err(e) = tokio::fs::write(&config_path, new_content).await {
+        return Html(format!(
+            "<div class='alert alert-danger'>Error saving conversion: {}</div>",
+            e
+        ));
+    }
+
+    Html(render_conversion_item_html(idx, &conversions[idx]))
+}
+
+/// Add a new conversion and return the full refreshed list
 pub async fn add_conversion(
     State(state): State<AppState>,
     Form(form): Form<ConversionForm>,
@@ -257,11 +463,7 @@ pub async fn add_conversion(
         .await
         .unwrap_or_default();
 
-    let section_name = form
-        .conversion_type
-        .chars()
-        .filter(|c| c.is_alphanumeric())
-        .collect::<String>();
+    let section_name = format!("Conversion{}", parse_conversions_cfg(&content).len() + 1);
 
     content.push_str(&format!(
         "\n[{}]\nTOPIC_PATTERN={}\nTYPE={}\nCONFIG={}\nENABLED={}\n",
@@ -272,49 +474,16 @@ pub async fn add_conversion(
         if form.enabled.is_some() { "1" } else { "0" }
     ));
 
-    if let Err(e) = tokio::fs::write(&config_path, content).await {
+    if let Err(e) = tokio::fs::write(&config_path, &content).await {
         return Html(format!(
             "<div class='alert alert-danger'>Error saving conversion: {}</div>",
             e
         ));
     }
 
-    let enabled = form.enabled.is_some();
-    let enabled_class = if enabled {
-        "conversion-item"
-    } else {
-        "conversion-item disabled"
-    };
-
-    Html(format!(
-        r#"<div class="{}">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong>{}</strong>
-                    <br><code style="color: #1976D2;">{}</code>
-                    <br><small style="color: #666;">{}</small>
-                    {}
-                </div>
-                <div>
-                    <button class="btn btn-danger btn-sm"
-                            hx-delete="/mqtt/conversions/delete"
-                            hx-target="closest .conversion-item"
-                            hx-swap="outerHTML">
-                        Delete
-                    </button>
-                </div>
-            </div>
-        </div>"#,
-        enabled_class,
-        form.conversion_type,
-        form.topic_pattern,
-        form.config,
-        if enabled {
-            "<span class='badge badge-success'>Active</span>"
-        } else {
-            "<span class='badge badge-warning'>Disabled</span>"
-        }
-    ))
+    // Return the full refreshed list so indices are always correct
+    let conversions = parse_conversions_cfg(&content);
+    Html(render_full_list(&conversions))
 }
 
 /// Delete a conversion
@@ -384,7 +553,6 @@ fn parse_subscriptions_cfg(content: &str) -> Vec<ParsedSubscription> {
         }
 
         if line.starts_with('[') {
-            // New section - save previous if complete
             if !current_topic.is_empty() {
                 subscriptions.push(ParsedSubscription {
                     topic: current_topic.clone(),
@@ -392,7 +560,6 @@ fn parse_subscriptions_cfg(content: &str) -> Vec<ParsedSubscription> {
                     enabled: current_enabled,
                 });
             }
-            // Reset for new section
             current_topic.clear();
             current_name.clear();
             current_enabled = true;
@@ -406,7 +573,6 @@ fn parse_subscriptions_cfg(content: &str) -> Vec<ParsedSubscription> {
         }
     }
 
-    // Save last subscription
     if !current_topic.is_empty() {
         subscriptions.push(ParsedSubscription {
             topic: current_topic,
