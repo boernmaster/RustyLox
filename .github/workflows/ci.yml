@@ -199,7 +199,7 @@ jobs:
           tar czf rustylox-daemon-${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz rustylox-daemon
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Release ${{ steps.version.outputs.version }}
           body: |
