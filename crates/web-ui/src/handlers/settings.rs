@@ -2,7 +2,12 @@
 
 use crate::templates::SettingsTemplate;
 use askama::Template;
-use axum::{extract::State, response::Html, Form};
+use axum::{
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::{Html, IntoResponse, Response},
+    Form,
+};
 use serde::Deserialize;
 use web_api::AppState;
 
@@ -31,10 +36,7 @@ pub struct SettingsFormData {
 }
 
 /// Submit settings
-pub async fn submit(
-    State(state): State<AppState>,
-    Form(form): Form<SettingsFormData>,
-) -> Html<String> {
+pub async fn submit(State(state): State<AppState>, Form(form): Form<SettingsFormData>) -> Response {
     // Get mutable config
     let mut config = state.config.write().await;
 
@@ -47,11 +49,16 @@ pub async fn submit(
         Ok(_) => {
             drop(config); // Release lock
             let _ = state.reload_config().await;
-            Html("<div class='alert alert-success'>Settings saved successfully</div>".to_string())
+            // Tell HTMX to do a full page reload so the new language takes effect
+            // (i18n.js reads document.documentElement.lang which is set server-side).
+            let mut headers = HeaderMap::new();
+            headers.insert("HX-Refresh", "true".parse().unwrap());
+            (StatusCode::OK, headers).into_response()
         }
         Err(e) => Html(format!(
             "<div class='alert alert-danger'>Error saving settings: {}</div>",
             e
-        )),
+        ))
+        .into_response(),
     }
 }

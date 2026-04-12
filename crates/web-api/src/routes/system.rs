@@ -100,6 +100,16 @@ pub async fn set_log_level(
 
     let mut current = state.log_level.write().await;
     *current = directive.to_string();
+    drop(current);
+
+    // Persist the new log level to general.json so it survives restarts.
+    {
+        let mut config = state.config.write().await;
+        config.base.systemloglevel = directive.to_string();
+        if let Err(e) = state.config_manager.save_general(&config).await {
+            tracing::warn!("Failed to persist log level to config: {}", e);
+        }
+    }
 
     tracing::info!("Log level changed to: {}", directive);
 
