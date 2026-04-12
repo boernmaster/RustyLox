@@ -409,10 +409,9 @@ pub async fn update_conversion(
 ) -> Html<String> {
     let config_path = state.lbhomedir.join("config/system/mqtt_transformers.cfg");
 
-    let content = match tokio::fs::read_to_string(&config_path).await {
-        Ok(c) => c,
-        Err(_) => String::new(),
-    };
+    let content = tokio::fs::read_to_string(&config_path)
+        .await
+        .unwrap_or_default();
 
     let mut conversions = parse_conversions_cfg(&content);
 
@@ -464,10 +463,7 @@ pub async fn add_conversion(
         .await
         .unwrap_or_default();
 
-    let section_name = format!(
-        "Conversion{}",
-        parse_conversions_cfg(&content).len() + 1
-    );
+    let section_name = format!("Conversion{}", parse_conversions_cfg(&content).len() + 1);
 
     content.push_str(&format!(
         "\n[{}]\nTOPIC_PATTERN={}\nTYPE={}\nCONFIG={}\nENABLED={}\n",

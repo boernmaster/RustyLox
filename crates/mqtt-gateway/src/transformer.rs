@@ -101,11 +101,7 @@ impl Transformer for JsonExpansionTransformer {
             return Ok(vec![]);
         }
 
-        debug!(
-            "Expand JSON: {} keys from topic {}",
-            flat.len(),
-            topic
-        );
+        debug!("Expand JSON: {} keys from topic {}", flat.len(), topic);
 
         let results = flat
             .into_iter()
@@ -335,8 +331,12 @@ mod tests {
             .unwrap();
         assert_eq!(r.len(), 2);
         // Both sub-topics should start with home/sensor/
-        assert!(r.iter().any(|x| x.topic == "home/sensor/temp" && x.value == "21"));
-        assert!(r.iter().any(|x| x.topic == "home/sensor/hum" && x.value == "65"));
+        assert!(r
+            .iter()
+            .any(|x| x.topic == "home/sensor/temp" && x.value == "21"));
+        assert!(r
+            .iter()
+            .any(|x| x.topic == "home/sensor/hum" && x.value == "65"));
     }
 
     #[test]
@@ -356,9 +356,15 @@ mod tests {
         let t = JsonExpansionTransformer;
         let r = t.transform("home/sensor", r#"[10,20,30]"#).unwrap();
         assert_eq!(r.len(), 3);
-        assert!(r.iter().any(|x| x.topic == "home/sensor/0" && x.value == "10"));
-        assert!(r.iter().any(|x| x.topic == "home/sensor/1" && x.value == "20"));
-        assert!(r.iter().any(|x| x.topic == "home/sensor/2" && x.value == "30"));
+        assert!(r
+            .iter()
+            .any(|x| x.topic == "home/sensor/0" && x.value == "10"));
+        assert!(r
+            .iter()
+            .any(|x| x.topic == "home/sensor/1" && x.value == "20"));
+        assert!(r
+            .iter()
+            .any(|x| x.topic == "home/sensor/2" && x.value == "30"));
     }
 
     #[test]
