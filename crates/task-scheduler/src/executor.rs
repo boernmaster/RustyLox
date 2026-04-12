@@ -6,7 +6,7 @@ use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::path::PathBuf;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 /// Task execution status
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -356,7 +356,18 @@ impl TaskExecutor {
                         }
                     }
                     Err(e) => {
-                        warn!("Skipping '{}' in Miniserver backup: {}", file, e);
+                        let msg = e.to_string();
+                        if msg.contains("403")
+                            || msg.contains("404")
+                            || msg.contains("error decoding response body")
+                        {
+                            // 403: access-controlled file; 404: placeholder sentinel;
+                            // decode error: Miniserver serves some binary files with
+                            // non-standard encoding — all are expected and non-actionable.
+                            debug!("Skipping '{}' in Miniserver backup: {}", file, e);
+                        } else {
+                            warn!("Skipping '{}' in Miniserver backup: {}", file, e);
+                        }
                     }
                 }
             }
@@ -491,7 +502,12 @@ async fn walk_ms_dir(client: &miniserver_client::MiniserverClient, dir: &str) ->
         let listing = match client.http().call(&url).await {
             Ok((_, _, body)) => body,
             Err(e) => {
-                warn!("Failed to list Miniserver dir '{}': {}", dir, e);
+                let msg = e.to_string();
+                if msg.contains("403") || msg.contains("404") {
+                    debug!("Skipping Miniserver dir '{}': {}", dir, e);
+                } else {
+                    warn!("Failed to list Miniserver dir '{}': {}", dir, e);
+                }
                 continue;
             }
         };
@@ -503,7 +519,8 @@ async fn walk_ms_dir(client: &miniserver_client::MiniserverClient, dir: &str) ->
             if let Some(name) = line.split_whitespace().last() {
                 if line.starts_with("d ") {
                     queue.push_back(format!("{}{}/", dir, name));
-                } else {
+                } else if name != "empty" {
+                    // Skip "empty" sentinel files the Miniserver uses for empty dirs
                     all_files.push(format!("{}{}", dir, name));
                 }
             }
