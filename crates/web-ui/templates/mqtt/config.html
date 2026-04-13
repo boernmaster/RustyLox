@@ -176,14 +176,17 @@
         .btn-sm {
             padding: 4px 10px;
             font-size: 0.85em;
-            border: 1px solid #bbb;
-            background: #e8e8e8;
-            color: #333;
             border-radius: 3px;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-sm:hover {
+        /* standalone quick-add buttons with no color class */
+        .btn-quick {
+            border: 1px solid #bbb;
+            background: #e8e8e8;
+            color: #333;
+        }
+        .btn-quick:hover {
             background: #d4d4d4;
             border-color: #4CAF50;
         }
@@ -446,12 +449,12 @@
 
                             <p style="margin: 15px 0 5px 0;"><strong>Quick add buttons:</strong></p>
                             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
-                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_healthcheck_')">+ healthcheck</button>
-                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_info_')">+ info</button>
-                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_announce_')">+ announce</button>
-                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_mqttgateway_')">+ mqttgateway</button>
-                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('_schedule_')">+ schedule</button>
-                                <button type="button" class="btn-sm" onclick="addToGlobalFilter('^solcast_')">+ solcast</button>
+                                <button type="button" class="btn-sm btn-quick" onclick="addToGlobalFilter('_healthcheck_')">+ healthcheck</button>
+                                <button type="button" class="btn-sm btn-quick" onclick="addToGlobalFilter('_info_')">+ info</button>
+                                <button type="button" class="btn-sm btn-quick" onclick="addToGlobalFilter('_announce_')">+ announce</button>
+                                <button type="button" class="btn-sm btn-quick" onclick="addToGlobalFilter('_mqttgateway_')">+ mqttgateway</button>
+                                <button type="button" class="btn-sm btn-quick" onclick="addToGlobalFilter('_schedule_')">+ schedule</button>
+                                <button type="button" class="btn-sm btn-quick" onclick="addToGlobalFilter('^solcast_')">+ solcast</button>
                             </div>
                         </div>
                     </details>
