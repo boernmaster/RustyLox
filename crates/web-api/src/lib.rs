@@ -141,7 +141,10 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/tasks", get(routes::tasks::list_tasks))
         .route("/api/tasks", post(routes::tasks::create_task))
         .route("/api/tasks/history", get(routes::tasks::get_history))
-        .route("/api/tasks/cron-describe", get(routes::tasks::describe_cron_expr))
+        .route(
+            "/api/tasks/cron-describe",
+            get(routes::tasks::describe_cron_expr),
+        )
         .route("/api/tasks/:id", get(routes::tasks::get_task))
         .route("/api/tasks/:id", put(routes::tasks::update_task))
         .route("/api/tasks/:id", delete(routes::tasks::delete_task))
