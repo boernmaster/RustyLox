@@ -4,7 +4,6 @@
 
 use anyhow::Result;
 use auth::{AuditLogger, AuthService, AuthStore};
-use backup_manager::{scheduler::BackupSchedule as BmBackupSchedule, BackupScheduler};
 use mqtt_gateway::MqttGateway;
 use rustylox_config::{ConfigManager, GeneralConfig};
 use std::path::PathBuf;
@@ -327,27 +326,11 @@ async fn main() -> Result<()> {
     // Create API router
     let api_router = create_router(state.clone());
 
-    // Spawn system backup scheduler (reads schedule from general.json config)
-    {
-        let sched_cfg = {
-            let cfg = state.config.read().await;
-            BmBackupSchedule {
-                enabled: cfg.backup.schedule.active == "true",
-                interval_hours: cfg.backup.schedule.interval_hours,
-                include_plugins: cfg.backup.schedule.include_plugins,
-                max_backups: cfg.backup.schedule.keep_backups,
-            }
-        };
-        let backup_scheduler =
-            BackupScheduler::new(state.lbhomedir.clone(), version.to_string(), sched_cfg);
-        tokio::spawn(async move {
-            if let Err(e) = backup_scheduler.run().await {
-                error!("Backup scheduler error: {}", e);
-            }
-        });
-    }
-
-    // Spawn the cron-based task scheduler background loop
+    // Spawn the cron-based task scheduler background loop.
+    // This is the single authoritative scheduler for both system backups
+    // (builtin_backup) and Miniserver backups (builtin_miniserver_backup).
+    // The legacy interval-based BackupScheduler and spawn_ms_backup_scheduler
+    // have been replaced by these built-in cron tasks.
     {
         let task_scheduler = Arc::new(task_scheduler::TaskScheduler::new(
             &state.lbhomedir,
@@ -355,9 +338,6 @@ async fn main() -> Result<()> {
         ));
         task_scheduler.start_background_scheduler();
     }
-
-    // Spawn Miniserver backup scheduler
-    web_ui::handlers::miniserver_backup::spawn_ms_backup_scheduler(state.clone());
 
     // Create UI router
     let ui_router = web_ui::create_ui_router(state.clone());
