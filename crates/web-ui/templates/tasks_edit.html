@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Task - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/i18n.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                    <li><a href="/miniserver/backup">MS Backup</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/config">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/system-update">Update</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Edit Scheduled Task</h1>
+
+        {% if let Some(t) = task %}
+        <div class="card">
+            <form method="post" action="/tasks/{{ t.id }}/edit">
+
+                <div class="form-group">
+                    <label for="name">Task Name *</label>
+                    <input type="text" id="name" name="name" value="{{ t.name }}" required
+                           placeholder="My Task">
+                </div>
+
+                <div class="form-group">
+                    <label for="schedule">Cron Schedule *</label>
+                    <input type="text" id="schedule" name="schedule" value="{{ t.schedule }}" required
+                           placeholder="0 0 2 * * *">
+                    <small>Format: Seconds Minutes Hours Day Month Weekday (e.g. <code>0 0 2 * * *</code> = daily at 02:00)</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Task Type</label>
+                    <input type="text" value="{% if t.task_type == "backup" %}System Backup{% else if t.task_type == "log_rotation" %}Log Rotation{% else if t.task_type == "health_check" %}Health Check{% else if t.task_type == "miniserver_backup" %}Miniserver Backup{% else %}Custom Script{% endif %}" disabled>
+                    <small>Task type cannot be changed after creation.</small>
+                </div>
+
+                {% if t.task_type == "custom" %}
+                <div class="form-group">
+                    <label for="script_path">Script Path</label>
+                    <input type="text" id="script_path" name="script_path" value="{{ t.script_path }}"
+                           placeholder="/opt/loxberry/scripts/my-script.sh">
+                    <small>Path to the script to execute (relative to LBHOMEDIR or absolute).</small>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="enabled" value="on"
+                               {% if t.enabled %}checked{% endif %}>
+                        Enabled
+                    </label>
+                    <small>When enabled, this task runs automatically on its schedule.</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="/tasks" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="alert alert-danger">Task not found. <a href="/tasks">Back to tasks</a></div>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox v{{ version }} | &copy; 2026</p>
+    </footer>
+</body>
+</html>

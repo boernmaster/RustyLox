@@ -13,6 +13,7 @@ backup-manager = { path = "../backup-manager" }
 rustylox-logging = { path = "../rustylox-logging" }
 web-api = { path = "../web-api" }
 email-manager = { path = "../email-manager" }
+task-scheduler = { path = "../task-scheduler" }
 auth = { path = "../auth" }
 
 serde = { workspace = true }

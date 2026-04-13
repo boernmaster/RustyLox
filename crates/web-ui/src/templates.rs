@@ -219,6 +219,25 @@ pub struct TasksTemplate {
     pub lang: String,
 }
 
+/// Scheduled task edit template
+#[derive(Template)]
+#[template(path = "tasks_edit.html")]
+pub struct TaskEditTemplate {
+    pub task: Option<TaskForm>,
+    pub version: String,
+    pub lang: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaskForm {
+    pub id: String,
+    pub name: String,
+    pub schedule: String,
+    pub task_type: String,
+    pub script_path: String,
+    pub enabled: bool,
+}
+
 /// Network diagnostics template
 #[derive(Template)]
 #[template(path = "network.html")]

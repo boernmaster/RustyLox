@@ -165,13 +165,10 @@
     </footer>
 
     <script>
-    let allTasks = [];
-
     function loadTasks() {
         apiFetch('/api/tasks')
             .then(resp => {
                 const tasks = Array.isArray(resp) ? resp : (resp.tasks || []);
-                allTasks = tasks;
                 const tbody = document.getElementById('tasks-tbody');
                 if (tasks.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center;">No tasks configured.</td></tr>';
@@ -190,9 +187,7 @@
                         <td style="padding: 10px;">${t.last_run ? escHtml(t.last_run) : '-'}</td>
                         <td style="padding: 10px; display: flex; gap: 6px;">
                             <button class="btn btn-sm btn-primary" onclick="runTask('${t.id}')">Run Now</button>
-                            <button class="btn btn-sm btn-secondary" onclick="toggleTask('${t.id}', ${!t.enabled})">
-                                ${t.enabled ? 'Disable' : 'Enable'}
-                            </button>
+                            <a class="btn btn-sm btn-secondary" href="/tasks/${t.id}/edit">Edit</a>
                             <button class="btn btn-sm btn-danger" onclick="deleteTask('${t.id}')">Delete</button>
                         </td>
                     </tr>
@@ -251,19 +246,6 @@
                 }
                 setTimeout(() => { loadTasks(); loadHistory(); }, 2000);
             });
-    }
-
-    function toggleTask(id, enable) {
-        const task = allTasks.find(t => t.id === id);
-        if (!task) return;
-        const updated = Object.assign({}, task, { enabled: enable });
-        fetch(`/api/tasks/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(updated),
-        })
-        .then(r => r.json())
-        .then(() => loadTasks());
     }
 
     function deleteTask(id) {

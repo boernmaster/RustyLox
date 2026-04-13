@@ -3647,6 +3647,7 @@ dependencies = [
  "rustylox-logging",
  "serde",
  "serde_json",
+ "task-scheduler",
  "tokio",
  "tokio-stream",
  "tower-http 0.5.2",
