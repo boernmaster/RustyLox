@@ -94,8 +94,10 @@
                 </div>
                 <div class="form-group">
                     <label for="new-task-schedule">Cron Schedule</label>
-                    <input type="text" id="new-task-schedule" placeholder="0 0 2 * * *">
-                    <small>Seconds Minutes Hours Day Month Weekday</small>
+                    <input type="text" id="new-task-schedule" placeholder="0 0 2 * * *"
+                           oninput="updateAddCronDescription(this.value)">
+                    <small>Format: <code>second minute hour day-of-month month day-of-week</code></small>
+                    <div id="add-cron-description" style="margin-top: 6px; padding: 0; border-radius: 4px; font-size: 0.9em; min-height: 0;"></div>
                 </div>
                 <div class="form-group">
                     <label for="new-task-type">Task Type</label>
@@ -296,6 +298,53 @@
 
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Live cron description for the Add Task form ──────────────────────────
+
+    var _addCronTimer = null;
+
+    function updateAddCronDescription(expr) {
+        clearTimeout(_addCronTimer);
+        if (!expr || expr.trim() === '') {
+            _setAddCronDesc('', false, '');
+            return;
+        }
+        _addCronTimer = setTimeout(function() {
+            fetch('/api/tasks/cron-describe?expr=' + encodeURIComponent(expr))
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    _setAddCronDesc(d.description || '', d.valid, d.error || '');
+                })
+                .catch(function() {
+                    _setAddCronDesc('Could not validate expression', false, '');
+                });
+        }, 350);
+    }
+
+    function _setAddCronDesc(description, valid, errorMsg) {
+        var el = document.getElementById('add-cron-description');
+        if (!el) return;
+        if (!description && !errorMsg) {
+            el.innerHTML = '';
+            el.style.background = '';
+            el.style.borderLeft = '';
+            el.style.padding = '';
+            return;
+        }
+        if (valid) {
+            el.style.background = '#f0f4ff';
+            el.style.borderLeft = '3px solid #2a5caa';
+            el.style.color = '#2a5caa';
+            el.style.padding = '6px 10px';
+            el.innerHTML = '&#128337; <strong>' + escHtml(description) + '</strong>';
+        } else {
+            el.style.background = '#fff3f3';
+            el.style.borderLeft = '3px solid #dc3545';
+            el.style.color = '#dc3545';
+            el.style.padding = '6px 10px';
+            el.innerHTML = '&#9888; ' + escHtml(errorMsg || description);
+        }
     }
 
     loadTasks();
