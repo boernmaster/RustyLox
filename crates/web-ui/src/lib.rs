@@ -124,6 +124,8 @@ pub fn create_ui_router(state: AppState) -> Router {
         .route("/email", get(handlers::email::index))
         // Scheduled tasks
         .route("/tasks", get(handlers::tasks::index))
+        .route("/tasks/:id/edit", get(handlers::tasks::edit_form))
+        .route("/tasks/:id/edit", post(handlers::tasks::edit_submit))
         // Network diagnostics
         .route("/network", get(handlers::network::index))
         // System update
