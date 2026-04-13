@@ -91,8 +91,11 @@
                 <div class="form-group">
                     <label for="schedule">Cron Schedule *</label>
                     <input type="text" id="schedule" name="schedule" value="{{ t.schedule }}" required
-                           placeholder="0 0 2 * * *">
-                    <small>Format: Seconds Minutes Hours Day Month Weekday (e.g. <code>0 0 2 * * *</code> = daily at 02:00)</small>
+                           placeholder="0 0 2 * * *"
+                           oninput="updateCronDescription(this.value)">
+                    <small>Format: <code>second minute hour day-of-month month day-of-week</code> &mdash; e.g. <code>0 0 2 * * *</code></small>
+                    <div id="cron-description" style="margin-top: 6px; padding: 6px 10px; border-radius: 4px; font-size: 0.9em; min-height: 28px;">
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -133,5 +136,68 @@
     <footer class="footer">
         <p>RustyLox v{{ version }} | &copy; 2026</p>
     </footer>
+
+    <script>
+    var _cronTimer = null;
+
+    function updateCronDescription(expr) {
+        clearTimeout(_cronTimer);
+        _cronTimer = setTimeout(function() {
+            _fetchCronDescription(expr);
+        }, 350);
+    }
+
+    function _fetchCronDescription(expr) {
+        if (!expr || expr.trim() === '') {
+            _setCronDesc('', false, '');
+            return;
+        }
+        fetch('/api/tasks/cron-describe?expr=' + encodeURIComponent(expr))
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                _setCronDesc(d.description || '', d.valid, d.error || '');
+            })
+            .catch(function() {
+                _setCronDesc('Could not validate expression', false, '');
+            });
+    }
+
+    function _setCronDesc(description, valid, errorMsg) {
+        var el = document.getElementById('cron-description');
+        if (!el) return;
+        if (!description && !errorMsg) {
+            el.innerHTML = '';
+            el.style.background = '';
+            el.style.borderLeft = '';
+            el.style.color = '';
+            return;
+        }
+        if (valid) {
+            el.style.background = '#f0f4ff';
+            el.style.borderLeft = '3px solid #2a5caa';
+            el.style.color = '#2a5caa';
+            el.style.padding = '6px 10px';
+            el.innerHTML = '&#128337; <strong>' + _esc(description) + '</strong>';
+        } else {
+            el.style.background = '#fff3f3';
+            el.style.borderLeft = '3px solid #dc3545';
+            el.style.color = '#dc3545';
+            el.style.padding = '6px 10px';
+            el.innerHTML = '&#9888; ' + _esc(errorMsg || description);
+        }
+    }
+
+    function _esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Describe the current value on page load
+    (function() {
+        var schedInput = document.getElementById('schedule');
+        if (schedInput && schedInput.value) {
+            _fetchCronDescription(schedInput.value);
+        }
+    })();
+    </script>
 </body>
 </html>

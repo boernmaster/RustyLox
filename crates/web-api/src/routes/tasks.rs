@@ -2,13 +2,13 @@
 
 use crate::state::AppState;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
 use serde::Deserialize;
-use task_scheduler::{ScheduledTask, TaskScheduler, TaskType};
+use task_scheduler::{describe_cron, ScheduledTask, TaskScheduler, TaskType};
 use tracing::{error, info};
 
 /// Request to create a new task
@@ -300,4 +300,46 @@ pub async fn get_history(State(state): State<AppState>) -> impl IntoResponse {
     let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let history = scheduler.get_recent_history(50).await;
     Json(serde_json::to_value(history).unwrap_or_default())
+}
+
+/// Query params for the cron-describe endpoint
+#[derive(Debug, Deserialize)]
+pub struct CronDescribeQuery {
+    pub expr: Option<String>,
+}
+
+/// Describe a cron expression in human-readable English.
+///
+/// GET /api/tasks/cron-describe?expr=0+0+2+*+*+*
+///
+/// Returns `{ "description": "daily at 02:00", "valid": true }` on success,
+/// or `{ "description": "...", "valid": false, "error": "..." }` when the
+/// expression is invalid.
+pub async fn describe_cron_expr(Query(q): Query<CronDescribeQuery>) -> impl IntoResponse {
+    let expr = q.expr.as_deref().unwrap_or("").trim().to_string();
+
+    if expr.is_empty() {
+        return Json(serde_json::json!({
+            "description": "",
+            "valid": false,
+            "error": "No expression provided"
+        }))
+        .into_response();
+    }
+
+    if ScheduledTask::is_valid_schedule(&expr) {
+        let description = describe_cron(&expr);
+        Json(serde_json::json!({
+            "description": description,
+            "valid": true
+        }))
+        .into_response()
+    } else {
+        Json(serde_json::json!({
+            "description": "Invalid cron expression",
+            "valid": false,
+            "error": format!("'{}' is not a valid 6-field cron expression", expr)
+        }))
+        .into_response()
+    }
 }

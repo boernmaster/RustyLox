@@ -163,30 +163,17 @@
             {% endif %}
 
             <hr style="margin: 20px 0;">
-            <h3 style="margin-bottom: 12px; font-size: 1rem;">Automatic Schedule</h3>
-            <div id="schedule-result-{{ entry.id }}" style="margin-bottom: 8px;"></div>
-            <form hx-post="/miniserver/backup/{{ entry.id }}/schedule"
-                  hx-target="#schedule-result-{{ entry.id }}"
-                  hx-swap="innerHTML"
-                  style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                    <input type="checkbox" name="enabled" value="1"
-                        {% if entry.schedule_enabled %}checked{% endif %}>
-                    Enable automatic backup
-                </label>
-                <label style="display: flex; align-items: center; gap: 6px;">
-                    Interval:
-                    <select name="interval_hours" class="form-control" style="width: auto;">
-                        <option value="6"   {% if entry.schedule_interval_hours == 6   %}selected{% endif %}>Every 6 hours</option>
-                        <option value="12"  {% if entry.schedule_interval_hours == 12  %}selected{% endif %}>Every 12 hours</option>
-                        <option value="24"  {% if entry.schedule_interval_hours == 24  %}selected{% endif %}>Daily (24 h)</option>
-                        <option value="48"  {% if entry.schedule_interval_hours == 48  %}selected{% endif %}>Every 2 days</option>
-                        <option value="168" {% if entry.schedule_interval_hours == 168 %}selected{% endif %}>Weekly</option>
-                    </select>
-                </label>
-                <button type="submit" class="btn btn-sm btn-secondary">Save Schedule</button>
-                <span style="color: #888; font-size: 0.85em;">Last run: {{ entry.schedule_last_run }}</span>
-            </form>
+            <h3 style="margin-bottom: 8px; font-size: 1rem;">Automatic Schedule</h3>
+            <div style="padding: 10px 14px; border-radius: 4px; background: #f0f4ff; border-left: 3px solid #2a5caa; font-size: 0.9em; color: #2a5caa;">
+                Miniserver backups are scheduled via the
+                <strong><a href="/tasks" style="color: #2a5caa;">Task Scheduler</a></strong>
+                &mdash; look for the <em>Miniserver Backup</em> built-in task
+                (<code>builtin_miniserver_backup</code>). Enable it there and adjust
+                its cron schedule to control when all Miniservers are backed up.
+                {% if entry.schedule_last_run != "Never" %}
+                <br><span style="color: #888; margin-top: 4px; display: inline-block;">Last scheduled run: {{ entry.schedule_last_run }}</span>
+                {% endif %}
+            </div>
         </div>
         {% endfor %}
 
