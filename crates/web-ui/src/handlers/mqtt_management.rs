@@ -74,7 +74,7 @@ fn render_conversion_item_html(idx: usize, conv: &ParsedConversion) -> String {
             {status_badge}
         </div>
         <div style="display: flex; gap: 8px;">
-            <button class="btn btn-secondary btn-sm"
+            <button class="btn btn-success btn-sm"
                     hx-get="/mqtt/conversions/{idx}/edit"
                     hx-target="#conversion-item-{idx}"
                     hx-swap="outerHTML">
