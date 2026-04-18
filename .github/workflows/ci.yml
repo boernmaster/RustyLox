@@ -36,7 +36,16 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee /tmp/clippy-out.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Clippy output on failure
+        if: failure()
+        run: |
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/clippy-out.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
   test:
     name: Test
