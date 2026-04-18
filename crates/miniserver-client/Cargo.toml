@@ -14,7 +14,7 @@ anyhow = { workspace = true }
 tracing = { workspace = true }
 
 # HTTP client
-reqwest = { workspace = true, default-features = false, features = ["rustls-tls"] }
+reqwest = { workspace = true, features = ["rustls-tls"] }
 
 # Async runtime with network features
 tokio = { workspace = true, features = ["net"] }
