@@ -66,13 +66,9 @@ impl RebootDetector {
         let rebooted = if let Some(prev_value) = last_value.as_ref() {
             // If value decreased or changed significantly, assume reboot
             match (prev_value.parse::<u64>(), txp_value.parse::<u64>()) {
-                (Ok(prev), Ok(current)) => {
-                    if current < prev {
-                        debug!("Miniserver reboot detected (txp: {} -> {})", prev, current);
-                        true
-                    } else {
-                        false
-                    }
+                (Ok(prev), Ok(current)) if current < prev => {
+                    debug!("Miniserver reboot detected (txp: {} -> {})", prev, current);
+                    true
                 }
                 _ => false,
             }
