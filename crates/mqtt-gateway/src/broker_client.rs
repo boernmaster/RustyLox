@@ -92,7 +92,7 @@ impl BrokerClient {
                     warn!("Disconnected from MQTT broker");
                     self.connected.store(false, Ordering::Relaxed);
                 }
-                Ok(Event::Outgoing(_) | _) => {}
+                Ok(_) => {}
                 Err(e) => {
                     warn!(
                         "MQTT broker unavailable, retrying in {}s: {}",
