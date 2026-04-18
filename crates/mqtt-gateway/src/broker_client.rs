@@ -14,6 +14,7 @@ pub struct BrokerClient {
     client: AsyncClient,
     eventloop: Arc<tokio::sync::Mutex<EventLoop>>,
     connected: Arc<AtomicBool>,
+    subscriptions: Arc<tokio::sync::Mutex<Vec<String>>>,
 }
 
 impl BrokerClient {
@@ -51,18 +52,29 @@ impl BrokerClient {
             client,
             eventloop: Arc::new(tokio::sync::Mutex::new(eventloop)),
             connected: Arc::new(AtomicBool::new(false)),
+            subscriptions: Arc::new(tokio::sync::Mutex::new(Vec::new())),
         })
     }
 
     /// Run the broker client event loop
     pub async fn run(&self, tx: broadcast::Sender<GatewayMessage>) -> Result<()> {
         let mut eventloop = self.eventloop.lock().await;
+        let mut retry_delay_secs: u64 = 5;
 
         loop {
             match eventloop.poll().await {
                 Ok(Event::Incoming(Packet::ConnAck(_))) => {
                     info!("Connected to MQTT broker");
                     self.connected.store(true, Ordering::Relaxed);
+                    retry_delay_secs = 5;
+
+                    // Re-subscribe to all topics after every (re)connect
+                    let topics = self.subscriptions.lock().await.clone();
+                    for topic in &topics {
+                        if let Err(e) = self.client.subscribe(topic, QoS::AtLeastOnce).await {
+                            warn!("Failed to re-subscribe to {}: {}", topic, e);
+                        }
+                    }
                 }
                 Ok(Event::Incoming(Packet::Publish(publish))) => {
                     debug!("MQTT received: {} = {:?}", publish.topic, publish.payload);
@@ -80,16 +92,16 @@ impl BrokerClient {
                     warn!("Disconnected from MQTT broker");
                     self.connected.store(false, Ordering::Relaxed);
                 }
-                Ok(Event::Outgoing(_)) => {
-                    // Ignore outgoing events
-                }
-                Ok(_) => {
-                    // Ignore other events
-                }
+                Ok(Event::Outgoing(_)) => {}
+                Ok(_) => {}
                 Err(e) => {
-                    warn!("MQTT broker unavailable, retrying in 5s: {}", e);
+                    warn!(
+                        "MQTT broker unavailable, retrying in {}s: {}",
+                        retry_delay_secs, e
+                    );
                     self.connected.store(false, Ordering::Relaxed);
-                    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                    tokio::time::sleep(tokio::time::Duration::from_secs(retry_delay_secs)).await;
+                    retry_delay_secs = (retry_delay_secs * 2).min(60);
                 }
             }
         }
@@ -103,6 +115,11 @@ impl BrokerClient {
             .subscribe(topic, QoS::AtLeastOnce)
             .await
             .map_err(|e| Error::gateway(format!("Failed to subscribe to {}: {}", topic, e)))?;
+
+        let mut subs = self.subscriptions.lock().await;
+        if !subs.contains(&topic.to_string()) {
+            subs.push(topic.to_string());
+        }
 
         Ok(())
     }
