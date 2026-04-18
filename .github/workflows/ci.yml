@@ -28,9 +28,9 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: "v1-rust"
+          prefix-key: "v2-rust"
           shared-key: "lint"
-          cache-on-failure: true
+          cache-on-failure: false
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -48,9 +48,9 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: "v1-rust"
+          prefix-key: "v2-rust"
           shared-key: "test"
-          cache-on-failure: true
+          cache-on-failure: false
           cache-all-crates: true
 
       - name: Run tests
