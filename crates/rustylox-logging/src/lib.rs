@@ -76,7 +76,7 @@ pub fn get_log_files(log_dir: &PathBuf) -> Result<Vec<LogFile>> {
         }
     }
 
-    files.sort_by(|a, b| b.modified.cmp(&a.modified));
+    files.sort_by_key(|b| std::cmp::Reverse(b.modified));
     Ok(files)
 }
 

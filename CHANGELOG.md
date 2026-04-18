@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.25] - 2026-04-18
+
+### Fixed
+- MQTT gateway now re-subscribes to all topics after broker reconnect; a clean-session reconnect previously silently dropped all subscriptions
+- Exponential backoff on MQTT broker connection failures (5 s → 10 → 20 → 40 → 60 s cap) to reduce log noise during prolonged outages
+- Miniserver reboot detector: collapse nested `if let` into a match guard (clippy::collapsible_match)
+
+### Changed
+- Replace `sort_by` comparators with `sort_by_key` across logging, backup, and MQTT stats modules (Rust 1.95 `clippy::unnecessary_sort_by`)
+- Set `reqwest` to `default-features = false` at the workspace level, removing unused native-TLS and OpenSSL transitive dependencies
+
 ## [0.8.11] - 2026-04-06
 
 ### Changed

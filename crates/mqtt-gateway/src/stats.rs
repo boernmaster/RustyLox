@@ -108,7 +108,7 @@ impl MqttGatewayStats {
             .map(|entry| (entry.key().clone(), entry.value().clone()))
             .collect();
 
-        params.sort_by(|a, b| b.1.count.cmp(&a.1.count));
+        params.sort_by_key(|b| std::cmp::Reverse(b.1.count));
         params.truncate(n);
         params
     }
