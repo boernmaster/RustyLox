@@ -91,7 +91,7 @@ impl BackupScheduler {
         }
 
         // Sort by creation time (oldest first)
-        backups.sort_by(|a, b| a.created.cmp(&b.created));
+        backups.sort_by_key(|b| b.created);
 
         // Remove oldest backups
         let to_remove = backups.len() - self.schedule.max_backups;

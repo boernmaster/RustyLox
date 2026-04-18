@@ -51,7 +51,7 @@ pub async fn cleanup_logs(log_dir: &PathBuf, policy: &RotationPolicy) -> Result<
     }
 
     // Sort by modification time (newest first)
-    log_files.sort_by(|a, b| b.1.cmp(&a.1));
+    log_files.sort_by_key(|b| std::cmp::Reverse(b.1));
 
     // Remove files older than max_age_days
     for (path, modified, _) in log_files.iter() {

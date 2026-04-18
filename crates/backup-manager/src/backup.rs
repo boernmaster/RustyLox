@@ -135,7 +135,7 @@ impl BackupManager {
             }
         }
 
-        backups.sort_by(|a, b| b.created.cmp(&a.created));
+        backups.sort_by_key(|b| std::cmp::Reverse(b.created));
         Ok(backups)
     }
 
