@@ -1,5 +1,11 @@
 # Architecture
 
+## Concept
+
+RustyLox is LoxBerry as a Docker container. The original [LoxBerry](https://github.com/mschlenstedt/Loxberry) runs on a bare-metal Raspberry Pi and is built from Perl, PHP, and Bash scripts hosted by Apache. RustyLox replaces the entire stack with a single compiled Rust binary in a Docker image — same features, same LoxBerry directory layout, same environment variables for plugins — but deployable anywhere Docker runs.
+
+The plugin compatibility layer ships the LoxBerry Perl/PHP/Bash SDK libraries inside the container so existing plugin hooks can execute unchanged. **Plugin compatibility is a work in progress.** The infrastructure (ZIP install, lifecycle hooks, SDK paths, env vars) is fully implemented, but individual plugins may rely on LoxBerry internals that are not yet replicated. Test reports and bug reports are welcome.
+
 ## Overview
 
 RustyLox is a Cargo workspace containing 13 crates compiled into a single `rustylox-daemon` binary. All services run inside one Docker container alongside an Eclipse Mosquitto MQTT broker.
@@ -113,6 +119,6 @@ All paths above are relative to `$LBHOMEDIR` (default `/opt/loxberry`).
 | Async | Synchronous CGI | Tokio async runtime |
 | Web | Apache + CGI | Axum + Askama + HTMX |
 | Config format | INI / custom | JSON (compatible subset) |
-| Plugin SDK | Native Perl/PHP/Bash | Compatibility layer (same SDK, Docker-hosted) |
+| Plugin SDK | Native Perl/PHP/Bash | Same SDK libraries bundled in Docker image; hooks execute the same way — individual plugin compatibility varies (WIP) |
 | MQTT | LoxBerry MQTT GW plugin | Built-in |
 | Auth | Basic Auth / session files | JWT + RBAC |

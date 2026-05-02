@@ -4,7 +4,7 @@
 
 ![RustyLox Logo](static/logo.svg)
 
-**A modern Rust rewrite of [LoxBerry](https://github.com/mschlenstedt/Loxberry) — the open-source smart home bridge for Loxone**
+**LoxBerry as a Docker container — the open-source smart home bridge for Loxone, rewritten in Rust**
 
 [![CI](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml/badge.svg)](https://github.com/boernmaster/RustyLox/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/boernmaster/RustyLox)](https://github.com/boernmaster/RustyLox/releases/latest)
@@ -16,7 +16,9 @@
 
 ---
 
-RustyLox connects your [Loxone Miniserver](https://www.loxone.com) to the rest of your smart home. It provides an MQTT gateway, a plugin system (compatible with existing LoxBerry plugins), Miniserver communication, and a web-based management interface — all in a single Docker container.
+RustyLox is [LoxBerry](https://github.com/mschlenstedt/Loxberry) as a Docker container. The goal is to provide the same set of functions — MQTT gateway, plugin system, Miniserver communication, web management interface — without requiring a dedicated Raspberry Pi or a bare-metal OS install. You run one `docker compose up` and everything is there.
+
+The core platform is production-ready. **Plugin ecosystem compatibility is a work in progress** — the infrastructure (ZIP install, lifecycle hooks, Perl/PHP/Bash SDK, directory layout) is in place, but not every existing LoxBerry plugin is tested or guaranteed to work. Contributions and test reports are welcome.
 
 ## Quick Start
 
@@ -43,7 +45,7 @@ Open **http://localhost** in your browser. Default login: `admin` / `admin`.
 |---------|-------------|
 | **MQTT Gateway** | Bridges MQTT topics to Loxone Virtual Inputs; supports transformers, hot-reload, UDP input |
 | **Miniserver Client** | HTTP/UDP communication, delta-sending, CloudDNS, reboot detection |
-| **Plugin System** | Install/uninstall plugins from ZIP archives; full Perl/PHP/Bash SDK compatibility |
+| **Plugin System** | Install/uninstall plugins from ZIP archives; Perl/PHP/Bash SDK compatibility layer (work in progress — not all plugins work yet) |
 | **Web UI** | Dashboard, MQTT monitor, plugin management, admin panel, backup, task scheduler |
 | **REST API** | Full API at `/api/*`; interactive docs at `/api-docs` |
 | **Security** | JWT auth, RBAC (Admin/Operator/Viewer), API keys, Argon2id, audit log |

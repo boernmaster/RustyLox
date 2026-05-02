@@ -1,6 +1,28 @@
 # Plugin Development
 
-RustyLox is compatible with the LoxBerry plugin format. A plugin is a ZIP archive containing a `plugin.cfg` manifest and optional hook scripts, daemon processes, and web frontend files.
+## Compatibility Status
+
+RustyLox implements the LoxBerry plugin format — the same ZIP structure, `plugin.cfg` manifest, lifecycle hooks, environment variables, and SDK library paths that LoxBerry plugins expect. The goal is drop-in compatibility: a plugin that works on LoxBerry should work on RustyLox without modification.
+
+**Current state: work in progress.** The infrastructure is fully in place, but plugin compatibility has not been exhaustively tested across the full LoxBerry plugin catalogue. Known working: Vitoconnect (PHP + MQTT + Miniserver). If you find a plugin that doesn't work, please [open an issue](https://github.com/boernmaster/RustyLox/issues) with the plugin name and error output.
+
+What is implemented:
+- ZIP install/uninstall/upgrade
+- Lifecycle hooks (`preroot`, `preinstall`, `preupgrade`, `postinstall`, `postupgrade`, `postroot`, `uninstall`)
+- All LoxBerry environment variables injected into hook scripts
+- Perl, PHP, and Bash SDK libraries at `/opt/loxberry/libs/`
+- Plugin web frontend serving (auth and public paths)
+- Plugin daemon start/stop/restart control
+- Per-plugin config, data, and log directory isolation
+
+What may not work yet:
+- Plugins that rely on LoxBerry CGI or Apache-specific routing
+- Plugins that call LoxBerry system commands not yet ported
+- Plugins with unusual directory assumptions outside the standard layout
+
+---
+
+A plugin is a ZIP archive containing a `plugin.cfg` manifest and optional hook scripts, daemon processes, and web frontend files.
 
 ---
 
