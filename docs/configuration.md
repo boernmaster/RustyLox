@@ -2,23 +2,59 @@
 
 ## Deploy from Pre-Built Image
 
-Pull and run without cloning the repository:
+The pre-built image is published to the GitHub Container Registry on every release:
 
-```bash
-# Download the example compose file
-curl -fsSL https://raw.githubusercontent.com/boernmaster/RustyLox/main/docker-compose.example.yml \
-  -o docker-compose.yml
-
-# Start RustyLox + Mosquitto
-docker compose up -d
+```
+ghcr.io/boernmaster/rustylox:latest
 ```
 
-With an external MQTT broker, edit the environment section before starting:
+No repository clone or Rust toolchain needed.
+
+### 1. Download the example compose file
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/boernmaster/RustyLox/main/docker-compose.example.yml \
+  -o docker-compose.yml
+```
+
+The full file is also available in the repository: [`docker-compose.example.yml`](../docker-compose.example.yml)
+
+### 2. Start
+
+**With the built-in Mosquitto broker** (recommended if you don't have your own):
+
+```bash
+docker compose --profile mqtt up -d
+```
+
+**With an external MQTT broker** — edit the environment section first:
 
 ```yaml
 environment:
-  - MQTT_BROKER=192.168.1.10
+  - MQTT_BROKER=192.168.1.10   # your broker's IP or hostname
   - MQTT_PORT=1883
+```
+
+Then start without the profile:
+
+```bash
+docker compose up -d
+```
+
+### 3. Open the web UI
+
+```
+http://localhost:8080
+```
+
+Default login: `admin` / `admin` — change it immediately in **Admin → Users**.
+
+### 4. Pull a specific version
+
+Replace `latest` with any release tag (e.g. `v0.8.25`):
+
+```bash
+docker pull ghcr.io/boernmaster/rustylox:v0.8.25
 ```
 
 ---
@@ -29,7 +65,7 @@ environment:
 |----------|---------|-------------|
 | `LBHOMEDIR` | `/opt/loxberry` | Base directory for config, data, and log |
 | `RUST_LOG` | `info` | Log level (`error`, `warn`, `info`, `debug`, `trace`) |
-| `BIND_ADDR` | `0.0.0.0:80` | HTTP bind address |
+| `BIND_ADDR` | `0.0.0.0:8080` | HTTP bind address |
 | `MQTT_BROKER` | `mosquitto` | MQTT broker hostname |
 | `MQTT_PORT` | `1883` | MQTT broker port |
 
@@ -37,14 +73,30 @@ environment:
 
 ## Volume Mounts
 
-| Host path | Container path | Purpose |
-|-----------|---------------|---------|
-| `./volumes/config` | `/opt/loxberry/config` | JSON and INI config files |
-| `./volumes/data` | `/opt/loxberry/data` | Plugin data, backup archives |
-| `./volumes/log` | `/opt/loxberry/log` | Log files |
-| `./volumes/webfrontend` | `/opt/loxberry/webfrontend` | Plugin web frontends |
-| `./volumes/templates` | `/opt/loxberry/templates/plugins` | Plugin templates |
-| `./volumes/bin` | `/opt/loxberry/bin/plugins` | Plugin executables |
+The example compose file uses named Docker volumes (data lives inside Docker's storage, survives container restarts):
+
+| Named volume | Container path | Purpose |
+|--------------|---------------|---------|
+| `rustylox-config` | `/opt/loxberry/config` | JSON and INI config files |
+| `rustylox-data` | `/opt/loxberry/data` | Plugin data, backup archives |
+| `rustylox-log` | `/opt/loxberry/log` | Log files |
+
+To use bind mounts instead (files visible directly on the host), replace the volume entries in your compose file:
+
+```yaml
+volumes:
+  - ./config:/opt/loxberry/config
+  - ./data:/opt/loxberry/data
+  - ./log:/opt/loxberry/log
+```
+
+For plugin web assets and binaries, uncomment the optional lines in the example compose:
+
+```yaml
+  - ./webfrontend:/opt/loxberry/webfrontend
+  - ./templates:/opt/loxberry/templates/plugins
+  - ./bin:/opt/loxberry/bin/plugins
+```
 
 ---
 
@@ -52,7 +104,7 @@ environment:
 
 | Port | Protocol | Service |
 |------|----------|---------|
-| `80` | TCP | Web UI and REST API |
+| `8080` | TCP | Web UI and REST API |
 | `6066` | TCP | Loxone Cloud Emulator (weather service) |
 | `53` | UDP | DNS redirect (dnsmasq) |
 | `53` | TCP | DNS TCP |

@@ -25,19 +25,25 @@ The core platform is production-ready. **Plugin ecosystem compatibility is a wor
 **Requires:** Docker and Docker Compose
 
 ```bash
-git clone https://github.com/boernmaster/RustyLox.git
-cd RustyLox
+# Download the example compose file
+curl -fsSL https://raw.githubusercontent.com/boernmaster/RustyLox/main/docker-compose.example.yml \
+  -o docker-compose.yml
 
-# Create volume directories
-mkdir -p volumes/config/system volumes/data/system volumes/log/system
+# Start RustyLox + built-in Mosquitto broker
+docker compose --profile mqtt up -d
+```
 
-# Start RustyLox + Mosquitto broker
+Open **http://localhost:8080** in your browser. Default login: `admin` / `admin`.
+
+The image is pulled automatically from `ghcr.io/boernmaster/rustylox:latest` — no build step needed.
+
+If you already run your own MQTT broker, edit `MQTT_BROKER` / `MQTT_PORT` in the compose file and start without `--profile mqtt`:
+
+```bash
 docker compose up -d
 ```
 
-Open **http://localhost** in your browser. Default login: `admin` / `admin`.
-
-> To use a pre-built image without cloning, see [docs/configuration.md](docs/configuration.md#deploy-from-pre-built-image).
+> **Build from source** — see [docs/development.md](docs/development.md).
 
 ## What It Does
 
@@ -67,7 +73,7 @@ Open **http://localhost** in your browser. Default login: `admin` / `admin`.
 
 | Port | Protocol | Purpose |
 |------|----------|---------|
-| `80` | TCP | Web UI and REST API |
+| `8080` | TCP | Web UI and REST API (example compose) |
 | `1883` | TCP | MQTT broker (Mosquitto) |
 | `6066` | TCP | Loxone Cloud Emulator (weather) |
 | `53` | UDP/TCP | DNS redirect (dnsmasq) |
