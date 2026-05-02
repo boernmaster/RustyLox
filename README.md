@@ -25,6 +25,85 @@ The core platform is production-ready. **Plugin ecosystem compatibility is a wor
 **Requires:** Docker and Docker Compose
 
 ```bash
+# Download the example compose file
+curl -fsSL https://raw.githubusercontent.com/boernmaster/RustyLox/main/docker-compose.example.yml \
+  -o docker-compose.yml
+
+# Start RustyLox + built-in Mosquitto broker
+docker compose --profile mqtt up -d
+```
+
+Open **http://localhost:8080** in your browser. Default login: `admin` / `admin`.
+
+The image is pulled automatically from `ghcr.io/boernmaster/rustylox:latest` — no build step needed.
+
+If you already run your own MQTT broker, edit `MQTT_BROKER` / `MQTT_PORT` in the compose file and start without `--profile mqtt`:
+
+```bash
+docker compose up -d
+```
+
+> **Build from source** — see [docs/development.md](docs/development.md).
+
+## What It Does
+
+| Feature | Description |
+|---------|-------------|
+| **MQTT Gateway** | Bridges MQTT topics to Loxone Virtual Inputs; supports transformers, hot-reload, UDP input |
+| **Miniserver Client** | HTTP/UDP communication, delta-sending, CloudDNS, reboot detection |
+| **Plugin System** | Install/uninstall plugins from ZIP archives; Perl/PHP/Bash SDK compatibility layer (work in progress — not all plugins work yet) |
+| **Web UI** | Dashboard, MQTT monitor, plugin management, admin panel, backup, task scheduler |
+| **REST API** | Full API at `/api/*`; interactive docs at `/api-docs` |
+| **Security** | JWT auth, RBAC (Admin/Operator/Viewer), API keys, Argon2id, audit log |
+
+## Documentation
+
+| Document | Contents |
+|----------|----------|
+| [docs/architecture.md](docs/architecture.md) | Crate layout, tech stack, differences from original LoxBerry |
+| [docs/configuration.md](docs/configuration.md) | `general.json` reference, environment variables, ports, volume mounts |
+| [docs/api.md](docs/api.md) | Full REST API reference |
+| [docs/plugins.md](docs/plugins.md) | Plugin development: structure, hooks, SDK, environment variables |
+| [docs/development.md](docs/development.md) | Build from source, testing, debugging, local workflow |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to report bugs, submit PRs, commit style |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [ROADMAP.md](ROADMAP.md) | Planned features |
+
+## Ports
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| `8080` | TCP | Web UI and REST API (example compose) |
+| `1883` | TCP | MQTT broker (Mosquitto) |
+| `6066` | TCP | Loxone Cloud Emulator (weather) |
+| `53` | UDP/TCP | DNS redirect (dnsmasq) |
+| `8090` | UDP | Miniserver Virtual UDP Output |
+| `11884` | UDP | MQTT UDP input gateway |
+
+## Credits
+
+RustyLox is built on the shoulders of the original **[LoxBerry](https://github.com/mschlenstedt/Loxberry)** project, created by **Christian Fenzl** and the LoxBerry community. Their work established the plugin ecosystem, configuration format, and SDK that RustyLox remains compatible with.
+
+### Third-Party Components
+
+| Component | Author / Maintainer | License |
+|-----------|--------------------|---------| 
+| [LoxBerry](https://github.com/mschlenstedt/Loxberry) | Christian Fenzl & contributors | Apache 2.0 |
+| [Axum](https://github.com/tokio-rs/axum) | Tokio project | MIT |
+| [Tokio](https://github.com/tokio-rs/tokio) | Tokio project | MIT |
+| [Askama](https://github.com/djc/askama) | Dirkjan Ochtman | MIT / Apache 2.0 |
+| [HTMX](https://htmx.org) | Carson Gross | BSD 2-Clause |
+| [rumqttc](https://github.com/bytebeamio/rumqtt) | Bytebeam | Apache 2.0 |
+| [Eclipse Mosquitto](https://mosquitto.org) | Eclipse Foundation | EPL 2.0 |
+| [serde](https://serde.rs) | David Tolnay & Erick Tryzelaar | MIT / Apache 2.0 |
+
+### Contributors
+
+See [GitHub Contributors](https://github.com/boernmaster/RustyLox/graphs/contributors) for the full list.
+
+=======
+
+```bash
 git clone https://github.com/boernmaster/RustyLox.git
 cd RustyLox
 
