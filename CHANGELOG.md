@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-06
+
+### Added
+- Plugin cron script auto-execution: scripts installed into `system/cron/<interval>/` are now executed on the corresponding schedule (1 min through monthly), matching LoxBerry behaviour
+- Plugin daemon auto-start: all plugins with a daemon script are automatically started at system boot
+- `Base.Country` config field — `lbcountry()` in the Perl/PHP SDK now returns the configured value
+
+### Fixed
+- Plugin web handler: all hardcoded `/opt/loxberry` paths replaced with the runtime `lbhomedir` value
+- Plugin web handler: missing CGI environment variables added to PHP and Perl execution contexts (`LBPTEMPLATEDIR`, `LBPBINDIR`, `LBPCGIDIR`, `SERVER_NAME`, `REMOTE_ADDR`, `HTTP_COOKIE`, `PLUGINDATABASE`, `LBSVERSION`, `PERL5LIB`)
+- Plugin hook environment: added `LBPCGIDIR`, `PLUGINDATABASE`, `LBSVERSION`, `LBVERSION`
+- Plugin install: `run/plugins/<folder>/` and `run/system/` directories are now created at install time
+
 ## [1.0.2] - 2026-05-06
 
 ### Security
