@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-06
+
+### Security
+- Require `JWT_SECRET` and `ADMIN_PASSWORD` environment variables — no insecure hardcoded defaults
+- `JWT_SECRET` must be at least 32 bytes; `ADMIN_PASSWORD` must be at least 8 characters
+- Per-IP login rate limiting: 10 attempts per 15-minute window with automatic reset on success
+- Return generic `InvalidCredentials` for disabled/locked accounts to prevent account enumeration
+- Auth guards added to all backup, config, metrics, and plugin API endpoints (previously unauthenticated)
+- Prevent deletion of the last admin account
+- Script path traversal check in task scheduler (`../` and absolute paths rejected)
+- Explicit CORS policy replacing `CorsLayer::permissive()`
+
+### Changed
+- Atomic config writes: `general.json`, plugin database, and email history use write-to-`.tmp`-then-rename
+- Backup creation and restore wrapped in `tokio::task::spawn_blocking` to avoid blocking the async runtime
+- Plugin log writes wrapped in `spawn_blocking`; log rotation happens in the same blocking task
+- Task execution timeout set to 300 seconds
+- `RwLock`/`Mutex` poison recovery across mqtt-gateway, miniserver backup job map
+- Stale miniserver backup job TTL: entries older than 600 seconds are pruned automatically
+- Docker Compose files require `JWT_SECRET` and `ADMIN_PASSWORD` via `${VAR:?message}` syntax
+
+### Added
+- `.env.example` template with all required environment variables documented
+
 ## [0.8.25] - 2026-04-18
 
 ### Fixed
