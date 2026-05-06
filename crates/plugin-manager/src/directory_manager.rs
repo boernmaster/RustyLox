@@ -44,6 +44,28 @@ impl DirectoryManager {
                 .map_err(|e| Error::plugin(format!("Failed to create directory {}: {}", dir, e)))?;
         }
 
+        // Create run/plugins/<folder>/ for PID files and sockets (LoxBerry convention)
+        let run_dir = self.lbhomedir.join(format!("run/plugins/{}", folder));
+        debug!("Creating directory: {}", run_dir.display());
+        fs::create_dir_all(&run_dir).await.map_err(|e| {
+            Error::plugin(format!(
+                "Failed to create directory {}: {}",
+                run_dir.display(),
+                e
+            ))
+        })?;
+
+        // Ensure run/system/ exists as well
+        let run_system_dir = self.lbhomedir.join("run/system");
+        debug!("Creating directory: {}", run_system_dir.display());
+        fs::create_dir_all(&run_system_dir).await.map_err(|e| {
+            Error::plugin(format!(
+                "Failed to create directory {}: {}",
+                run_system_dir.display(),
+                e
+            ))
+        })?;
+
         info!("Successfully created directory structure for: {}", folder);
         Ok(paths)
     }

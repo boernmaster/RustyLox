@@ -11,7 +11,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path as FsPath, PathBuf};
 use tokio::process::Command;
 use tracing::{debug, error, warn};
 use web_api::AppState;
@@ -81,7 +81,15 @@ pub async fn serve_plugin_public(
 
     let mut req = PhpRequest::get_only();
     req.http_host = extract_http_host(&headers);
-    serve_plugin_file(&base_dir, &path, &plugin_name, req).await
+    serve_plugin_file(
+        &base_dir,
+        &path,
+        &plugin_name,
+        req,
+        &state.lbhomedir,
+        &headers,
+    )
+    .await
 }
 
 /// Serve public plugin index (no path specified)
@@ -99,7 +107,15 @@ pub async fn serve_plugin_public_index(
 
     let mut req = PhpRequest::get_only();
     req.http_host = extract_http_host(&headers);
-    serve_plugin_file(&base_dir, "index.html", &plugin_name, req).await
+    serve_plugin_file(
+        &base_dir,
+        "index.html",
+        &plugin_name,
+        req,
+        &state.lbhomedir,
+        &headers,
+    )
+    .await
 }
 
 /// Serve authenticated plugin web interface (GET)
@@ -124,7 +140,15 @@ pub async fn serve_plugin_auth(
         http_host: extract_http_host(&headers),
     };
 
-    serve_plugin_file(&base_dir, &path, &plugin_name, php_req).await
+    serve_plugin_file(
+        &base_dir,
+        &path,
+        &plugin_name,
+        php_req,
+        &state.lbhomedir,
+        &headers,
+    )
+    .await
 }
 
 /// Serve authenticated plugin web interface (POST for AJAX)
@@ -156,7 +180,15 @@ pub async fn serve_plugin_auth_post(
         http_host: extract_http_host(&headers),
     };
 
-    serve_plugin_file(&base_dir, &path, &plugin_name, php_req).await
+    serve_plugin_file(
+        &base_dir,
+        &path,
+        &plugin_name,
+        php_req,
+        &state.lbhomedir,
+        &headers,
+    )
+    .await
 }
 
 /// Serve authenticated plugin index
@@ -177,11 +209,35 @@ pub async fn serve_plugin_auth_index(
 
     // Try index.php → index.cgi → index.html
     if base_dir.join("index.php").exists() {
-        serve_plugin_file(&base_dir, "index.php", &plugin_name, req).await
+        serve_plugin_file(
+            &base_dir,
+            "index.php",
+            &plugin_name,
+            req,
+            &state.lbhomedir,
+            &headers,
+        )
+        .await
     } else if base_dir.join("index.cgi").exists() {
-        serve_plugin_file(&base_dir, "index.cgi", &plugin_name, req).await
+        serve_plugin_file(
+            &base_dir,
+            "index.cgi",
+            &plugin_name,
+            req,
+            &state.lbhomedir,
+            &headers,
+        )
+        .await
     } else {
-        serve_plugin_file(&base_dir, "index.html", &plugin_name, req).await
+        serve_plugin_file(
+            &base_dir,
+            "index.html",
+            &plugin_name,
+            req,
+            &state.lbhomedir,
+            &headers,
+        )
+        .await
     }
 }
 
@@ -191,6 +247,8 @@ async fn serve_plugin_file(
     path: &str,
     plugin_name: &str,
     php_req: PhpRequest,
+    lbhomedir: &FsPath,
+    headers: &HeaderMap,
 ) -> Response {
     // Normalize path - strip leading slashes
     let clean_path = path.trim_start_matches('/');
@@ -235,12 +293,12 @@ async fn serve_plugin_file(
 
     // Handle PHP files
     if ext == "php" {
-        return serve_php_file(&resolved, plugin_name, php_req).await;
+        return serve_php_file(&resolved, plugin_name, php_req, lbhomedir, headers).await;
     }
 
     // Handle Perl CGI files
     if ext == "cgi" {
-        return serve_cgi_file(&resolved, plugin_name, php_req).await;
+        return serve_cgi_file(&resolved, plugin_name, php_req, lbhomedir, headers).await;
     }
 
     // Find content type for allowed extensions
@@ -279,7 +337,13 @@ async fn serve_static_file(path: &PathBuf, content_type: &str) -> Response {
 }
 
 /// Execute a PHP script via php-cli with CGI environment and serve the output
-async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) -> Response {
+async fn serve_php_file(
+    path: &PathBuf,
+    plugin_name: &str,
+    php_req: PhpRequest,
+    lbhomedir: &FsPath,
+    headers: &HeaderMap,
+) -> Response {
     debug!(
         "Executing PHP file: {} (method={}, query={})",
         path.display(),
@@ -288,8 +352,13 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
     );
 
     // Set PHP include_path and auto-prepend bootstrap for PHP 8.x compatibility
-    let include_path = ".:/opt/loxberry/libs/phplib:/usr/share/php";
-    let bootstrap = "/opt/loxberry/libs/phplib/loxberry_bootstrap.php";
+    let include_path = format!(".:{}/libs/phplib:/usr/share/php", lbhomedir.display());
+    let bootstrap = format!("{}/libs/phplib/loxberry_bootstrap.php", lbhomedir.display());
+
+    let client_ip = headers
+        .get("x-real-ip")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("127.0.0.1");
 
     let mut cmd = Command::new("php-cgi");
     cmd.arg("-d")
@@ -300,28 +369,58 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         // Run from script's directory so relative includes (e.g. "./phpMQTT/...") work
         .current_dir(path.parent().unwrap_or(path))
         // LoxBerry environment
-        .env("LBHOMEDIR", "/opt/loxberry")
+        .env("LBHOMEDIR", lbhomedir.to_string_lossy().as_ref())
         .env("LBPPLUGINDIR", plugin_name)
         .env(
             "LBPHTMLDIR",
-            format!("/opt/loxberry/webfrontend/html/plugins/{}", plugin_name),
+            format!(
+                "{}/webfrontend/html/plugins/{}",
+                lbhomedir.display(),
+                plugin_name
+            ),
         )
         .env(
             "LBPHTMLAUTHDIR",
-            format!("/opt/loxberry/webfrontend/htmlauth/plugins/{}", plugin_name),
+            format!(
+                "{}/webfrontend/htmlauth/plugins/{}",
+                lbhomedir.display(),
+                plugin_name
+            ),
         )
         .env(
             "LBPDATADIR",
-            format!("/opt/loxberry/data/plugins/{}", plugin_name),
+            format!("{}/data/plugins/{}", lbhomedir.display(), plugin_name),
         )
         .env(
             "LBPLOGDIR",
-            format!("/opt/loxberry/log/plugins/{}", plugin_name),
+            format!("{}/log/plugins/{}", lbhomedir.display(), plugin_name),
         )
         .env(
             "LBPCONFIGDIR",
-            format!("/opt/loxberry/config/plugins/{}", plugin_name),
+            format!("{}/config/plugins/{}", lbhomedir.display(), plugin_name),
         )
+        .env(
+            "LBPTEMPLATEDIR",
+            format!("{}/templates/plugins/{}", lbhomedir.display(), plugin_name),
+        )
+        .env(
+            "LBPBINDIR",
+            format!("{}/bin/plugins/{}", lbhomedir.display(), plugin_name),
+        )
+        .env(
+            "LBPCGIDIR",
+            format!(
+                "{}/webfrontend/htmlauth/plugins/{}",
+                lbhomedir.display(),
+                plugin_name
+            ),
+        )
+        .env(
+            "PLUGINDATABASE",
+            format!("{}/data/system/plugindatabase.json", lbhomedir.display()),
+        )
+        .env("PERL5LIB", format!("{}/libs/perllib", lbhomedir.display()))
+        .env("LBSVERSION", "4.0.0.0")
         // CGI environment variables for $_GET, $_POST, $_SERVER
         .env("REDIRECT_STATUS", "200")
         .env("REQUEST_METHOD", &php_req.method)
@@ -332,7 +431,29 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         .env("SERVER_PROTOCOL", "HTTP/1.1")
         .env("GATEWAY_INTERFACE", "CGI/1.1")
         .env("SERVER_SOFTWARE", "RustyLox")
-        .env("HTTP_HOST", &php_req.http_host);
+        .env("SERVER_PORT", "80")
+        .env(
+            "SERVER_NAME",
+            headers
+                .get("host")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("localhost"),
+        )
+        .env("REMOTE_ADDR", client_ip)
+        .env(
+            "HTTP_HOST",
+            headers
+                .get("host")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("localhost"),
+        )
+        .env(
+            "HTTP_COOKIE",
+            headers
+                .get("cookie")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or(""),
+        );
 
     // For POST requests, pipe the body via stdin and capture stdout
     if !php_req.body.is_empty() {
@@ -409,7 +530,13 @@ async fn serve_php_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
 }
 
 /// Execute a Perl CGI script and serve the output
-async fn serve_cgi_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) -> Response {
+async fn serve_cgi_file(
+    path: &PathBuf,
+    plugin_name: &str,
+    php_req: PhpRequest,
+    lbhomedir: &FsPath,
+    headers: &HeaderMap,
+) -> Response {
     debug!(
         "Executing CGI file: {} (method={}, query={})",
         path.display(),
@@ -417,32 +544,66 @@ async fn serve_cgi_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         php_req.query_string
     );
 
+    let client_ip = headers
+        .get("x-real-ip")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("127.0.0.1");
+
     let mut cmd = Command::new("perl");
     cmd.arg(path)
         .current_dir(path.parent().unwrap_or(path))
-        .env("PERL5LIB", "/opt/loxberry/libs/perllib")
-        .env("LBHOMEDIR", "/opt/loxberry")
+        .env("PERL5LIB", format!("{}/libs/perllib", lbhomedir.display()))
+        .env("LBHOMEDIR", lbhomedir.to_string_lossy().as_ref())
         .env("LBPPLUGINDIR", plugin_name)
         .env(
             "LBPHTMLDIR",
-            format!("/opt/loxberry/webfrontend/html/plugins/{}", plugin_name),
+            format!(
+                "{}/webfrontend/html/plugins/{}",
+                lbhomedir.display(),
+                plugin_name
+            ),
         )
         .env(
             "LBPHTMLAUTHDIR",
-            format!("/opt/loxberry/webfrontend/htmlauth/plugins/{}", plugin_name),
+            format!(
+                "{}/webfrontend/htmlauth/plugins/{}",
+                lbhomedir.display(),
+                plugin_name
+            ),
         )
         .env(
             "LBPDATADIR",
-            format!("/opt/loxberry/data/plugins/{}", plugin_name),
+            format!("{}/data/plugins/{}", lbhomedir.display(), plugin_name),
         )
         .env(
             "LBPLOGDIR",
-            format!("/opt/loxberry/log/plugins/{}", plugin_name),
+            format!("{}/log/plugins/{}", lbhomedir.display(), plugin_name),
         )
         .env(
             "LBPCONFIGDIR",
-            format!("/opt/loxberry/config/plugins/{}", plugin_name),
+            format!("{}/config/plugins/{}", lbhomedir.display(), plugin_name),
         )
+        .env(
+            "LBPTEMPLATEDIR",
+            format!("{}/templates/plugins/{}", lbhomedir.display(), plugin_name),
+        )
+        .env(
+            "LBPBINDIR",
+            format!("{}/bin/plugins/{}", lbhomedir.display(), plugin_name),
+        )
+        .env(
+            "LBPCGIDIR",
+            format!(
+                "{}/webfrontend/htmlauth/plugins/{}",
+                lbhomedir.display(),
+                plugin_name
+            ),
+        )
+        .env(
+            "PLUGINDATABASE",
+            format!("{}/data/system/plugindatabase.json", lbhomedir.display()),
+        )
+        .env("LBSVERSION", "4.0.0.0")
         .env("REDIRECT_STATUS", "200")
         .env("REQUEST_METHOD", &php_req.method)
         .env("QUERY_STRING", &php_req.query_string)
@@ -452,7 +613,29 @@ async fn serve_cgi_file(path: &PathBuf, plugin_name: &str, php_req: PhpRequest) 
         .env("SERVER_PROTOCOL", "HTTP/1.1")
         .env("GATEWAY_INTERFACE", "CGI/1.1")
         .env("SERVER_SOFTWARE", "RustyLox")
-        .env("HTTP_HOST", &php_req.http_host);
+        .env("SERVER_PORT", "80")
+        .env(
+            "SERVER_NAME",
+            headers
+                .get("host")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("localhost"),
+        )
+        .env("REMOTE_ADDR", client_ip)
+        .env(
+            "HTTP_HOST",
+            headers
+                .get("host")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("localhost"),
+        )
+        .env(
+            "HTTP_COOKIE",
+            headers
+                .get("cookie")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or(""),
+        );
 
     match cmd.output().await {
         Ok(out) => {

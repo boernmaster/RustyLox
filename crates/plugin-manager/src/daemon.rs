@@ -3,7 +3,7 @@
 //! Manages the lifecycle of plugin background processes (daemons).
 //! Plugins can have a daemon/daemon.pl (or .sh, .php) that runs continuously.
 
-use crate::database::PluginEntry;
+use crate::database::{PluginDatabase, PluginEntry};
 use crate::environment::build_plugin_env;
 use rustylox_core::{Error, Result};
 use serde::{Deserialize, Serialize};
@@ -291,6 +291,44 @@ impl DaemonManager {
             folder
         )))
     }
+}
+
+/// Start all plugin daemons that have a daemon script present on disk.
+///
+/// Called once at system startup. Iterates all plugins in the database and
+/// starts any that have a detectable daemon script (`daemon.pl`, `.sh`, `.php`,
+/// or `.py`) under `bin/plugins/<folder>/daemon/`.
+///
+/// Returns a vector of `(plugin_folder, Result<DaemonInfo>)` so the caller can
+/// log per-plugin outcomes.
+pub async fn start_enabled_daemons(lbhomedir: &Path) -> Vec<(String, Result<DaemonInfo>)> {
+    let db_path = lbhomedir.join("data/system/plugindatabase.json");
+    let db = match PluginDatabase::load(&db_path).await {
+        Ok(db) => db,
+        Err(e) => {
+            warn!(
+                "Failed to load plugin database for daemon auto-start: {}",
+                e
+            );
+            return Vec::new();
+        }
+    };
+
+    let manager = DaemonManager::new(lbhomedir);
+    let mut results = Vec::new();
+
+    for plugin in db.list() {
+        if manager.has_daemon(&plugin.folder) {
+            info!("Auto-starting daemon for plugin: {}", plugin.name);
+            let result = manager.start(plugin).await;
+            if let Err(ref e) = result {
+                warn!("Failed to auto-start daemon for {}: {}", plugin.name, e);
+            }
+            results.push((plugin.folder.clone(), result));
+        }
+    }
+
+    results
 }
 
 /// Detect the interpreter for a script based on its extension or shebang

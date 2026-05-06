@@ -109,6 +109,26 @@ pub fn build_plugin_env(plugin: &PluginEntry, lbhomedir: &Path) -> HashMap<Strin
         format!("{}/bin", lbhomedir.display()),
     );
 
+    // LBPCGIDIR = alias for htmlauth dir (LoxBerry convention)
+    env.insert(
+        "LBPCGIDIR".to_string(),
+        format!(
+            "{}/webfrontend/htmlauth/plugins/{}",
+            lbhomedir.display(),
+            plugin_folder
+        ),
+    );
+
+    // PLUGINDATABASE path
+    env.insert(
+        "PLUGINDATABASE".to_string(),
+        format!("{}/data/system/plugindatabase.json", lbhomedir.display()),
+    );
+
+    // LoxBerry system version (plugins may query this)
+    env.insert("LBSVERSION".to_string(), "4.0.0.0".to_string());
+    env.insert("LBVERSION".to_string(), "4.0.0.0".to_string());
+
     // Plugin metadata
     env.insert("LBPPLUGINNAME".to_string(), plugin.name.clone());
     env.insert("LBPAUTHOR".to_string(), plugin.author_name.clone());
@@ -163,6 +183,16 @@ pub fn build_system_env(lbhomedir: &Path) -> HashMap<String, String> {
         "PERL5LIB".to_string(),
         format!("{}/libs/perllib", lbhomedir.display()),
     );
+
+    // PLUGINDATABASE path
+    env.insert(
+        "PLUGINDATABASE".to_string(),
+        format!("{}/data/system/plugindatabase.json", lbhomedir.display()),
+    );
+
+    // LoxBerry system version (plugins may query this)
+    env.insert("LBSVERSION".to_string(), "4.0.0.0".to_string());
+    env.insert("LBVERSION".to_string(), "4.0.0.0".to_string());
 
     env
 }

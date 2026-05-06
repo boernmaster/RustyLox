@@ -5,6 +5,7 @@
 use anyhow::Result;
 use auth::{AuditLogger, AuthService, AuthStore};
 use mqtt_gateway::MqttGateway;
+use plugin_manager::start_enabled_daemons;
 use rustylox_config::{ConfigManager, GeneralConfig};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -337,6 +338,29 @@ async fn main() -> Result<()> {
             version,
         ));
         task_scheduler.start_background_scheduler();
+    }
+
+    // Spawn plugin cron scheduler — executes scripts installed by plugins into
+    // $LBHOMEDIR/system/cron/<interval>/ on the corresponding schedule.
+    {
+        let lbhomedir = state.lbhomedir.clone();
+        tokio::spawn(async move {
+            plugin_manager::cron::run_plugin_cron_schedules(lbhomedir).await;
+        });
+    }
+
+    // Auto-start plugin daemons that have a daemon script on disk.
+    {
+        let lbhomedir = state.lbhomedir.clone();
+        tokio::spawn(async move {
+            let results = start_enabled_daemons(&lbhomedir).await;
+            let ok_count = results.iter().filter(|(_, r)| r.is_ok()).count();
+            info!(
+                "Plugin daemon auto-start: {}/{} started successfully",
+                ok_count,
+                results.len()
+            );
+        });
     }
 
     // Create UI router

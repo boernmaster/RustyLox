@@ -181,6 +181,9 @@ pub struct BaseConfig {
     #[serde(rename = "Lang")]
     pub lang: String,
 
+    #[serde(rename = "Country", default)]
+    pub country: String,
+
     #[serde(rename = "Sendstatistic")]
     pub sendstatistic: u8,
 
@@ -417,6 +420,7 @@ impl Default for BaseConfig {
         Self {
             clouddnsuri: "dns.loxonecloud.com".to_string(),
             lang: "en".to_string(),
+            country: "us".to_string(),
             sendstatistic: 1,
             startsetup: "1".to_string(),
             systemloglevel: "6".to_string(),

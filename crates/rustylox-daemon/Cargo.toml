@@ -17,6 +17,7 @@ backup-manager = { path = "../backup-manager" }
 task-scheduler = { path = "../task-scheduler" }
 web-api = { path = "../web-api" }
 web-ui = { path = "../web-ui" }
+plugin-manager = { path = "../plugin-manager" }
 
 chrono = "0.4"
 
