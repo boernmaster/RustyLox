@@ -12,7 +12,7 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tower_http::{cors::{Any, CorsLayer}, trace::TraceLayer};
 
 /// Create the Axum router with all routes
 pub fn create_router(state: AppState) -> Router {
@@ -223,7 +223,12 @@ pub fn create_router(state: AppState) -> Router {
         ))
         // Note: Rate limiting disabled due to issues with GovernorLayer in Docker
         // TODO: Re-enable with proper IP extraction once fixed
-        .layer(CorsLayer::permissive())
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .layer(TraceLayer::new_for_http())
 }
 
@@ -235,6 +240,11 @@ pub fn create_emu_router(state: AppState) -> Router {
         .route("/forecast", get(routes::weather::loxone_forecast))
         .route("/ping", get(|| async { "pong" }))
         .with_state(state)
-        .layer(CorsLayer::permissive())
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .layer(TraceLayer::new_for_http())
 }

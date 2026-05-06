@@ -160,7 +160,22 @@ pub async fn install_plugin(
             };
 
             // Write data to temp file
-            if let Err(e) = tokio::fs::File::from_std(tf.reopen().unwrap())
+            let std_file = match tf.reopen() {
+                Ok(f) => f,
+                Err(e) => {
+                    error!("Failed to reopen temp file: {}", e);
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(PluginInstallResponse {
+                            success: false,
+                            plugin: None,
+                            error: Some(format!("Failed to reopen temp file: {}", e)),
+                        }),
+                    )
+                        .into_response();
+                }
+            };
+            if let Err(e) = tokio::fs::File::from_std(std_file)
                 .write_all(&data)
                 .await
             {
@@ -354,7 +369,22 @@ pub async fn upgrade_plugin(
             };
 
             // Write data to temp file
-            if let Err(e) = tokio::fs::File::from_std(tf.reopen().unwrap())
+            let std_file = match tf.reopen() {
+                Ok(f) => f,
+                Err(e) => {
+                    error!("Failed to reopen temp file: {}", e);
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(PluginInstallResponse {
+                            success: false,
+                            plugin: None,
+                            error: Some(format!("Failed to reopen temp file: {}", e)),
+                        }),
+                    )
+                        .into_response();
+                }
+            };
+            if let Err(e) = tokio::fs::File::from_std(std_file)
                 .write_all(&data)
                 .await
             {

@@ -116,7 +116,11 @@ impl AuditLogger {
         let mut entries: Vec<AuditEntry> = content
             .lines()
             .filter(|l| !l.is_empty())
-            .filter_map(|l| serde_json::from_str(l).ok())
+            .filter_map(|l| {
+                serde_json::from_str(l)
+                    .map_err(|e| warn!("Skipping unparseable audit log line: {}", e))
+                    .ok()
+            })
             .collect();
 
         let total = entries.len();

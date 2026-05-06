@@ -1015,7 +1015,9 @@ impl PluginInstaller {
             let script_src = source_dir.join(script_name);
             if script_src.exists() {
                 let script_dst = install_backup_dir.join(script_name);
-                fs::copy(&script_src, &script_dst).await.ok();
+                if let Err(e) = fs::copy(&script_src, &script_dst).await {
+                    tracing::warn!("Failed to copy {} to install backup: {}", script_name, e);
+                }
             }
         }
         // Copy apt/dpkg directories for reference
@@ -1023,8 +1025,11 @@ impl PluginInstaller {
             let dir_src = source_dir.join(dir_name);
             if dir_src.exists() {
                 let dir_dst = install_backup_dir.join(dir_name);
-                fs::create_dir_all(&dir_dst).await.ok();
-                self.copy_dir_recursive(&dir_src, &dir_dst).await.ok();
+                if let Err(e) = fs::create_dir_all(&dir_dst).await {
+                    tracing::warn!("Failed to create backup dir {}: {}", dir_name, e);
+                } else if let Err(e) = self.copy_dir_recursive(&dir_src, &dir_dst).await {
+                    tracing::warn!("Failed to copy {} to install backup: {}", dir_name, e);
+                }
             }
         }
 

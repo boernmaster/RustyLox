@@ -173,9 +173,13 @@ impl PluginDatabase {
         let content = serde_json::to_string_pretty(self)
             .map_err(|e| Error::plugin(format!("Failed to serialize plugin database: {}", e)))?;
 
-        fs::write(path, content)
+        let tmp = path.with_extension("tmp");
+        fs::write(&tmp, &content)
             .await
             .map_err(|e| Error::plugin(format!("Failed to write plugin database: {}", e)))?;
+        fs::rename(&tmp, path)
+            .await
+            .map_err(|e| Error::plugin(format!("Failed to finalize plugin database write: {}", e)))?;
 
         debug!("Saved {} plugins to database", self.plugins.len());
         Ok(())

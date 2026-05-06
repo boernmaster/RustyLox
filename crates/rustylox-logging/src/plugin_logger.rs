@@ -41,12 +41,28 @@ impl PluginLogger {
         }
 
         // Append to file
-        let mut file = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(self.log_file_path())?;
+        {
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(self.log_file_path())?;
+            file.write_all(log_line.as_bytes())?;
+        }
 
-        file.write_all(log_line.as_bytes())?;
+        // Rotate if file exceeds 10MB — keep last 5MB
+        const MAX_BYTES: u64 = 10 * 1024 * 1024;
+        const KEEP_BYTES: u64 = 5 * 1024 * 1024;
+        let path = self.log_file_path();
+        if let Ok(meta) = std::fs::metadata(&path) {
+            if meta.len() > MAX_BYTES {
+                if let Ok(content) = std::fs::read(&path) {
+                    let start = (content.len() as u64).saturating_sub(KEEP_BYTES) as usize;
+                    let tail = &content[start..];
+                    let newline = tail.iter().position(|&b| b == b'\n').map(|i| i + 1).unwrap_or(0);
+                    let _ = std::fs::write(&path, &tail[newline..]);
+                }
+            }
+        }
 
         Ok(())
     }

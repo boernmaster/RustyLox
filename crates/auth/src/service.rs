@@ -6,7 +6,7 @@ use chrono::Utc;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use sha2::{Digest, Sha256};
-use tracing::info;
+use tracing::{info, warn};
 use uuid::Uuid;
 
 use crate::audit::{AuditAction, AuditLogger};
@@ -186,7 +186,9 @@ impl AuthService {
         let store = Arc::clone(&self.store);
         let key_id = api_key.id;
         tokio::spawn(async move {
-            let _ = store.update_api_key_last_used(&key_id).await;
+            if let Err(e) = store.update_api_key_last_used(&key_id).await {
+                warn!("Failed to update api key last_used: {}", e);
+            }
         });
 
         Ok(AuthIdentity {

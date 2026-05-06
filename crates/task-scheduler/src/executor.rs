@@ -423,12 +423,16 @@ impl TaskExecutor {
             _ => "bash",
         };
 
-        let output = tokio::process::Command::new(interpreter)
-            .arg(&full_path)
-            .env("LBHOMEDIR", &self.lbhomedir)
-            .output()
-            .await
-            .map_err(|e| Error::plugin(format!("Failed to run script: {}", e)))?;
+        let output = tokio::time::timeout(
+            std::time::Duration::from_secs(300),
+            tokio::process::Command::new(interpreter)
+                .arg(&full_path)
+                .env("LBHOMEDIR", &self.lbhomedir)
+                .output(),
+        )
+        .await
+        .map_err(|_| Error::plugin("Script execution timed out after 300 seconds"))?
+        .map_err(|e| Error::plugin(format!("Failed to run script: {}", e)))?;
 
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())

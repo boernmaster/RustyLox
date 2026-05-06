@@ -31,7 +31,7 @@ pub async fn add_security_headers(req: Request<Body>, next: Next) -> Response<Bo
         (
             "content-security-policy",
             "default-src 'self'; \
-             script-src 'self' 'unsafe-inline'; \
+             script-src 'self'; \
              style-src 'self' 'unsafe-inline'; \
              img-src 'self' data:; \
              connect-src 'self'; \

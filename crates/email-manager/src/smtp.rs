@@ -66,8 +66,11 @@ impl EmailHistoryManager {
             if let Some(parent) = self.history_path.parent() {
                 let _ = tokio::fs::create_dir_all(parent).await;
             }
-            if let Err(e) = tokio::fs::write(&self.history_path, content).await {
-                warn!("Failed to save email history: {}", e);
+            let tmp = self.history_path.with_extension("tmp");
+            if let Err(e) = tokio::fs::write(&tmp, &content).await {
+                warn!("Failed to write email history: {}", e);
+            } else if let Err(e) = tokio::fs::rename(&tmp, &self.history_path).await {
+                warn!("Failed to finalize email history write: {}", e);
             }
         }
     }

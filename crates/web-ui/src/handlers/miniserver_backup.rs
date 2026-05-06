@@ -395,7 +395,7 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
     let job_id = new_job_id();
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<ProgressPayload>();
     {
-        let mut jobs = BACKUP_JOBS.lock().unwrap();
+        let mut jobs = BACKUP_JOBS.lock().unwrap_or_else(|p| p.into_inner());
         jobs.insert(job_id.clone(), rx);
     }
 
@@ -639,7 +639,7 @@ async fn run_backup_task(
     );
 
     // Clean up job slot (normally the SSE handler already consumed it)
-    let mut jobs = BACKUP_JOBS.lock().unwrap();
+    let mut jobs = BACKUP_JOBS.lock().unwrap_or_else(|p| p.into_inner());
     jobs.remove(&job_id);
 }
 
@@ -648,7 +648,7 @@ pub async fn backup_progress(
     Path((_id, job_id)): Path<(String, String)>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let rx = {
-        let mut jobs = BACKUP_JOBS.lock().unwrap();
+        let mut jobs = BACKUP_JOBS.lock().unwrap_or_else(|p| p.into_inner());
         jobs.remove(&job_id)
     };
 

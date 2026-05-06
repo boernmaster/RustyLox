@@ -80,9 +80,13 @@ impl EmailConfigManager {
         let content = serde_json::to_string_pretty(config)
             .map_err(|e| Error::config(format!("Failed to serialize email config: {}", e)))?;
 
-        tokio::fs::write(&self.config_path, content)
+        let tmp = self.config_path.with_extension("tmp");
+        tokio::fs::write(&tmp, &content)
             .await
             .map_err(|e| Error::config(format!("Failed to write email config: {}", e)))?;
+        tokio::fs::rename(&tmp, &self.config_path)
+            .await
+            .map_err(|e| Error::config(format!("Failed to finalize email config write: {}", e)))?;
 
         Ok(())
     }

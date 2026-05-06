@@ -53,7 +53,7 @@ impl SubscriptionManager {
 
         let subscriptions = self.parse_subscriptions_ini(&content)?;
 
-        let mut subs = self.subscriptions.write().unwrap();
+        let mut subs = self.subscriptions.write().unwrap_or_else(|p| p.into_inner());
         *subs = subscriptions;
 
         info!(
@@ -127,30 +127,30 @@ impl SubscriptionManager {
 
     /// Get all enabled subscriptions
     pub fn get_all(&self) -> Vec<Subscription> {
-        let subs = self.subscriptions.read().unwrap();
+        let subs = self.subscriptions.read().unwrap_or_else(|p| p.into_inner());
         subs.iter().filter(|s| s.enabled).cloned().collect()
     }
 
     /// Count total subscriptions
     pub fn count(&self) -> usize {
-        self.subscriptions.read().unwrap().len()
+        self.subscriptions.read().unwrap_or_else(|p| p.into_inner()).len()
     }
 
     /// Add a subscription
     pub fn add(&self, subscription: Subscription) {
-        let mut subs = self.subscriptions.write().unwrap();
+        let mut subs = self.subscriptions.write().unwrap_or_else(|p| p.into_inner());
         subs.push(subscription);
     }
 
     /// Remove subscriptions by topic
     pub fn remove(&self, topic: &str) {
-        let mut subs = self.subscriptions.write().unwrap();
+        let mut subs = self.subscriptions.write().unwrap_or_else(|p| p.into_inner());
         subs.retain(|s| s.topic != topic);
     }
 
     /// Check if a topic matches any subscription
     pub fn matches(&self, topic: &str) -> bool {
-        let subs = self.subscriptions.read().unwrap();
+        let subs = self.subscriptions.read().unwrap_or_else(|p| p.into_inner());
         subs.iter()
             .filter(|s| s.enabled)
             .any(|s| topic_matches(&s.topic, topic))

@@ -250,7 +250,7 @@ impl TransformerRegistry {
             }
         }
 
-        let mut registry = self.transformers.write().unwrap();
+        let mut registry = self.transformers.write().unwrap_or_else(|p| p.into_inner());
         *registry = transformers;
 
         info!("Loaded {} transformers", registry.len());
@@ -263,7 +263,7 @@ impl TransformerRegistry {
     /// The first transformer that returns a non-empty result wins.
     /// If no transformer matches, the original message is returned unchanged.
     pub async fn transform(&self, topic: &str, value: &str) -> Result<Vec<TransformResult>> {
-        let transformers = self.transformers.read().unwrap();
+        let transformers = self.transformers.read().unwrap_or_else(|p| p.into_inner());
 
         for transformer in transformers.iter() {
             let results = transformer.transform(topic, value)?;
@@ -284,7 +284,7 @@ impl TransformerRegistry {
 
     /// Count loaded transformers.
     pub fn count(&self) -> usize {
-        self.transformers.read().unwrap().len()
+        self.transformers.read().unwrap_or_else(|p| p.into_inner()).len()
     }
 }
 

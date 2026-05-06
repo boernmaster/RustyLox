@@ -233,11 +233,7 @@ pub async fn login(
                 .lock()
                 .unwrap_or_else(|p| p.into_inner())
                 .remove(&ip);
-            (
-                StatusCode::OK,
-                Json(serde_json::to_value(&token_response).unwrap()),
-            )
-                .into_response()
+            (StatusCode::OK, Json(token_response)).into_response()
         }
         Err(e) => auth_error(
             StatusCode::from_u16(e.http_status()).unwrap_or(StatusCode::UNAUTHORIZED),
@@ -316,11 +312,7 @@ pub async fn list_users(State(state): State<AppState>, headers: HeaderMap) -> im
                     }
                 })
                 .collect();
-            (
-                StatusCode::OK,
-                Json(serde_json::to_value(&summaries).unwrap()),
-            )
-                .into_response()
+            (StatusCode::OK, Json(summaries)).into_response()
         }
         Err(e) => auth_error(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
@@ -448,11 +440,7 @@ pub async fn list_api_keys(State(state): State<AppState>, headers: HeaderMap) ->
                     created_at: k.created_at,
                 })
                 .collect();
-            (
-                StatusCode::OK,
-                Json(serde_json::to_value(&summaries).unwrap()),
-            )
-                .into_response()
+            (StatusCode::OK, Json(summaries)).into_response()
         }
         Err(e) => auth_error(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
@@ -504,16 +492,13 @@ pub async fn create_api_key(
     {
         Ok((key, raw_key)) => (
             StatusCode::CREATED,
-            Json(
-                serde_json::to_value(CreateApiKeyResponse {
-                    id: key.id,
-                    name: key.name,
-                    key: raw_key,
-                    expires_at: key.expires_at,
-                    created_at: key.created_at,
-                })
-                .unwrap(),
-            ),
+            Json(CreateApiKeyResponse {
+                id: key.id,
+                name: key.name,
+                key: raw_key,
+                expires_at: key.expires_at,
+                created_at: key.created_at,
+            }),
         )
             .into_response(),
         Err(e) => auth_error(
@@ -574,9 +559,5 @@ pub async fn get_audit_log(
         let filter = user_filter.to_lowercase();
         entries.retain(|e| e.user.to_lowercase().contains(&filter));
     }
-    (
-        StatusCode::OK,
-        Json(serde_json::to_value(&entries).unwrap()),
-    )
-        .into_response()
+    (StatusCode::OK, Json(entries)).into_response()
 }
