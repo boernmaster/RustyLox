@@ -1,9 +1,10 @@
 //! Scheduled task management API endpoints
 
+use crate::routes::auth::extract_identity;
 use crate::state::AppState;
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Json,
 };
@@ -33,7 +34,18 @@ pub struct UpdateTaskRequest {
 /// List all scheduled tasks
 ///
 /// GET /api/tasks
-pub async fn list_tasks(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn list_tasks(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     match scheduler.load_config().await {
         Ok(config) => {
@@ -78,8 +90,20 @@ pub async fn list_tasks(State(state): State<AppState>) -> impl IntoResponse {
 /// GET /api/tasks/:id
 pub async fn get_task(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(task_id): Path<String>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     match scheduler.load_config().await {
         Ok(config) => match config.tasks.iter().find(|t| t.id == task_id) {
@@ -103,8 +127,20 @@ pub async fn get_task(
 /// POST /api/tasks
 pub async fn create_task(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(req): Json<CreateTaskRequest>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     // Validate schedule
     if !ScheduledTask::is_valid_schedule(&req.schedule) {
         return (
@@ -167,9 +203,21 @@ pub async fn create_task(
 /// PUT /api/tasks/:id
 pub async fn update_task(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(task_id): Path<String>,
     Json(req): Json<UpdateTaskRequest>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let mut config = match scheduler.load_config().await {
         Ok(c) => c,
@@ -232,8 +280,20 @@ pub async fn update_task(
 /// DELETE /api/tasks/:id
 pub async fn delete_task(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(task_id): Path<String>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let mut config = match scheduler.load_config().await {
         Ok(c) => c,
@@ -275,8 +335,20 @@ pub async fn delete_task(
 /// POST /api/tasks/:id/run
 pub async fn run_task(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(task_id): Path<String>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     info!("Manually triggering task: {}", task_id);
     let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
 
@@ -296,10 +368,21 @@ pub async fn run_task(
 /// Get task execution history
 ///
 /// GET /api/tasks/history
-pub async fn get_history(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn get_history(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let scheduler = TaskScheduler::new(&state.lbhomedir, &state.version);
     let history = scheduler.get_recent_history(50).await;
-    Json(serde_json::to_value(history).unwrap_or_default())
+    Json(serde_json::to_value(history).unwrap_or_default()).into_response()
 }
 
 /// Query params for the cron-describe endpoint

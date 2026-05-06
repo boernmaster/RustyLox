@@ -1,7 +1,13 @@
 //! System update API endpoints - check and apply updates from GitHub releases
 
+use crate::routes::auth::extract_identity;
 use crate::state::AppState;
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use tracing::{error, info, warn};
 
@@ -41,10 +47,31 @@ pub struct UpdateCheckResponse {
 
 const GITHUB_REPO: &str = "boernmaster/RustyLox";
 
+/// Parse a semver-style string (with optional leading 'v') into a comparable tuple.
+fn parse_semver(s: &str) -> (u64, u64, u64) {
+    let s = s.trim_start_matches('v');
+    let parts: Vec<u64> = s.split('.').filter_map(|p| p.parse().ok()).collect();
+    (
+        parts.first().copied().unwrap_or(0),
+        parts.get(1).copied().unwrap_or(0),
+        parts.get(2).copied().unwrap_or(0),
+    )
+}
+
 /// Check for available updates by querying GitHub releases
 ///
 /// GET /api/system/update/check
-pub async fn check_update(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn check_update(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
     let current_version = state.version.clone();
     let url = format!(
         "https://api.github.com/repos/{}/releases/latest",
@@ -106,8 +133,7 @@ pub async fn check_update(State(state): State<AppState>) -> impl IntoResponse {
 
     let latest = release.tag_name.trim_start_matches('v');
     let current = current_version.trim_start_matches('v');
-    // Simple string comparison; works for semver when format is consistent
-    let update_available = latest != current && latest > current;
+    let update_available = latest != current && parse_semver(latest) > parse_semver(current);
 
     info!(
         "Update check: current={}, latest={}, available={}",
@@ -134,7 +160,18 @@ pub async fn check_update(State(state): State<AppState>) -> impl IntoResponse {
 ///
 /// For Docker deployments, this signals that the user should pull the new image.
 /// For binary deployments, this could download and replace the binary.
-pub async fn apply_update(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn apply_update(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     // In a Docker-first deployment, "applying" an update means pulling the new image.
     // We provide instructions rather than doing it automatically for safety.
     info!("System update apply requested");

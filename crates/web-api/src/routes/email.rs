@@ -1,7 +1,13 @@
 //! Email configuration and notification API endpoints
 
+use crate::routes::auth::extract_identity;
 use crate::state::AppState;
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use email_manager::{
     EmailConfig, EmailConfigManager, EmailHistoryManager, EmailManager, EmailType,
 };
@@ -25,7 +31,18 @@ pub struct SendEmailRequest {
 /// Get email configuration
 ///
 /// GET /api/email/config
-pub async fn get_config(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn get_config(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let manager = EmailConfigManager::new(&state.lbhomedir);
     match manager.load().await {
         Ok(config) => {
@@ -52,8 +69,20 @@ pub async fn get_config(State(state): State<AppState>) -> impl IntoResponse {
 /// PUT /api/email/config
 pub async fn update_config(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(mut new_config): Json<EmailConfig>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let manager = EmailConfigManager::new(&state.lbhomedir);
 
     // If password is masked, keep the existing password
@@ -85,8 +114,20 @@ pub async fn update_config(
 /// POST /api/email/test
 pub async fn send_test(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(req): Json<TestEmailRequest>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let config_manager = EmailConfigManager::new(&state.lbhomedir);
     let config = match config_manager.load().await {
         Ok(c) => c,
@@ -141,8 +182,20 @@ pub async fn send_test(
 /// POST /api/email/send
 pub async fn send_notification(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(req): Json<SendEmailRequest>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let config_manager = EmailConfigManager::new(&state.lbhomedir);
     let config = match config_manager.load().await {
         Ok(c) => c,
@@ -193,7 +246,18 @@ pub async fn send_notification(
 /// Get email send history
 ///
 /// GET /api/email/history
-pub async fn get_history(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn get_history(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({"error": "Auth not configured"})),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
+
     let history_manager = EmailHistoryManager::new(&state.lbhomedir);
     let history = history_manager.recent(50).await;
     Json(history).into_response()
