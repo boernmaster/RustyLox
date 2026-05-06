@@ -138,6 +138,25 @@ impl AuthStore {
         let _guard = self.lock.lock().await;
         let mut db = self.load().await?;
         let before = db.users.len();
+        // Guard: cannot remove the last admin account
+        let target_is_admin = db
+            .users
+            .iter()
+            .find(|u| u.id == *id)
+            .map(|u| u.roles.contains(&Role::Admin))
+            .unwrap_or(false);
+        if target_is_admin {
+            let remaining_admins = db
+                .users
+                .iter()
+                .filter(|u| u.id != *id && u.roles.contains(&Role::Admin))
+                .count();
+            if remaining_admins == 0 {
+                return Err(AuthError::Validation(
+                    "Cannot delete the last admin account".to_string(),
+                ));
+            }
+        }
         db.users.retain(|u| u.id != *id);
         if db.users.len() == before {
             return Err(AuthError::UserNotFound(id.to_string()));

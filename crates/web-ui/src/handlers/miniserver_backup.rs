@@ -38,8 +38,16 @@ use web_api::AppState;
 type ProgressPayload = (String, String);
 
 static BACKUP_JOBS: LazyLock<
-    std::sync::Mutex<HashMap<String, tokio::sync::mpsc::UnboundedReceiver<ProgressPayload>>>,
+    std::sync::Mutex<
+        HashMap<String, (tokio::sync::mpsc::UnboundedReceiver<ProgressPayload>, std::time::Instant)>,
+    >,
 > = LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+fn prune_stale_jobs(
+    jobs: &mut HashMap<String, (tokio::sync::mpsc::UnboundedReceiver<ProgressPayload>, std::time::Instant)>,
+) {
+    jobs.retain(|_, (_, created)| created.elapsed().as_secs() < 600);
+}
 
 fn new_job_id() -> String {
     format!("{}", Local::now().timestamp_micros())
@@ -396,7 +404,8 @@ pub async fn run_backup(State(state): State<AppState>, Path(id): Path<String>) -
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<ProgressPayload>();
     {
         let mut jobs = BACKUP_JOBS.lock().unwrap_or_else(|p| p.into_inner());
-        jobs.insert(job_id.clone(), rx);
+        prune_stale_jobs(&mut jobs);
+        jobs.insert(job_id.clone(), (rx, std::time::Instant::now()));
     }
 
     info!(
@@ -649,7 +658,7 @@ pub async fn backup_progress(
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let rx = {
         let mut jobs = BACKUP_JOBS.lock().unwrap_or_else(|p| p.into_inner());
-        jobs.remove(&job_id)
+        jobs.remove(&job_id).map(|(rx, _)| rx)
     };
 
     let stream = async_stream::stream! {

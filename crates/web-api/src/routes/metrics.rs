@@ -1,9 +1,10 @@
 //! Metrics and system info API endpoints
 
+use crate::routes::auth::extract_identity;
 use crate::state::AppState;
 use axum::{
     extract::State,
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
     Json,
 };
@@ -13,7 +14,16 @@ use tracing::error;
 /// Prometheus metrics endpoint
 ///
 /// GET /metrics
-pub async fn prometheus_metrics(State(state): State<AppState>) -> Response {
+pub async fn prometheus_metrics(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Response {
+    if let Some(service) = &state.auth_service {
+        if let Err(e) = extract_identity(&headers, service).await {
+            return e.into_response();
+        }
+    }
+
     let (system, app, uptime) = {
         let mut collector = state.metrics_collector.lock().await;
         let system = collector.collect_system();
@@ -35,15 +45,31 @@ pub async fn prometheus_metrics(State(state): State<AppState>) -> Response {
 /// System metrics as JSON
 ///
 /// GET /api/system/metrics
-pub async fn system_metrics(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn system_metrics(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if let Some(service) = &state.auth_service {
+        if let Err(e) = extract_identity(&headers, service).await {
+            return e.into_response();
+        }
+    }
     let metrics = state.metrics_collector.lock().await.collect_system();
-    Json(metrics)
+    Json(metrics).into_response()
 }
 
 /// Enhanced health check with component status
 ///
 /// GET /api/health/detail
-pub async fn detailed_health(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn detailed_health(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if let Some(service) = &state.auth_service {
+        if let Err(e) = extract_identity(&headers, service).await {
+            return e.into_response();
+        }
+    }
     let mut components = Vec::new();
 
     // Config check

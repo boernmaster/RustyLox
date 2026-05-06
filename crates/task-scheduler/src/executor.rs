@@ -406,7 +406,16 @@ impl TaskExecutor {
 
     /// Run a custom script
     async fn run_custom_script(&self, script_path: &str) -> Result<String> {
+        if script_path.starts_with('/') || script_path.contains("..") {
+            return Err(Error::plugin(format!(
+                "Invalid script path (must be relative, no '..'): {}",
+                script_path
+            )));
+        }
         let full_path = self.lbhomedir.join(script_path);
+        if !full_path.starts_with(&self.lbhomedir) {
+            return Err(Error::plugin("Script path escapes home directory"));
+        }
         info!("Running custom script: {}", full_path.display());
 
         if !full_path.exists() {

@@ -24,8 +24,6 @@ impl PluginLogger {
 
     /// Write a log entry for the plugin
     pub async fn log(&self, level: LogLevel, message: &str) -> Result<()> {
-        use std::io::Write;
-
         let timestamp = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S");
         let log_line = format!(
             "[{}] [{}] [{}] {}\n",
@@ -35,34 +33,39 @@ impl PluginLogger {
             message
         );
 
+        let path = self.log_file_path();
+
         // Ensure directory exists
-        if let Some(parent) = self.log_file_path().parent() {
+        if let Some(parent) = path.parent() {
             tokio::fs::create_dir_all(parent).await?;
         }
 
-        // Append to file
-        {
-            let mut file = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(self.log_file_path())?;
-            file.write_all(log_line.as_bytes())?;
-        }
-
-        // Rotate if file exceeds 10MB — keep last 5MB
-        const MAX_BYTES: u64 = 10 * 1024 * 1024;
-        const KEEP_BYTES: u64 = 5 * 1024 * 1024;
-        let path = self.log_file_path();
-        if let Ok(meta) = std::fs::metadata(&path) {
-            if meta.len() > MAX_BYTES {
-                if let Ok(content) = std::fs::read(&path) {
-                    let start = (content.len() as u64).saturating_sub(KEEP_BYTES) as usize;
-                    let tail = &content[start..];
-                    let newline = tail.iter().position(|&b| b == b'\n').map(|i| i + 1).unwrap_or(0);
-                    let _ = std::fs::write(&path, &tail[newline..]);
+        tokio::task::spawn_blocking(move || -> std::io::Result<()> {
+            use std::io::Write;
+            {
+                let mut file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&path)?;
+                file.write_all(log_line.as_bytes())?;
+            }
+            const MAX_BYTES: u64 = 10 * 1024 * 1024;
+            const KEEP_BYTES: u64 = 5 * 1024 * 1024;
+            if let Ok(meta) = std::fs::metadata(&path) {
+                if meta.len() > MAX_BYTES {
+                    if let Ok(content) = std::fs::read(&path) {
+                        let start = (content.len() as u64).saturating_sub(KEEP_BYTES) as usize;
+                        let tail = &content[start..];
+                        let newline = tail.iter().position(|&b| b == b'\n').map(|i| i + 1).unwrap_or(0);
+                        let _ = std::fs::write(&path, &tail[newline..]);
+                    }
                 }
             }
-        }
+            Ok(())
+        })
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+        .and_then(|r| r)?;
 
         Ok(())
     }

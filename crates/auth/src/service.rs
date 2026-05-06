@@ -213,7 +213,11 @@ impl AuthService {
             .ok_or(AuthError::InvalidCredentials)?;
 
         if !user.enabled {
-            return Err(AuthError::AccountDisabled);
+            return Err(AuthError::InvalidCredentials);
+        }
+
+        if user.is_locked() {
+            return Err(AuthError::InvalidCredentials);
         }
 
         if !verify_password(password, &user.password_hash)? {
@@ -243,7 +247,11 @@ impl AuthService {
             return Err(AuthError::Forbidden);
         }
         let username = username.into();
-        let hash = hash_password(&password.into())?;
+        let password = password.into();
+        if password.len() < 8 {
+            return Err(AuthError::Validation("Password must be at least 8 characters".to_string()));
+        }
+        let hash = hash_password(&password)?;
         let user = User::new(username.clone(), hash, email, roles);
         let user = self.store.create_user(user).await?;
         self.audit
@@ -269,6 +277,9 @@ impl AuthService {
         // Users can change their own password; admins can change any
         if actor.user_id != *target_user_id && !actor.is_admin() {
             return Err(AuthError::Forbidden);
+        }
+        if new_password.len() < 8 {
+            return Err(AuthError::Validation("Password must be at least 8 characters".to_string()));
         }
         let mut user = self
             .store

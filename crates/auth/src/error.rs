@@ -31,6 +31,9 @@ pub enum AuthError {
     #[error("Not found: {0}")]
     NotFound(String),
 
+    #[error("Validation error: {0}")]
+    Validation(String),
+
     #[error("Internal auth error: {0}")]
     Internal(String),
 }
@@ -45,6 +48,7 @@ impl AuthError {
             AuthError::AccountLocked | AuthError::AccountDisabled => 403,
             AuthError::UserNotFound(_) | AuthError::NotFound(_) => 404,
             AuthError::UserAlreadyExists(_) => 409,
+            AuthError::Validation(_) => 400,
             AuthError::Internal(_) => 500,
         }
     }
