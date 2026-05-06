@@ -207,12 +207,8 @@ pub async fn login(
 
     // Per-IP rate limiting: max 10 attempts per 15 minutes
     {
-        let mut limiter = LOGIN_LIMITER
-            .lock()
-            .unwrap_or_else(|p| p.into_inner());
-        let entry = limiter
-            .entry(ip.clone())
-            .or_insert((0u32, Instant::now()));
+        let mut limiter = LOGIN_LIMITER.lock().unwrap_or_else(|p| p.into_inner());
+        let entry = limiter.entry(ip.clone()).or_insert((0u32, Instant::now()));
         if entry.1.elapsed().as_secs() > RATE_LIMIT_WINDOW_SECS {
             *entry = (0, Instant::now());
         }

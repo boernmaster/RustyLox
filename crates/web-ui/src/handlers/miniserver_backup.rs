@@ -36,16 +36,18 @@ use web_api::AppState;
 
 /// Each progress event is (event_name, json_data).
 type ProgressPayload = (String, String);
+type BackupJobMap = HashMap<
+    String,
+    (
+        tokio::sync::mpsc::UnboundedReceiver<ProgressPayload>,
+        std::time::Instant,
+    ),
+>;
 
-static BACKUP_JOBS: LazyLock<
-    std::sync::Mutex<
-        HashMap<String, (tokio::sync::mpsc::UnboundedReceiver<ProgressPayload>, std::time::Instant)>,
-    >,
-> = LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+static BACKUP_JOBS: LazyLock<std::sync::Mutex<BackupJobMap>> =
+    LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
 
-fn prune_stale_jobs(
-    jobs: &mut HashMap<String, (tokio::sync::mpsc::UnboundedReceiver<ProgressPayload>, std::time::Instant)>,
-) {
+fn prune_stale_jobs(jobs: &mut BackupJobMap) {
     jobs.retain(|_, (_, created)| created.elapsed().as_secs() < 600);
 }
 

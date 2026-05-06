@@ -56,7 +56,11 @@ impl PluginLogger {
                     if let Ok(content) = std::fs::read(&path) {
                         let start = (content.len() as u64).saturating_sub(KEEP_BYTES) as usize;
                         let tail = &content[start..];
-                        let newline = tail.iter().position(|&b| b == b'\n').map(|i| i + 1).unwrap_or(0);
+                        let newline = tail
+                            .iter()
+                            .position(|&b| b == b'\n')
+                            .map(|i| i + 1)
+                            .unwrap_or(0);
                         let _ = std::fs::write(&path, &tail[newline..]);
                     }
                 }
@@ -64,7 +68,7 @@ impl PluginLogger {
             Ok(())
         })
         .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+        .map_err(|e| std::io::Error::other(e.to_string()))
         .and_then(|r| r)?;
 
         Ok(())

@@ -15,14 +15,14 @@ use crate::routes::auth::extract_identity;
 use crate::AppState;
 
 fn auth_err(msg: &str) -> (StatusCode, Json<serde_json::Value>) {
-    (StatusCode::UNAUTHORIZED, Json(serde_json::json!({"error": msg})))
+    (
+        StatusCode::UNAUTHORIZED,
+        Json(serde_json::json!({"error": msg})),
+    )
 }
 
 /// Get backup schedule configuration
-pub async fn get_schedule(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
+pub async fn get_schedule(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     let Some(service) = &state.auth_service else {
         return auth_err("Auth not configured").into_response();
     };
@@ -110,10 +110,7 @@ fn default_true() -> bool {
 }
 
 /// List all backups
-pub async fn list_backups(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
+pub async fn list_backups(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     let Some(service) = &state.auth_service else {
         return auth_err("Auth not configured").into_response();
     };
@@ -150,7 +147,7 @@ pub async fn create_backup(
     let Some(service) = &state.auth_service else {
         return Err(auth_err("Auth not configured"));
     };
-    extract_identity(&headers, service).await.map_err(|e| e)?;
+    extract_identity(&headers, service).await?;
     let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     match manager.create_backup(query.include_plugins).await {
@@ -188,7 +185,7 @@ pub async fn download_backup(
     let Some(service) = &state.auth_service else {
         return Err(auth_err("Auth not configured"));
     };
-    extract_identity(&headers, service).await.map_err(|e| e)?;
+    extract_identity(&headers, service).await?;
     // Prevent path traversal
     if name.contains('/') || name.contains("..") {
         return Err((
@@ -236,7 +233,7 @@ pub async fn restore_backup(
     let Some(service) = &state.auth_service else {
         return Err(auth_err("Auth not configured"));
     };
-    extract_identity(&headers, service).await.map_err(|e| e)?;
+    extract_identity(&headers, service).await?;
     // Prevent path traversal
     if name.contains('/') || name.contains("..") {
         return Err((
@@ -282,7 +279,7 @@ pub async fn delete_backup(
     let Some(service) = &state.auth_service else {
         return Err(auth_err("Auth not configured"));
     };
-    extract_identity(&headers, service).await.map_err(|e| e)?;
+    extract_identity(&headers, service).await?;
     // Prevent path traversal
     if name.contains('/') || name.contains("..") {
         return Err((

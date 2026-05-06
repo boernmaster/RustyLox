@@ -249,7 +249,9 @@ impl AuthService {
         let username = username.into();
         let password = password.into();
         if password.len() < 8 {
-            return Err(AuthError::Validation("Password must be at least 8 characters".to_string()));
+            return Err(AuthError::Validation(
+                "Password must be at least 8 characters".to_string(),
+            ));
         }
         let hash = hash_password(&password)?;
         let user = User::new(username.clone(), hash, email, roles);
@@ -279,7 +281,9 @@ impl AuthService {
             return Err(AuthError::Forbidden);
         }
         if new_password.len() < 8 {
-            return Err(AuthError::Validation("Password must be at least 8 characters".to_string()));
+            return Err(AuthError::Validation(
+                "Password must be at least 8 characters".to_string(),
+            ));
         }
         let mut user = self
             .store

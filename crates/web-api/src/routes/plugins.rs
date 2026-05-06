@@ -175,10 +175,7 @@ pub async fn install_plugin(
                         .into_response();
                 }
             };
-            if let Err(e) = tokio::fs::File::from_std(std_file)
-                .write_all(&data)
-                .await
-            {
+            if let Err(e) = tokio::fs::File::from_std(std_file).write_all(&data).await {
                 error!("Failed to write temp file: {}", e);
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -384,10 +381,7 @@ pub async fn upgrade_plugin(
                         .into_response();
                 }
             };
-            if let Err(e) = tokio::fs::File::from_std(std_file)
-                .write_all(&data)
-                .await
-            {
+            if let Err(e) = tokio::fs::File::from_std(std_file).write_all(&data).await {
                 error!("Failed to write temp file: {}", e);
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,

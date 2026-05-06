@@ -12,7 +12,10 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use tower_http::{cors::{Any, CorsLayer}, trace::TraceLayer};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    trace::TraceLayer,
+};
 
 /// Create the Axum router with all routes
 pub fn create_router(state: AppState) -> Router {

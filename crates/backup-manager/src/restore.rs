@@ -16,8 +16,8 @@ pub async fn restore_backup(lbhomedir: PathBuf, backup_path: PathBuf) -> Result<
 
     tokio::task::spawn_blocking(move || {
         let file = File::open(&backup_path)?;
-        let mut archive = zip::ZipArchive::new(file)
-            .map_err(|e| rustylox_core::Error::backup(e.to_string()))?;
+        let mut archive =
+            zip::ZipArchive::new(file).map_err(|e| rustylox_core::Error::backup(e.to_string()))?;
         archive
             .extract(&lbhomedir)
             .map_err(|e| rustylox_core::Error::backup(e.to_string()))?;

@@ -1,6 +1,11 @@
 //! Configuration routes
 
-use axum::{extract::State, http::{HeaderMap, StatusCode}, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+    Json,
+};
 use rustylox_config::GeneralConfig;
 use serde_json::json;
 
@@ -8,12 +13,13 @@ use crate::routes::auth::extract_identity;
 use crate::state::AppState;
 
 /// Get general configuration
-pub async fn get_general(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
+pub async fn get_general(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     let Some(service) = &state.auth_service else {
-        return (StatusCode::SERVICE_UNAVAILABLE, Json(json!({"error": "Auth not configured"}))).into_response();
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "Auth not configured"})),
+        )
+            .into_response();
     };
     if let Err(e) = extract_identity(&headers, service).await {
         return e.into_response();
@@ -29,7 +35,11 @@ pub async fn update_general(
     Json(new_config): Json<GeneralConfig>,
 ) -> impl IntoResponse {
     let Some(service) = &state.auth_service else {
-        return (StatusCode::SERVICE_UNAVAILABLE, Json(json!({"error": "Auth not configured"}))).into_response();
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "Auth not configured"})),
+        )
+            .into_response();
     };
     if let Err(e) = extract_identity(&headers, service).await {
         return e.into_response();

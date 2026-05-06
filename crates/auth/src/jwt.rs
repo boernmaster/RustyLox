@@ -31,8 +31,8 @@ impl JwtConfig {
 
 impl Default for JwtConfig {
     fn default() -> Self {
-        let secret = std::env::var("JWT_SECRET")
-            .expect("JWT_SECRET environment variable must be set");
+        let secret =
+            std::env::var("JWT_SECRET").expect("JWT_SECRET environment variable must be set");
         assert!(
             secret.len() >= 32,
             "JWT_SECRET must be at least 32 bytes long"

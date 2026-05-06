@@ -53,7 +53,10 @@ impl SubscriptionManager {
 
         let subscriptions = self.parse_subscriptions_ini(&content)?;
 
-        let mut subs = self.subscriptions.write().unwrap_or_else(|p| p.into_inner());
+        let mut subs = self
+            .subscriptions
+            .write()
+            .unwrap_or_else(|p| p.into_inner());
         *subs = subscriptions;
 
         info!(
@@ -133,18 +136,27 @@ impl SubscriptionManager {
 
     /// Count total subscriptions
     pub fn count(&self) -> usize {
-        self.subscriptions.read().unwrap_or_else(|p| p.into_inner()).len()
+        self.subscriptions
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .len()
     }
 
     /// Add a subscription
     pub fn add(&self, subscription: Subscription) {
-        let mut subs = self.subscriptions.write().unwrap_or_else(|p| p.into_inner());
+        let mut subs = self
+            .subscriptions
+            .write()
+            .unwrap_or_else(|p| p.into_inner());
         subs.push(subscription);
     }
 
     /// Remove subscriptions by topic
     pub fn remove(&self, topic: &str) {
-        let mut subs = self.subscriptions.write().unwrap_or_else(|p| p.into_inner());
+        let mut subs = self
+            .subscriptions
+            .write()
+            .unwrap_or_else(|p| p.into_inner());
         subs.retain(|s| s.topic != topic);
     }
 

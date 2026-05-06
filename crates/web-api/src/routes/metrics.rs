@@ -14,10 +14,7 @@ use tracing::error;
 /// Prometheus metrics endpoint
 ///
 /// GET /metrics
-pub async fn prometheus_metrics(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Response {
+pub async fn prometheus_metrics(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if let Some(service) = &state.auth_service {
         if let Err(e) = extract_identity(&headers, service).await {
             return e.into_response();

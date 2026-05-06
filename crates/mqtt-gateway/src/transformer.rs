@@ -284,7 +284,10 @@ impl TransformerRegistry {
 
     /// Count loaded transformers.
     pub fn count(&self) -> usize {
-        self.transformers.read().unwrap_or_else(|p| p.into_inner()).len()
+        self.transformers
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .len()
     }
 }
 
