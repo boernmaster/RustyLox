@@ -31,6 +31,11 @@ services:
       - BIND_ADDR=0.0.0.0:80   ##default:80 is more standard for HTTP and avoids the need to specify the port in the URL
       - MQTT_BROKER=mosquitto
       - MQTT_PORT=1883
+      # Required on first boot to create the admin user (min 8 chars).
+      # Remove or leave unset after the user has been created.
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
+      # Required: secret used to sign JWTs (min 32 chars).
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
     depends_on:
       - mosquitto
     networks:
