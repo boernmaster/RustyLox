@@ -841,11 +841,11 @@ error!("Error occurred: {}", err);
 
 ## Project Status
 
-**Current Status**: Production-ready (v0.8.0). All core features are implemented — MQTT gateway, plugin system, web UI (31 Askama templates), security hardening (JWT/RBAC, API keys, audit log), monitoring, backup/restore, email, task scheduling, system updates, and admin panel.
+**Current Status**: Production-ready (v1.0.1). All core features are implemented — MQTT gateway, plugin system, web UI (31 Askama templates), full security hardening, monitoring, backup/restore, email, task scheduling, system updates, and admin panel.
 
 **MQTT UI**: Incoming Overview and MQTT Finder are tabs on `/mqtt/config` (not separate pages) since v0.8.0.
 
-**Storage**: All persistence is JSON file-backed (`auth.json`, `plugindatabase.json`, `task_history.json`, etc.) — no SQL database.
+**Storage**: All persistence is JSON file-backed (`auth.json`, `plugindatabase.json`, `task_history.json`, etc.) — no SQL database. All writes are atomic (write to `.tmp` then `fs::rename`).
 
 **Health endpoint** (`/api/health/detail`): Reports per-component status for `config`, `mqtt_broker`, `miniserver`, `disk_space`, `cpu`, and `memory`.
 
@@ -854,6 +854,22 @@ error!("Error occurred: {}", err);
 **Network diagnostics** (`/network`): Interface `is_up` is determined by whether the interface has at least one assigned IP address — not by traffic counters.
 
 **API Documentation**: Full endpoint reference is available at `/api-docs` in the web UI, covering all endpoint groups (health, system, config, miniserver, MQTT, plugins, backup, tasks, network, email, weather, auth, virtual inputs).
+
+**Security model** (v1.0.0+):
+- All API endpoints require authentication — `JWT_SECRET` and `ADMIN_PASSWORD` env vars are mandatory (no defaults)
+- RBAC enforced on destructive operations: `Action::Write` required for config/backup mutations, `Action::Delete` for deletions
+- Per-IP login rate limiting: 10 attempts per 15-minute window; counter increments only on failure
+- Argon2id password hashing runs in `spawn_blocking` to avoid blocking the async runtime
+- API key comparison is constant-time (`subtle::ConstantTimeEq`)
+- Session store purges expired entries hourly via a background Tokio task
+- Audit log auto-rotates at 10 MB (keeps last 5 MB)
+- Plugin APT package names validated against Debian naming regex before passing to `apt-get`
+- Plugin lifecycle session IDs generated with `rand::thread_rng()` (CSPRNG)
+- CSP `script-src 'self' 'unsafe-inline'` — `'unsafe-inline'` is required because 26 inline `<script>` blocks exist in Askama templates; removing it requires migrating those to external JS files
+- Mosquitto broker requires authentication (`mosquitto/mosquitto.conf` with `allow_anonymous false`); see `mosquitto/README.md` for setup
+- `GET /api/config/general` strips credential fields (`pass_raw`, `admin_raw`, `credentials_raw`, `fulluri_raw`, WPA passphrase) before returning
+
+**Backup**: `data/system/miniserver-backups/` is excluded from the RustyLox system backup — miniserver backups are managed by their own subsystem.
 
 Next planned work: advanced features & ecosystem expansion (plugin marketplace, Kubernetes, OAuth2/OIDC, PWA). See [ROADMAP.md](ROADMAP.md) for details.
 
