@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-05-06
+
+### Fixed
+- System backup no longer includes `data/system/miniserver-backups/` — those archives are large and managed by their own backup subsystem
+
 ## [1.0.0] - 2026-05-06
 
 ### Security
