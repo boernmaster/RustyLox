@@ -841,7 +841,7 @@ error!("Error occurred: {}", err);
 
 ## Project Status
 
-**Current Status**: Production-ready (v1.0.1). All core features are implemented — MQTT gateway, plugin system, web UI (31 Askama templates), full security hardening, monitoring, backup/restore, email, task scheduling, system updates, and admin panel.
+**Current Status**: Production-ready (v1.1.0). All core features are implemented — MQTT gateway, plugin system, web UI (31 Askama templates), full security hardening, monitoring, backup/restore, email, task scheduling, system updates, and admin panel.
 
 **MQTT UI**: Incoming Overview and MQTT Finder are tabs on `/mqtt/config` (not separate pages) since v0.8.0.
 
@@ -870,6 +870,17 @@ error!("Error occurred: {}", err);
 - `GET /api/config/general` strips credential fields (`pass_raw`, `admin_raw`, `credentials_raw`, `fulluri_raw`, WPA passphrase) before returning
 
 **Backup**: `data/system/miniserver-backups/` is excluded from the RustyLox system backup — miniserver backups are managed by their own subsystem.
+
+**Plugin compatibility** (v1.1.0+):
+- Plugin cron scripts in `system/cron/<interval>/` are auto-executed on the corresponding schedule (1 min → monthly) via background Tokio tasks in `crates/plugin-manager/src/cron.rs`
+- Plugin daemons with a script present are auto-started at system boot via `start_enabled_daemons()`
+- All plugin hook env vars match LoxBerry: `LBPCGIDIR`, `PLUGINDATABASE`, `LBSVERSION`, `LBVERSION` included
+- Plugin web handler (`plugin_web.rs`) uses runtime `lbhomedir` — no hardcoded `/opt/loxberry`
+- PHP and Perl CGI execution contexts inject the full LoxBerry CGI env: `LBPTEMPLATEDIR`, `LBPBINDIR`, `LBPCGIDIR`, `SERVER_NAME`, `REMOTE_ADDR`, `HTTP_COOKIE`, `PLUGINDATABASE`, `LBSVERSION`, `PERL5LIB`
+- `Base.Country` field present in `BaseConfig` — `lbcountry()` returns the configured value
+- `run/plugins/<folder>/` created at plugin install time for PID files
+- `libdbi-perl` and `libdbd-sqlite3-perl` installed in Docker image — `LoxBerry::Log` SQLite session DB and `notify()` work correctly
+- Known limitation: `preroot.sh` / `postroot.sh` run as the current user (not root) — plugins needing root access for service installation will require manual intervention
 
 Next planned work: advanced features & ecosystem expansion (plugin marketplace, Kubernetes, OAuth2/OIDC, PWA). See [ROADMAP.md](ROADMAP.md) for details.
 
