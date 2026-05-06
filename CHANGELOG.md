@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-05-06
+
+### Security
+- Add authentication guards to all previously unprotected email, tasks, and system-update API endpoints (C-3)
+
+### Fixed
+- Version comparison in `check_update` now uses semver-aware tuple comparison — `v0.10.0` correctly evaluates as greater than `v0.9.0`
+
+### Docs
+- Update CLAUDE.md project status to v1.0.1 with full security model reference
+
 ## [1.0.1] - 2026-05-06
 
 ### Fixed
