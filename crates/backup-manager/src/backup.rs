@@ -68,12 +68,18 @@ impl BackupManager {
             zip.start_file("metadata.json", options).map_err(zip_err)?;
             zip.write_all(metadata_json.as_bytes())?;
 
+            let ms_backup_dir = lbhomedir.join("data/system/miniserver-backups");
+
             for include in &includes {
                 let source = lbhomedir.join(include);
                 if source.exists() {
                     tracing::info!("Adding to backup: {}", include);
                     for entry in WalkDir::new(&source).into_iter().filter_map(|e| e.ok()) {
                         let path = entry.path();
+                        // Miniserver backups can be large and are managed separately
+                        if path.starts_with(&ms_backup_dir) {
+                            continue;
+                        }
                         let rel_path = path.strip_prefix(&lbhomedir).unwrap_or(path);
                         let name = rel_path.to_string_lossy();
 
