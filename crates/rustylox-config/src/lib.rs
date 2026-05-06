@@ -45,13 +45,17 @@ impl ConfigManager {
             .map_err(|e| Error::config(format!("Failed to parse {}: {}", path.display(), e)))
     }
 
-    /// Save general configuration
+    /// Save general configuration (atomic: write to temp file then rename)
     pub async fn save_general(&self, config: &GeneralConfig) -> Result<()> {
         let path = self.general_json_path();
         let content = serde_json::to_string_pretty(config)?;
 
-        fs::write(&path, content)
+        let tmp = path.with_extension("tmp");
+        fs::write(&tmp, &content)
             .await
-            .map_err(|e| Error::config(format!("Failed to write {}: {}", path.display(), e)))
+            .map_err(|e| Error::config(format!("Failed to write {}: {}", tmp.display(), e)))?;
+        fs::rename(&tmp, &path)
+            .await
+            .map_err(|e| Error::config(format!("Failed to finalize config write: {}", e)))
     }
 }

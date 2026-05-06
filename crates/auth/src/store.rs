@@ -72,9 +72,17 @@ impl AuthStore {
         let _guard = self.lock.lock().await;
         let db = self.load().await?;
         if db.users.is_empty() {
-            let default_password =
-                std::env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "abc123".to_string());
-            warn!("No users found - creating default admin user. Change the password immediately!");
+            let default_password = std::env::var("ADMIN_PASSWORD").map_err(|_| {
+                AuthError::Internal(
+                    "ADMIN_PASSWORD environment variable must be set to create the initial admin user".to_string(),
+                )
+            })?;
+            if default_password.len() < 8 {
+                return Err(AuthError::Internal(
+                    "ADMIN_PASSWORD must be at least 8 characters".to_string(),
+                ));
+            }
+            warn!("No users found - creating default admin user");
             let hash = hash_password(&default_password)?;
             let admin = User::new("admin", hash, "admin@localhost", vec![Role::Admin]);
             let mut db = db;

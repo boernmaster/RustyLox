@@ -3,18 +3,32 @@
 use axum::{
     body::Body,
     extract::{Path, Query, State},
-    http::{header, StatusCode},
-    response::Response,
+    http::{header, HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
     Json,
 };
 use backup_manager::{BackupManager, BackupMetadata};
 use serde::{Deserialize, Serialize};
 use tokio_util::io::ReaderStream;
 
+use crate::routes::auth::extract_identity;
 use crate::AppState;
 
+fn auth_err(msg: &str) -> (StatusCode, Json<serde_json::Value>) {
+    (StatusCode::UNAUTHORIZED, Json(serde_json::json!({"error": msg})))
+}
+
 /// Get backup schedule configuration
-pub async fn get_schedule(State(state): State<AppState>) -> Json<serde_json::Value> {
+pub async fn get_schedule(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return auth_err("Auth not configured").into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
     let config = state.config.read().await;
     let s = &config.backup.schedule;
     Json(serde_json::json!({
@@ -23,6 +37,7 @@ pub async fn get_schedule(State(state): State<AppState>) -> Json<serde_json::Val
         "keep_backups": s.keep_backups,
         "include_plugins": s.include_plugins,
     }))
+    .into_response()
 }
 
 #[derive(Debug, Deserialize)]
@@ -36,8 +51,15 @@ pub struct ScheduleRequest {
 /// Update backup schedule configuration
 pub async fn update_schedule(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(body): Json<ScheduleRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let Some(service) = &state.auth_service else {
+        return Err(auth_err("Auth not configured"));
+    };
+    extract_identity(&headers, service)
+        .await
+        .map_err(|e| (e.0, e.1))?;
     if body.interval_hours == 0 {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -88,7 +110,16 @@ fn default_true() -> bool {
 }
 
 /// List all backups
-pub async fn list_backups(State(state): State<AppState>) -> Json<Vec<BackupResponse>> {
+pub async fn list_backups(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return auth_err("Auth not configured").into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
     let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     let backups = match manager.list_backups().await {
@@ -107,14 +138,19 @@ pub async fn list_backups(State(state): State<AppState>) -> Json<Vec<BackupRespo
         }
     };
 
-    Json(backups)
+    Json(backups).into_response()
 }
 
 /// Create a new backup
 pub async fn create_backup(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Query(query): Query<CreateBackupQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let Some(service) = &state.auth_service else {
+        return Err(auth_err("Auth not configured"));
+    };
+    extract_identity(&headers, service).await.map_err(|e| e)?;
     let manager = BackupManager::new(state.lbhomedir.clone(), state.version.clone());
 
     match manager.create_backup(query.include_plugins).await {
@@ -146,8 +182,13 @@ pub async fn create_backup(
 /// Download a backup file
 pub async fn download_backup(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(name): Path<String>,
 ) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
+    let Some(service) = &state.auth_service else {
+        return Err(auth_err("Auth not configured"));
+    };
+    extract_identity(&headers, service).await.map_err(|e| e)?;
     // Prevent path traversal
     if name.contains('/') || name.contains("..") {
         return Err((
@@ -189,8 +230,13 @@ pub async fn download_backup(
 /// Restore from a backup
 pub async fn restore_backup(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(name): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let Some(service) = &state.auth_service else {
+        return Err(auth_err("Auth not configured"));
+    };
+    extract_identity(&headers, service).await.map_err(|e| e)?;
     // Prevent path traversal
     if name.contains('/') || name.contains("..") {
         return Err((
@@ -230,8 +276,13 @@ pub async fn restore_backup(
 /// Delete a backup
 pub async fn delete_backup(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(name): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let Some(service) = &state.auth_service else {
+        return Err(auth_err("Auth not configured"));
+    };
+    extract_identity(&headers, service).await.map_err(|e| e)?;
     // Prevent path traversal
     if name.contains('/') || name.contains("..") {
         return Err((

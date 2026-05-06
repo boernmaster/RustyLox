@@ -8,11 +8,20 @@ use axum::{
 };
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+use std::time::Instant;
 use uuid::Uuid;
 
 use auth::{Action, AuthIdentity, AuthService, Resource, Role};
 
 use crate::state::AppState;
+
+static LOGIN_LIMITER: LazyLock<Mutex<HashMap<String, (u32, Instant)>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+const RATE_LIMIT_MAX: u32 = 10;
+const RATE_LIMIT_WINDOW_SECS: u64 = 900; // 15 minutes
 
 // ─── Request/Response types ──────────────────────────────────────────────────
 
@@ -195,12 +204,41 @@ pub async fn login(
         return auth_error(StatusCode::SERVICE_UNAVAILABLE, "Auth not configured").into_response();
     };
     let ip = extract_ip(&headers);
+
+    // Per-IP rate limiting: max 10 attempts per 15 minutes
+    {
+        let mut limiter = LOGIN_LIMITER
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let entry = limiter
+            .entry(ip.clone())
+            .or_insert((0u32, Instant::now()));
+        if entry.1.elapsed().as_secs() > RATE_LIMIT_WINDOW_SECS {
+            *entry = (0, Instant::now());
+        }
+        if entry.0 >= RATE_LIMIT_MAX {
+            return auth_error(
+                StatusCode::TOO_MANY_REQUESTS,
+                "Too many login attempts, try again later",
+            )
+            .into_response();
+        }
+        entry.0 += 1;
+    }
+
     match service.login(&req.username, &req.password, &ip).await {
-        Ok(token_response) => (
-            StatusCode::OK,
-            Json(serde_json::to_value(&token_response).unwrap()),
-        )
-            .into_response(),
+        Ok(token_response) => {
+            // Clear rate limit counter on successful login
+            LOGIN_LIMITER
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .remove(&ip);
+            (
+                StatusCode::OK,
+                Json(serde_json::to_value(&token_response).unwrap()),
+            )
+                .into_response()
+        }
         Err(e) => auth_error(
             StatusCode::from_u16(e.http_status()).unwrap_or(StatusCode::UNAUTHORIZED),
             &e.to_string(),

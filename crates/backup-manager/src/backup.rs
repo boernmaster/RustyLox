@@ -32,77 +32,78 @@ impl BackupManager {
 
     /// Create a new backup
     pub async fn create_backup(&self, include_plugins: bool) -> Result<PathBuf> {
-        let timestamp = Utc::now().format("%Y%m%d_%H%M%S").to_string();
-        let backup_name = format!("rustylox_backup_{}.zip", timestamp);
-        let backup_dir = crate::backup_dir(&self.lbhomedir);
+        let lbhomedir = self.lbhomedir.clone();
+        let version = self.version.clone();
 
-        tokio::fs::create_dir_all(&backup_dir).await?;
+        tokio::task::spawn_blocking(move || -> Result<PathBuf> {
+            let backup_dir = crate::backup_dir(&lbhomedir);
+            std::fs::create_dir_all(&backup_dir)?;
 
-        let backup_path = backup_dir.join(&backup_name);
+            let timestamp = Utc::now().format("%Y%m%d_%H%M%S").to_string();
+            let backup_name = format!("rustylox_backup_{}.zip", timestamp);
+            let backup_path = backup_dir.join(&backup_name);
 
-        tracing::info!("Creating backup: {}", backup_path.display());
+            tracing::info!("Creating backup: {}", backup_path.display());
 
-        // Create metadata
-        let mut includes = vec!["config/system".to_string(), "data/system".to_string()];
-
-        if include_plugins {
-            includes.push("config/plugins".to_string());
-            includes.push("data/plugins".to_string());
-        }
-
-        let metadata = BackupMetadata {
-            version: crate::BACKUP_VERSION.to_string(),
-            timestamp: Utc::now(),
-            rustylox_version: self.version.clone(),
-            includes: includes.clone(),
-            size_bytes: 0,
-        };
-
-        // Create ZIP
-        let zip_file = std::fs::File::create(&backup_path)?;
-        let mut zip = zip::ZipWriter::new(zip_file);
-        let options = zip::write::SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated);
-
-        // Add metadata.json
-        let metadata_json = serde_json::to_string_pretty(&metadata)?;
-        zip.start_file("metadata.json", options).map_err(zip_err)?;
-        zip.write_all(metadata_json.as_bytes())?;
-
-        // Add directories
-        for include in &includes {
-            let source = self.lbhomedir.join(include);
-            if source.exists() {
-                tracing::info!("Adding to backup: {}", include);
-                for entry in WalkDir::new(&source).into_iter().filter_map(|e| e.ok()) {
-                    let path = entry.path();
-                    let rel_path = path.strip_prefix(&self.lbhomedir).unwrap_or(path);
-                    let name = rel_path.to_string_lossy();
-
-                    if path.is_dir() {
-                        zip.add_directory(format!("{}/", name), options)
-                            .map_err(zip_err)?;
-                    } else if path.is_file() {
-                        zip.start_file(name.to_string(), options).map_err(zip_err)?;
-                        let data = std::fs::read(path)?;
-                        zip.write_all(&data)?;
-                    }
-                }
-            } else {
-                tracing::warn!("Backup source not found: {}", include);
+            let mut includes = vec!["config/system".to_string(), "data/system".to_string()];
+            if include_plugins {
+                includes.push("config/plugins".to_string());
+                includes.push("data/plugins".to_string());
             }
-        }
 
-        zip.finish().map_err(zip_err)?;
+            let metadata = BackupMetadata {
+                version: crate::BACKUP_VERSION.to_string(),
+                timestamp: Utc::now(),
+                rustylox_version: version,
+                includes: includes.clone(),
+                size_bytes: 0,
+            };
 
-        let file_size = tokio::fs::metadata(&backup_path).await?.len();
-        tracing::info!(
-            "Backup created successfully: {} ({} bytes)",
-            backup_path.display(),
-            file_size
-        );
+            let zip_file = std::fs::File::create(&backup_path)?;
+            let mut zip = zip::ZipWriter::new(zip_file);
+            let options = zip::write::SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Deflated);
 
-        Ok(backup_path)
+            let metadata_json = serde_json::to_string_pretty(&metadata)?;
+            zip.start_file("metadata.json", options).map_err(zip_err)?;
+            zip.write_all(metadata_json.as_bytes())?;
+
+            for include in &includes {
+                let source = lbhomedir.join(include);
+                if source.exists() {
+                    tracing::info!("Adding to backup: {}", include);
+                    for entry in WalkDir::new(&source).into_iter().filter_map(|e| e.ok()) {
+                        let path = entry.path();
+                        let rel_path = path.strip_prefix(&lbhomedir).unwrap_or(path);
+                        let name = rel_path.to_string_lossy();
+
+                        if path.is_dir() {
+                            zip.add_directory(format!("{}/", name), options)
+                                .map_err(zip_err)?;
+                        } else if path.is_file() {
+                            zip.start_file(name.to_string(), options).map_err(zip_err)?;
+                            let data = std::fs::read(path)?;
+                            zip.write_all(&data)?;
+                        }
+                    }
+                } else {
+                    tracing::warn!("Backup source not found: {}", include);
+                }
+            }
+
+            zip.finish().map_err(zip_err)?;
+
+            let file_size = std::fs::metadata(&backup_path)?.len();
+            tracing::info!(
+                "Backup created successfully: {} ({} bytes)",
+                backup_path.display(),
+                file_size
+            );
+
+            Ok(backup_path)
+        })
+        .await
+        .map_err(|e| rustylox_core::Error::backup(format!("Backup task failed: {}", e)))?
     }
 
     /// List all backups

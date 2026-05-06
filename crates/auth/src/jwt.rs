@@ -31,9 +31,12 @@ impl JwtConfig {
 
 impl Default for JwtConfig {
     fn default() -> Self {
-        // In production this should come from a secure env var
         let secret = std::env::var("JWT_SECRET")
-            .unwrap_or_else(|_| "change-me-in-production-loxberry-secret-key-32bytes".to_string());
+            .expect("JWT_SECRET environment variable must be set");
+        assert!(
+            secret.len() >= 32,
+            "JWT_SECRET must be at least 32 bytes long"
+        );
         Self::new(secret)
     }
 }

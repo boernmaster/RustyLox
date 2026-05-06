@@ -1,9 +1,10 @@
 //! Plugin management API endpoints
 
+use crate::routes::auth::extract_identity;
 use crate::state::AppState;
 use axum::{
     extract::{Multipart, Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Json,
 };
@@ -99,8 +100,23 @@ pub async fn get_plugin(
 /// POST /api/plugins/install
 pub async fn install_plugin(
     State(state): State<AppState>,
+    headers: HeaderMap,
     mut multipart: Multipart,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(PluginInstallResponse {
+                success: false,
+                plugin: None,
+                error: Some("Auth not configured".to_string()),
+            }),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
     info!("Received plugin install request");
 
     // Extract ZIP file from multipart form data
@@ -227,8 +243,22 @@ pub async fn install_plugin(
 /// DELETE /api/plugins/:md5
 pub async fn uninstall_plugin(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(md5): Path<String>,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(PluginUninstallResponse {
+                success: false,
+                message: "Auth not configured".to_string(),
+            }),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
     info!("Uninstalling plugin: {}", md5);
 
     let lbhomedir = &state.lbhomedir;
@@ -263,9 +293,24 @@ pub async fn uninstall_plugin(
 /// POST /api/plugins/:md5/upgrade
 pub async fn upgrade_plugin(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(md5): Path<String>,
     mut multipart: Multipart,
 ) -> impl IntoResponse {
+    let Some(service) = &state.auth_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(PluginInstallResponse {
+                success: false,
+                plugin: None,
+                error: Some("Auth not configured".to_string()),
+            }),
+        )
+            .into_response();
+    };
+    if let Err(e) = extract_identity(&headers, service).await {
+        return e.into_response();
+    }
     info!("Upgrading plugin: {}", md5);
 
     // Extract ZIP file from multipart form data

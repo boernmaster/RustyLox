@@ -72,7 +72,8 @@ impl AuthService {
                     Some("account disabled".into()),
                 )
                 .await;
-            return Err(AuthError::AccountDisabled);
+            // Return generic error to prevent account enumeration
+            return Err(AuthError::InvalidCredentials);
         }
 
         if user.is_locked() {
@@ -86,7 +87,8 @@ impl AuthService {
                     Some("account locked".into()),
                 )
                 .await;
-            return Err(AuthError::AccountLocked);
+            // Return generic error to prevent account enumeration
+            return Err(AuthError::InvalidCredentials);
         }
 
         if !verify_password(password, &user.password_hash)? {

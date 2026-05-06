@@ -34,7 +34,7 @@ services:
     depends_on:
       - mosquitto
     networks:
-      - loxberry-net
+      - rustylox-net
 
   mosquitto:
     image: eclipse-mosquitto:2.0
@@ -48,10 +48,10 @@ services:
       - ./volumes/mosquitto/data:/mosquitto/data
       - ./volumes/mosquitto/log:/mosquitto/log
     networks:
-      - loxberry-net
+      - rustylox-net
 
 networks:
-  loxberry-net:
+  rustylox-net:
     driver: bridge
 
 volumes:
