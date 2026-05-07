@@ -27,3 +27,6 @@ walkdir = "2.5"
 
 # File operations
 tempfile = "3.13"
+
+# Unix uid/gid for diagnostic logging
+libc = "0.2"

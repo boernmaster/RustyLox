@@ -47,3 +47,6 @@ zip = "2.1"
 
 # Base64 decoding for HTTP Basic Auth
 base64 = { workspace = true }
+
+# Unix uid/gid for diagnostic logging
+libc = "0.2"

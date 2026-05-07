@@ -8,6 +8,7 @@ use axum::{
     extract::{Multipart, Path, State},
     response::Html,
 };
+use tracing::{error, info};
 use web_api::AppState;
 
 /// List all plugins
@@ -133,7 +134,35 @@ pub async fn install_submit(
 
             // Save to temporary location
             let temp_dir = state.lbhomedir.join("tmp");
+            info!("plugin upload: creating temp dir {:?}", temp_dir);
+            {
+                let parent = &state.lbhomedir;
+                match std::fs::metadata(parent) {
+                    Ok(m) => info!(
+                        "plugin upload: lbhomedir {:?} exists, readonly={}",
+                        parent,
+                        m.permissions().readonly()
+                    ),
+                    Err(e) => error!("plugin upload: lbhomedir {:?} stat failed: {}", parent, e),
+                }
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::MetadataExt;
+                    if let Ok(m) = std::fs::metadata(parent) {
+                        info!(
+                            "plugin upload: lbhomedir uid={} gid={} mode={:#o}",
+                            m.uid(),
+                            m.gid(),
+                            m.mode()
+                        );
+                    }
+                    let euid = unsafe { libc::geteuid() };
+                    let egid = unsafe { libc::getegid() };
+                    info!("plugin upload: process euid={} egid={}", euid, egid);
+                }
+            }
             if let Err(e) = tokio::fs::create_dir_all(&temp_dir).await {
+                error!("plugin upload: create_dir_all {:?} failed: {}", temp_dir, e);
                 return Html(format!(
                     "<div class='error'>Failed to create temp directory: {}</div>",
                     e

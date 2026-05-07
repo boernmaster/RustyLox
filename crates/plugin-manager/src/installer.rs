@@ -716,7 +716,34 @@ impl PluginInstaller {
     async fn extract_zip(&self, zip_path: &Path) -> Result<TempDir> {
         info!("Extracting ZIP file: {}", zip_path.display());
 
-        let temp_dir = TempDir::new_in(self.lbhomedir.join("tmp"))
+        let tmp_base = self.lbhomedir.join("tmp");
+        info!("extract_zip: creating temp dir in {:?}", tmp_base);
+        {
+            match std::fs::metadata(&tmp_base) {
+                Ok(m) => info!(
+                    "extract_zip: tmp_base {:?} exists, readonly={}",
+                    tmp_base,
+                    m.permissions().readonly()
+                ),
+                Err(e) => warn!("extract_zip: tmp_base {:?} stat failed: {}", tmp_base, e),
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::MetadataExt;
+                if let Ok(m) = std::fs::metadata(&tmp_base) {
+                    info!(
+                        "extract_zip: tmp_base uid={} gid={} mode={:#o}",
+                        m.uid(),
+                        m.gid(),
+                        m.mode()
+                    );
+                }
+                let euid = unsafe { libc::geteuid() };
+                let egid = unsafe { libc::getegid() };
+                info!("extract_zip: process euid={} egid={}", euid, egid);
+            }
+        }
+        let temp_dir = TempDir::new_in(&tmp_base)
             .map_err(|e| Error::plugin(format!("Failed to create temp directory: {}", e)))?;
 
         let file = std::fs::File::open(zip_path)

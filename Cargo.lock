@@ -1854,6 +1854,7 @@ name = "plugin-manager"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "libc",
  "md5",
  "rustylox-core",
  "serde",
@@ -3454,6 +3455,7 @@ dependencies = [
  "chrono",
  "email-manager",
  "futures",
+ "libc",
  "miniserver-client",
  "mqtt-gateway",
  "plugin-manager",
