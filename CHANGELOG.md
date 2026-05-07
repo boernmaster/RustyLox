@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-05-07
+
+### Added
+- Diagnostic logging at both plugin temp-dir creation sites: logs lbhomedir/tmp path, parent directory uid/gid/mode, and process euid/egid to help diagnose `Permission denied (os error 13)` in restricted container runtimes
+
 ## [1.1.1] - 2026-05-07
 
 ### Fixed
