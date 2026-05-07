@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-05-07
+
+### Fixed
+- Plugin installation: pre-create `/opt/loxberry/tmp/` in the Docker image so the upload handler never needs to create it at runtime (fixes `Permission denied (os error 13)` on restricted container runtimes)
+- Plugin ZIP extraction: use `TempDir::new_in(lbhomedir/tmp)` instead of the system `/tmp`, ensuring extraction works in environments where `/tmp` access is restricted
+
 ## [1.1.0] - 2026-05-06
 
 ### Added

@@ -109,7 +109,8 @@ RUN mkdir -p \
     /opt/loxberry/templates/plugins \
     /opt/loxberry/libs/perllib \
     /opt/loxberry/libs/phplib \
-    /opt/loxberry/libs/bashlib
+    /opt/loxberry/libs/bashlib \
+    /opt/loxberry/tmp
 
 # Copy binary from builder
 COPY --from=builder /build/target/release/rustylox-daemon /usr/local/bin/

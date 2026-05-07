@@ -716,7 +716,7 @@ impl PluginInstaller {
     async fn extract_zip(&self, zip_path: &Path) -> Result<TempDir> {
         info!("Extracting ZIP file: {}", zip_path.display());
 
-        let temp_dir = TempDir::new()
+        let temp_dir = TempDir::new_in(self.lbhomedir.join("tmp"))
             .map_err(|e| Error::plugin(format!("Failed to create temp directory: {}", e)))?;
 
         let file = std::fs::File::open(zip_path)
