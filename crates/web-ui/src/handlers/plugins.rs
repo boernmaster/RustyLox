@@ -132,42 +132,32 @@ pub async fn install_submit(
                 }
             };
 
-            // Save to temporary location
-            let temp_dir = state.lbhomedir.join("tmp");
-            info!("plugin upload: creating temp dir {:?}", temp_dir);
-            {
-                let parent = &state.lbhomedir;
-                match std::fs::metadata(parent) {
-                    Ok(m) => info!(
-                        "plugin upload: lbhomedir {:?} exists, readonly={}",
-                        parent,
-                        m.permissions().readonly()
-                    ),
-                    Err(e) => error!("plugin upload: lbhomedir {:?} stat failed: {}", parent, e),
-                }
-                #[cfg(unix)]
-                {
-                    use std::os::unix::fs::MetadataExt;
-                    if let Ok(m) = std::fs::metadata(parent) {
-                        info!(
-                            "plugin upload: lbhomedir uid={} gid={} mode={:#o}",
-                            m.uid(),
-                            m.gid(),
-                            m.mode()
-                        );
+            // Save to temporary location — prefer lbhomedir/tmp, fall back to system /tmp
+            let preferred_tmp = state.lbhomedir.join("tmp");
+            let temp_dir = match tokio::fs::create_dir_all(&preferred_tmp).await {
+                Ok(()) => preferred_tmp,
+                Err(e) => {
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::MetadataExt;
+                        let euid = unsafe { libc::geteuid() };
+                        let egid = unsafe { libc::getegid() };
+                        match std::fs::metadata(&state.lbhomedir) {
+                            Ok(m) => error!(
+                                "plugin upload: create_dir_all({:?}) failed: {} — lbhomedir uid={} gid={} mode={:#o} process_euid={} process_egid={}",
+                                preferred_tmp, e, m.uid(), m.gid(), m.mode(), euid, egid
+                            ),
+                            Err(me) => error!(
+                                "plugin upload: create_dir_all({:?}) failed: {} — lbhomedir stat_err={} process_euid={} process_egid={}",
+                                preferred_tmp, e, me, euid, egid
+                            ),
+                        }
                     }
-                    let euid = unsafe { libc::geteuid() };
-                    let egid = unsafe { libc::getegid() };
-                    info!("plugin upload: process euid={} egid={}", euid, egid);
+                    #[cfg(not(unix))]
+                    error!("plugin upload: create_dir_all({:?}) failed: {}", preferred_tmp, e);
+                    std::env::temp_dir()
                 }
-            }
-            if let Err(e) = tokio::fs::create_dir_all(&temp_dir).await {
-                error!("plugin upload: create_dir_all {:?} failed: {}", temp_dir, e);
-                return Html(format!(
-                    "<div class='error'>Failed to create temp directory: {}</div>",
-                    e
-                ));
-            }
+            };
 
             let temp_path = temp_dir.join(&filename);
             if let Err(e) = tokio::fs::write(&temp_path, &data).await {

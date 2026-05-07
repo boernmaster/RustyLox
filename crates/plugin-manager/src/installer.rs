@@ -12,7 +12,7 @@ use rustylox_core::{Error, Result};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 use tokio::fs;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 use walkdir::WalkDir;
 
 /// Install action type
@@ -717,33 +717,27 @@ impl PluginInstaller {
         info!("Extracting ZIP file: {}", zip_path.display());
 
         let tmp_base = self.lbhomedir.join("tmp");
-        info!("extract_zip: creating temp dir in {:?}", tmp_base);
+        #[cfg(unix)]
         {
+            use std::os::unix::fs::MetadataExt;
+            let euid = unsafe { libc::geteuid() };
+            let egid = unsafe { libc::getegid() };
             match std::fs::metadata(&tmp_base) {
-                Ok(m) => info!(
-                    "extract_zip: tmp_base {:?} exists, readonly={}",
-                    tmp_base,
-                    m.permissions().readonly()
+                Ok(m) => error!(
+                    "extract_zip: tmp_base={:?} uid={} gid={} mode={:#o} process_euid={} process_egid={}",
+                    tmp_base, m.uid(), m.gid(), m.mode(), euid, egid
                 ),
-                Err(e) => warn!("extract_zip: tmp_base {:?} stat failed: {}", tmp_base, e),
-            }
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::MetadataExt;
-                if let Ok(m) = std::fs::metadata(&tmp_base) {
-                    info!(
-                        "extract_zip: tmp_base uid={} gid={} mode={:#o}",
-                        m.uid(),
-                        m.gid(),
-                        m.mode()
-                    );
-                }
-                let euid = unsafe { libc::geteuid() };
-                let egid = unsafe { libc::getegid() };
-                info!("extract_zip: process euid={} egid={}", euid, egid);
+                Err(e) => error!(
+                    "extract_zip: tmp_base={:?} stat_err={} process_euid={} process_egid={}",
+                    tmp_base, e, euid, egid
+                ),
             }
         }
         let temp_dir = TempDir::new_in(&tmp_base)
+            .or_else(|e| {
+                error!("extract_zip: TempDir::new_in({:?}) failed: {} — falling back to system /tmp", tmp_base, e);
+                TempDir::new()
+            })
             .map_err(|e| Error::plugin(format!("Failed to create temp directory: {}", e)))?;
 
         let file = std::fs::File::open(zip_path)

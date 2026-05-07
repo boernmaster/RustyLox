@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-05-07
+
+### Fixed
+- Plugin installation no longer fails with `Permission denied` when `lbhomedir/tmp` is unwritable: both the upload handler and ZIP extraction now fall back to the system `/tmp` automatically
+- All temp-dir error paths now log at `error!` level (uid/gid/mode/euid/egid) so the root cause is always visible in `docker compose logs`, regardless of `RUST_LOG` level
+
 ## [1.1.2] - 2026-05-07
 
 ### Added
