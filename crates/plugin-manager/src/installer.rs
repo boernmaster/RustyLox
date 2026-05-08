@@ -735,7 +735,10 @@ impl PluginInstaller {
         }
         let temp_dir = TempDir::new_in(&tmp_base)
             .or_else(|e| {
-                error!("extract_zip: TempDir::new_in({:?}) failed: {} — falling back to system /tmp", tmp_base, e);
+                error!(
+                    "extract_zip: TempDir::new_in({:?}) failed: {} — falling back to system /tmp",
+                    tmp_base, e
+                );
                 TempDir::new()
             })
             .map_err(|e| Error::plugin(format!("Failed to create temp directory: {}", e)))?;
