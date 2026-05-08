@@ -163,12 +163,24 @@ pub async fn install_submit(
             };
 
             let temp_path = temp_dir.join(&filename);
-            if let Err(e) = tokio::fs::write(&temp_path, &data).await {
-                return Html(format!(
-                    "<div class='error'>Failed to save uploaded file: {}</div>",
-                    e
-                ));
-            }
+            let write_result = tokio::fs::write(&temp_path, &data).await;
+            let temp_path = if let Err(ref e) = write_result {
+                // preferred_tmp exists but is not writable (e.g. owned by root) — fall back
+                error!(
+                    "plugin upload: write to {:?} failed: {} — retrying in system /tmp",
+                    temp_path, e
+                );
+                let fallback = std::env::temp_dir().join(&filename);
+                if let Err(e2) = tokio::fs::write(&fallback, &data).await {
+                    return Html(format!(
+                        "<div class='error'>Failed to save uploaded file: {}</div>",
+                        e2
+                    ));
+                }
+                fallback
+            } else {
+                temp_path
+            };
 
             zip_path = Some(temp_path);
             break;
