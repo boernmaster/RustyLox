@@ -130,7 +130,12 @@ COPY sdk/templates/system /opt/loxberry/templates/system
 # Install Perl modules not available in Debian bullseye repos
 RUN cpanm --notest List::MoreUtils 2>/dev/null
 
-RUN chown -R loxberry:loxberry /opt/loxberry
+# Own by loxberry, group=users (gid=100 on Debian).
+# g+w lets any process in group 100 write — handles Docker --user overrides
+# where the effective UID differs from the loxberry uid (1000).
+RUN chown -R loxberry:users /opt/loxberry \
+    && chmod -R g+w /opt/loxberry \
+    && chmod 1777 /opt/loxberry/tmp
 
 # ── dnsmasq setup (done at build time as root) ────────────────────────────────
 # Create the drop-in config dir and make it writable by the loxberry group so
