@@ -1206,9 +1206,9 @@ impl PluginInstaller {
 
         info!("Installing APT packages: {:?}", packages);
 
-        // Run apt-get update first
-        let update_result = tokio::process::Command::new("apt-get")
-            .args(["update", "-q"])
+        // Run apt-get update first (via sudo so it works as non-root)
+        let update_result = tokio::process::Command::new("sudo")
+            .args(["apt-get", "update", "-q"])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::piped())
             .output()
@@ -1219,8 +1219,8 @@ impl PluginInstaller {
         }
 
         // Install packages
-        let install_result = tokio::process::Command::new("apt-get")
-            .args(["install", "-y", "--no-install-recommends"])
+        let install_result = tokio::process::Command::new("sudo")
+            .args(["apt-get", "install", "-y", "--no-install-recommends"])
             .args(&packages)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -1253,8 +1253,8 @@ impl PluginInstaller {
         let arch_deb_dir = dpkg_dir.join(deb_arch);
         if arch_deb_dir.exists() {
             info!("Installing .deb packages from {}", arch_deb_dir.display());
-            let dpkg_result = tokio::process::Command::new("dpkg")
-                .args(["-i", "-R"])
+            let dpkg_result = tokio::process::Command::new("sudo")
+                .args(["dpkg", "-i", "-R"])
                 .arg(&arch_deb_dir)
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::piped())

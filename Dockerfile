@@ -149,6 +149,15 @@ RUN echo "loxberry ALL=(root) NOPASSWD: /usr/bin/pkill -HUP dnsmasq" \
         > /etc/sudoers.d/loxberry-dnsmasq \
     && chmod 440 /etc/sudoers.d/loxberry-dnsmasq
 
+# Allow any user in group users (gid=100) to run apt-get and dpkg as root.
+# Plugin installers need this to satisfy package dependencies.
+RUN printf '%s\n' \
+    'Defaults !requiretty' \
+    '%users ALL=(root) NOPASSWD: /usr/bin/apt-get' \
+    '%users ALL=(root) NOPASSWD: /usr/bin/dpkg' \
+    > /etc/sudoers.d/loxberry-apt \
+    && chmod 440 /etc/sudoers.d/loxberry-apt
+
 # Write the base dnsmasq config: forward everything except the weather override
 RUN printf '# RustyLox dnsmasq – DNS redirect for Loxone Cloud Emulator\n# Listen on port 5353 (unprivileged); docker-compose maps host:53 -> container:5353\nport=5353\n# Bind all interfaces so Docker port mapping (host:53->container:5353) works\nlisten-address=0.0.0.0\nbind-interfaces\nno-resolv\nserver=8.8.8.8\nserver=8.8.4.4\nconf-dir=/etc/dnsmasq.d/,*.conf\n' \
         > /etc/dnsmasq.conf

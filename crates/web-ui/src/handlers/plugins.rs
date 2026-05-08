@@ -219,6 +219,7 @@ pub async fn install_submit(
             // Clean up temp file
             let _ = tokio::fs::remove_file(&zip_path).await;
 
+            error!("Plugin installation failed: {}", e);
             Html(format!(
                 "<div class='error'>Failed to install plugin: {}</div>",
                 e
