@@ -30,7 +30,7 @@ use rustylox_core::Result;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 /// Gateway message types
 #[derive(Debug, Clone)]
@@ -68,7 +68,7 @@ impl MqttGateway {
     pub fn new(config: Arc<RwLock<GeneralConfig>>, lbhomedir: PathBuf) -> Result<Self> {
         info!("Initializing MQTT Gateway");
 
-        let (message_tx, _) = broadcast::channel(1000);
+        let (message_tx, _) = broadcast::channel(4096);
 
         // Get MQTT config for broker client
         let mqtt_config = tokio::task::block_in_place(|| {
@@ -264,7 +264,7 @@ impl MqttGateway {
                     }
                 }
                 Err(broadcast::error::RecvError::Lagged(n)) => {
-                    error!("Message processor lagged by {} messages", n);
+                    warn!("Message processor lagged by {} messages", n);
                 }
                 Err(broadcast::error::RecvError::Closed) => {
                     info!("Message channel closed, stopping processor");
