@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     let (non_blocking_file, _file_guard) = tracing_appender::non_blocking(file_appender);
 
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| "rustylox_daemon=info,web_api=info,miniserver_client=info".into());
+        .unwrap_or_else(|_| "info,miniserver_client=warn".into());
 
     // Wrap the filter in a reload layer so it can be swapped at runtime via the API.
     let (reload_filter, reload_handle) = tracing_subscriber::reload::Layer::new(env_filter);
