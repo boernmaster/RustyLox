@@ -98,6 +98,12 @@ pub fn create_ui_router(state: AppState) -> Router {
             post(handlers::plugins::uninstall),
         )
         // Plugin web interfaces (public)
+        // LoxBerry-compatible URL: /plugins/<name>/<path> served from webfrontend/html/plugins/<name>/
+        .route(
+            "/plugins/:name/*path",
+            get(handlers::plugin_web::serve_plugin_public),
+        )
+        // Legacy /plugins/web/:name routes (kept for any internal links)
         .route(
             "/plugins/web/:name",
             get(handlers::plugin_web::serve_plugin_public_index),

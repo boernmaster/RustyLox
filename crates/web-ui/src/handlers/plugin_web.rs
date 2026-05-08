@@ -43,6 +43,8 @@ struct PhpRequest {
     content_type: String,
     body: Vec<u8>,
     http_host: String,
+    /// Full request URI including path and query string (e.g. /admin/plugins/foo/index.cgi?do=bar)
+    request_uri: String,
 }
 
 impl PhpRequest {
@@ -53,7 +55,16 @@ impl PhpRequest {
             content_type: String::new(),
             body: Vec::new(),
             http_host: String::new(),
+            request_uri: String::new(),
         }
+    }
+}
+
+/// Build a REQUEST_URI string from path and optional query string
+fn build_request_uri(path: &str, query: Option<&str>) -> String {
+    match query {
+        Some(q) if !q.is_empty() => format!("{}?{}", path, q),
+        _ => path.to_string(),
     }
 }
 
@@ -68,10 +79,12 @@ fn extract_http_host(headers: &HeaderMap) -> String {
 
 /// Serve public plugin web interface (no authentication required)
 ///
-/// GET /plugins/web/:name/*path
+/// GET /plugins/:name/*path  (LoxBerry-compatible)
+/// GET /plugins/web/:name/*path  (legacy)
 pub async fn serve_plugin_public(
     State(state): State<AppState>,
     Path((plugin_name, path)): Path<(String, String)>,
+    uri: Uri,
     headers: HeaderMap,
 ) -> Response {
     let base_dir = state
@@ -81,6 +94,7 @@ pub async fn serve_plugin_public(
 
     let mut req = PhpRequest::get_only();
     req.http_host = extract_http_host(&headers);
+    req.request_uri = build_request_uri(uri.path(), uri.query());
     serve_plugin_file(
         &base_dir,
         &path,
@@ -98,6 +112,7 @@ pub async fn serve_plugin_public(
 pub async fn serve_plugin_public_index(
     State(state): State<AppState>,
     Path(plugin_name): Path<String>,
+    uri: Uri,
     headers: HeaderMap,
 ) -> Response {
     let base_dir = state
@@ -107,6 +122,7 @@ pub async fn serve_plugin_public_index(
 
     let mut req = PhpRequest::get_only();
     req.http_host = extract_http_host(&headers);
+    req.request_uri = build_request_uri(uri.path(), uri.query());
     serve_plugin_file(
         &base_dir,
         "index.html",
@@ -132,12 +148,14 @@ pub async fn serve_plugin_auth(
         .join("webfrontend/htmlauth/plugins")
         .join(&plugin_name);
 
+    let request_uri = build_request_uri(uri.path(), uri.query());
     let php_req = PhpRequest {
         method: "GET".to_string(),
         query_string: uri.query().unwrap_or("").to_string(),
         content_type: String::new(),
         body: Vec::new(),
         http_host: extract_http_host(&headers),
+        request_uri,
     };
 
     serve_plugin_file(
@@ -172,12 +190,14 @@ pub async fn serve_plugin_auth_post(
         .unwrap_or("")
         .to_string();
 
+    let request_uri = build_request_uri(uri.path(), uri.query());
     let php_req = PhpRequest {
         method: "POST".to_string(),
         query_string: uri.query().unwrap_or("").to_string(),
         content_type,
         body: body.to_vec(),
         http_host: extract_http_host(&headers),
+        request_uri,
     };
 
     serve_plugin_file(
@@ -197,6 +217,7 @@ pub async fn serve_plugin_auth_post(
 pub async fn serve_plugin_auth_index(
     State(state): State<AppState>,
     Path(plugin_name): Path<String>,
+    uri: Uri,
     headers: HeaderMap,
 ) -> Response {
     let base_dir = state
@@ -206,6 +227,8 @@ pub async fn serve_plugin_auth_index(
 
     let mut req = PhpRequest::get_only();
     req.http_host = extract_http_host(&headers);
+    req.query_string = uri.query().unwrap_or("").to_string();
+    req.request_uri = build_request_uri(uri.path(), uri.query());
 
     // Try index.php → index.cgi → index.html
     if base_dir.join("index.php").exists() {
@@ -425,6 +448,7 @@ async fn serve_php_file(
         .env("REDIRECT_STATUS", "200")
         .env("REQUEST_METHOD", &php_req.method)
         .env("QUERY_STRING", &php_req.query_string)
+        .env("REQUEST_URI", &php_req.request_uri)
         .env("CONTENT_TYPE", &php_req.content_type)
         .env("CONTENT_LENGTH", php_req.body.len().to_string())
         .env("SCRIPT_FILENAME", path.to_string_lossy().to_string())
@@ -607,6 +631,7 @@ async fn serve_cgi_file(
         .env("REDIRECT_STATUS", "200")
         .env("REQUEST_METHOD", &php_req.method)
         .env("QUERY_STRING", &php_req.query_string)
+        .env("REQUEST_URI", &php_req.request_uri)
         .env("CONTENT_TYPE", &php_req.content_type)
         .env("CONTENT_LENGTH", php_req.body.len().to_string())
         .env("SCRIPT_FILENAME", path.to_string_lossy().to_string())
