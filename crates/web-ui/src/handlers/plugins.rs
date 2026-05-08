@@ -8,7 +8,7 @@ use axum::{
     extract::{Multipart, Path, State},
     response::Html,
 };
-use tracing::{error, info};
+use tracing::error;
 use web_api::AppState;
 
 /// List all plugins
@@ -154,7 +154,10 @@ pub async fn install_submit(
                         }
                     }
                     #[cfg(not(unix))]
-                    error!("plugin upload: create_dir_all({:?}) failed: {}", preferred_tmp, e);
+                    error!(
+                        "plugin upload: create_dir_all({:?}) failed: {}",
+                        preferred_tmp, e
+                    );
                     std::env::temp_dir()
                 }
             };
