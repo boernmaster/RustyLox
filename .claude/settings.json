@@ -2,5 +2,19 @@
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport json, sys, subprocess, re, os\ndata = json.load(sys.stdin)\ncmd = data.get('tool_input', {}).get('command', '')\nif not re.search(r'\\\\bgit\\\\s+(tag|push)\\\\b', cmd):\n    sys.exit(0)\nprint('Running cargo fmt + clippy before git tag/push...', flush=True)\nresult_fmt = subprocess.run(['cargo', 'fmt', '--all'], cwd=os.environ.get('PWD', '.'))\nif result_fmt.returncode != 0:\n    print(json.dumps({'continue': False, 'stopReason': 'cargo fmt failed'}))\n    sys.exit(0)\nresult_clippy = subprocess.run(['cargo', 'clippy', '--all', '--', '-D', 'warnings'], cwd=os.environ.get('PWD', '.'))\nif result_clippy.returncode != 0:\n    print(json.dumps({'continue': False, 'stopReason': 'cargo clippy failed — fix warnings before tagging/pushing'}))\n    sys.exit(0)\nprint(json.dumps({'systemMessage': 'cargo fmt + clippy passed'}))\n\"",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
   }
 }

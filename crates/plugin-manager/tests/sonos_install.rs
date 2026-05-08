@@ -45,13 +45,19 @@ async fn test_install_sonos() {
         .await;
 
     match &result {
-        Ok(entry) => println!("Installed: {} v{} (folder: {})", entry.name, entry.version, entry.folder),
+        Ok(entry) => println!(
+            "Installed: {} v{} (folder: {})",
+            entry.name, entry.version, entry.folder
+        ),
         Err(e) => println!("Installation failed: {}", e),
     }
 
     // Print installed files for inspection
     if result.is_ok() {
         let plugins = installer.list().await.unwrap();
-        println!("Plugins in DB: {:?}", plugins.iter().map(|p| &p.name).collect::<Vec<_>>());
+        println!(
+            "Plugins in DB: {:?}",
+            plugins.iter().map(|p| &p.name).collect::<Vec<_>>()
+        );
     }
 }
