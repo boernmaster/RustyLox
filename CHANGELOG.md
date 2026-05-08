@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-05-08
+
+### Fixed
+- `sudo: you do not exist in the passwd database` no longer spams logs every 15 minutes: `docker-entrypoint.sh` now registers the current UID in `/etc/passwd` if missing (rootless Docker / `--user` override), and `weather.rs` tries `pkill` directly before falling back to `sudo`, with stderr suppressed on both attempts
+
 ## [1.1.3] - 2026-05-07
 
 ### Fixed

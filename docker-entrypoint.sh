@@ -1,6 +1,17 @@
 #!/bin/bash
 set -e
 
+# ─── Ensure current UID has a passwd entry (rootless Docker / --user override)
+# sudo and many tools fail with "you do not exist in the passwd database" when
+# the running UID has no /etc/passwd entry.  Add a minimal entry if missing.
+CUR_UID=$(id -u)
+CUR_GID=$(id -g)
+if ! getent passwd "$CUR_UID" >/dev/null 2>&1; then
+    echo "loxberry:x:${CUR_UID}:${CUR_GID}::/home/loxberry:/bin/bash" >> /etc/passwd
+    echo "loxberry:x:${CUR_GID}:" >> /etc/group 2>/dev/null || true
+    echo "Registered uid=${CUR_UID} as loxberry in /etc/passwd"
+fi
+
 # ─── dnsmasq ─────────────────────────────────────────────────────────────────
 # Permissions and sudoers were configured at image build time.
 # Just start dnsmasq in the background before dropping privileges.

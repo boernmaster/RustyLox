@@ -601,16 +601,29 @@ impl WeatherService {
         std::fs::write("/etc/dnsmasq.d/rustylox-weather.conf", &content)
             .map_err(|e| format!("Cannot write dnsmasq config: {}", e))?;
 
-        // Reload dnsmasq config via SIGHUP (non-fatal if dnsmasq isn't running).
-        // dnsmasq is started directly in docker-entrypoint.sh (not via a service
-        // manager), so we send SIGHUP via sudo+pkill rather than `service restart`.
-        let status = std::process::Command::new("sudo")
-            .args(["pkill", "-HUP", "dnsmasq"])
+        // Reload dnsmasq via SIGHUP (non-fatal if dnsmasq isn't running).
+        // Try direct pkill first (works when running as root); fall back to
+        // sudo for the loxberry-user case.  stderr is suppressed on both
+        // attempts so "you do not exist in the passwd database" never appears
+        // in docker logs when sudo is misconfigured.
+        use std::process::Stdio;
+        let direct = std::process::Command::new("pkill")
+            .args(["-HUP", "dnsmasq"])
+            .stderr(Stdio::null())
             .status();
-        match status {
-            Ok(s) if s.success() => info!("dnsmasq reloaded (SIGHUP)"),
-            Ok(s) => debug!("pkill -HUP dnsmasq exited with status {}", s),
-            Err(e) => debug!("Could not send SIGHUP to dnsmasq: {}", e),
+        let reloaded = matches!(direct, Ok(s) if s.success());
+        if !reloaded {
+            let via_sudo = std::process::Command::new("sudo")
+                .args(["pkill", "-HUP", "dnsmasq"])
+                .stderr(Stdio::null())
+                .status();
+            match via_sudo {
+                Ok(s) if s.success() => info!("dnsmasq reloaded via sudo (SIGHUP)"),
+                Ok(s) => debug!("sudo pkill -HUP dnsmasq exited {}", s),
+                Err(e) => debug!("Could not send SIGHUP to dnsmasq: {}", e),
+            }
+        } else {
+            info!("dnsmasq reloaded (SIGHUP)");
         }
         Ok(())
     }
