@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-05-08
+
+### Fixed
+- Plugin public files now served at the LoxBerry-compatible URL `/plugins/<name>/<path>` (was `/plugins/web/<name>/<path>`); CSS, JS and images referenced by plugins such as Sonos now load correctly
+- `REQUEST_URI` and `QUERY_STRING` are now forwarded to the index handler so plugin forms see the correct query parameters
+- `REQUEST_URI` CGI environment variable set in both PHP and Perl execution contexts so plugins that use `$ENV{REQUEST_URI}` for form actions or SELFURL templates get the right value
+
 ## [1.1.5] - 2026-05-08
 
 ### Fixed
