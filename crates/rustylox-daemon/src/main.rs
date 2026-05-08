@@ -28,8 +28,9 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|_| PathBuf::from("/opt/loxberry"));
 
     let log_dir = lbhomedir.join("log/system");
-    // Create log directory on first boot before writing to it.
+    // Create required directories on first boot / after volume mounts wipe them.
     let _ = std::fs::create_dir_all(&log_dir);
+    let _ = std::fs::create_dir_all(lbhomedir.join("tmp"));
 
     // Non-rolling file appender → log/system/rustylox.log.
     // Rotation is handled by the existing log-rotation task.

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-05-08
+
+### Fixed
+- `lbhomedir/tmp` is now created at daemon startup (alongside `log/system`), so it always exists regardless of Docker image age or volume mounts that wipe `/opt/loxberry/` contents — eliminates the root cause of `Permission denied` during plugin ZIP extraction
+
 ## [1.1.4] - 2026-05-08
 
 ### Fixed
