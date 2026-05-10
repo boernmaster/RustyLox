@@ -16,13 +16,13 @@ tracing = { workspace = true }
 tokio = { workspace = true }
 
 # Cron expression parsing
-cron = "0.12"
+cron = "0.16"
 
 # Time handling
 chrono = { version = "0.4", features = ["serde"] }
 
 # ZIP archive creation (for miniserver backup)
-zip = "2"
+zip = "8"
 
 [dev-dependencies]
 tempfile = { workspace = true }

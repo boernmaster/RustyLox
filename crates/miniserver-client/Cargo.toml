@@ -29,7 +29,7 @@ urlencoding = "2.1"
 base64 = "0.22"
 
 # XML parsing for Miniserver responses
-quick-xml = { version = "0.36", features = ["serialize"] }
+quick-xml = { version = "0.39", features = ["serialize"] }
 
 # MD5 for reboot detection cache keys
-md5 = "0.7"
+md5 = "0.8"
