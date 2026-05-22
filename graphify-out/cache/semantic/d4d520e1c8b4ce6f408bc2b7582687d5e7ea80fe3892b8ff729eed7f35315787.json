@@ -1,0 +1,1 @@
+{"nodes": [{"id": "plugins_details_plugin_details", "label": "Plugin Details Page", "file_type": "code", "source_file": "crates/web-ui/templates/plugins/details.html", "source_location": "line 1", "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

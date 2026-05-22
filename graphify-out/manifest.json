@@ -1,0 +1,1387 @@
+{
+  "/home/kalteneb/work/RustyLox/docker-entrypoint.sh": {
+    "mtime": 1778229862.5566232,
+    "ast_hash": "90a6d17fdbe7cc19d0be76c22e2e8e6f",
+    "semantic_hash": "90a6d17fdbe7cc19d0be76c22e2e8e6f"
+  },
+  "/home/kalteneb/work/RustyLox/test-phase2.sh": {
+    "mtime": 1778060534.7861907,
+    "ast_hash": "71ba5fb2183e5024cfd8332b9d707475",
+    "semantic_hash": "71ba5fb2183e5024cfd8332b9d707475"
+  },
+  "/home/kalteneb/work/RustyLox/test-phase3.sh": {
+    "mtime": 1778060534.7861907,
+    "ast_hash": "4ef109759018b5d3ed3b58ee94f26385",
+    "semantic_hash": "4ef109759018b5d3ed3b58ee94f26385"
+  },
+  "/home/kalteneb/work/RustyLox/examples/sample-plugin/uninstall.sh": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "53032b55691536e04fd45fcc06ceea64",
+    "semantic_hash": "53032b55691536e04fd45fcc06ceea64"
+  },
+  "/home/kalteneb/work/RustyLox/examples/sample-plugin/preinstall.sh": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "c9b2d5515e162298f310cd3e324c1b74",
+    "semantic_hash": "c9b2d5515e162298f310cd3e324c1b74"
+  },
+  "/home/kalteneb/work/RustyLox/examples/sample-plugin/postinstall.sh": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "12299f933748f1877bc1c0e8e3215794",
+    "semantic_hash": "12299f933748f1877bc1c0e8e3215794"
+  },
+  "/home/kalteneb/work/RustyLox/.claude/settings.json": {
+    "mtime": 1778227587.647835,
+    "ast_hash": "75b88b608e80294ac07265294d755919",
+    "semantic_hash": "75b88b608e80294ac07265294d755919"
+  },
+  "/home/kalteneb/work/RustyLox/.claude/settings.local.json": {
+    "mtime": 1778101875.5450058,
+    "ast_hash": "50eb19b9d28853f576ed45159530c90a",
+    "semantic_hash": "50eb19b9d28853f576ed45159530c90a"
+  },
+  "/home/kalteneb/work/RustyLox/static/js/htmx.min.js": {
+    "mtime": 1778060534.7861907,
+    "ast_hash": "7e9c374d75c23ad1d811715d41ac89f1",
+    "semantic_hash": "7e9c374d75c23ad1d811715d41ac89f1"
+  },
+  "/home/kalteneb/work/RustyLox/static/js/app.js": {
+    "mtime": 1778060534.7861907,
+    "ast_hash": "1f2bd3d942539d86f63b43686f06837c",
+    "semantic_hash": "1f2bd3d942539d86f63b43686f06837c"
+  },
+  "/home/kalteneb/work/RustyLox/static/js/i18n.js": {
+    "mtime": 1778060534.7861907,
+    "ast_hash": "40b657764ea4864efd50ce7903734e99",
+    "semantic_hash": "40b657764ea4864efd50ce7903734e99"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-config/src/miniserver.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "3a696d8e5953e8722b9d5c545ee4280a",
+    "semantic_hash": "3a696d8e5953e8722b9d5c545ee4280a"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-config/src/validation.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "74877d1ab268bad1b623660d4be27dc2",
+    "semantic_hash": "74877d1ab268bad1b623660d4be27dc2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-config/src/general.rs": {
+    "mtime": 1778101229.8496616,
+    "ast_hash": "41e6b4c40d0e890ed094705c1b565ce3",
+    "semantic_hash": "41e6b4c40d0e890ed094705c1b565ce3"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-config/src/mqtt.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "19b74b76400a60f4a4532e4200a749cc",
+    "semantic_hash": "19b74b76400a60f4a4532e4200a749cc"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-config/src/lib.rs": {
+    "mtime": 1778061546.2036452,
+    "ast_hash": "5dc698ca2c2865ba929fdf51f68b6567",
+    "semantic_hash": "5dc698ca2c2865ba929fdf51f68b6567"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-daemon/build.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "6b2f5b36d668e8c2d41999ff030b0131",
+    "semantic_hash": "6b2f5b36d668e8c2d41999ff030b0131"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-daemon/src/main.rs": {
+    "mtime": 1778232048.2296002,
+    "ast_hash": "eca1e8b0a2384a70d0e01a90e3adf003",
+    "semantic_hash": "eca1e8b0a2384a70d0e01a90e3adf003"
+  },
+  "/home/kalteneb/work/RustyLox/crates/miniserver-client/src/delta_cache.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "1cc742cedac088c3a4ad4241493dc8c7",
+    "semantic_hash": "1cc742cedac088c3a4ad4241493dc8c7"
+  },
+  "/home/kalteneb/work/RustyLox/crates/miniserver-client/src/http.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "c20f01292af1da42c5f9d4b8f4e4a98f",
+    "semantic_hash": "c20f01292af1da42c5f9d4b8f4e4a98f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/miniserver-client/src/udp_receiver.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "8f39fe90a8da25552ba3ddf61fb760db",
+    "semantic_hash": "8f39fe90a8da25552ba3ddf61fb760db"
+  },
+  "/home/kalteneb/work/RustyLox/crates/miniserver-client/src/udp.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "f24ac94223acbfb3b6c5462e7167b3d4",
+    "semantic_hash": "f24ac94223acbfb3b6c5462e7167b3d4"
+  },
+  "/home/kalteneb/work/RustyLox/crates/miniserver-client/src/lib.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "73391a593c6fdbd890a44ceebb6feb54",
+    "semantic_hash": "73391a593c6fdbd890a44ceebb6feb54"
+  },
+  "/home/kalteneb/work/RustyLox/crates/miniserver-client/src/reboot_detector.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "f538b7a71b00533cf184065d4e837ea3",
+    "semantic_hash": "f538b7a71b00533cf184065d4e837ea3"
+  },
+  "/home/kalteneb/work/RustyLox/crates/miniserver-client/tests/udp_receiver_integration.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "efeb66061f4011d779d597177ac51742",
+    "semantic_hash": "efeb66061f4011d779d597177ac51742"
+  },
+  "/home/kalteneb/work/RustyLox/crates/task-scheduler/src/scheduler.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "a91636fd112250d0f7e60f50a7a37fbc",
+    "semantic_hash": "a91636fd112250d0f7e60f50a7a37fbc"
+  },
+  "/home/kalteneb/work/RustyLox/crates/task-scheduler/src/config.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "67e8090f3b3fd4a942b848668128da21",
+    "semantic_hash": "67e8090f3b3fd4a942b848668128da21"
+  },
+  "/home/kalteneb/work/RustyLox/crates/task-scheduler/src/executor.rs": {
+    "mtime": 1778068664.1535995,
+    "ast_hash": "2bf9be5e4914d3d62dd328b045971cf2",
+    "semantic_hash": "2bf9be5e4914d3d62dd328b045971cf2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/task-scheduler/src/lib.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "8f3bc6a1d94977bfc24134fe88e326e2",
+    "semantic_hash": "8f3bc6a1d94977bfc24134fe88e326e2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/task-scheduler/src/cron.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "30a17d036f99d34d634668818a2aef11",
+    "semantic_hash": "30a17d036f99d34d634668818a2aef11"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-logging/src/plugin_logger.rs": {
+    "mtime": 1778085834.3526654,
+    "ast_hash": "1d59e3f3e2d2b373483a24513a1154d0",
+    "semantic_hash": "1d59e3f3e2d2b373483a24513a1154d0"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-logging/src/rotation.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "b4839c60ddff5731a8682c08c3d8b6d6",
+    "semantic_hash": "b4839c60ddff5731a8682c08c3d8b6d6"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-logging/src/config.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "38c6672f2cec0035ebb997388e5e55f2",
+    "semantic_hash": "38c6672f2cec0035ebb997388e5e55f2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-logging/src/lib.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "90fc600c0723d5f32f6d99258b31ba23",
+    "semantic_hash": "90fc600c0723d5f32f6d99258b31ba23"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/udp_listener.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "5d9c467fb8102180df1b4613b334c205",
+    "semantic_hash": "5d9c467fb8102180df1b4613b334c205"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/mqtt_finder.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "d8a838d2e3ec594c244d0ef108cad46b",
+    "semantic_hash": "d8a838d2e3ec594c244d0ef108cad46b"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/relay.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "febc633ca73161103fd5c31abe808461",
+    "semantic_hash": "febc633ca73161103fd5c31abe808461"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/subscription.rs": {
+    "mtime": 1778085638.664689,
+    "ast_hash": "2f1374b833f565f2a439dddedf7c0030",
+    "semantic_hash": "2f1374b833f565f2a439dddedf7c0030"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/stats.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "17f82bc6c8cb0ab345d3e2699a5c2e6b",
+    "semantic_hash": "17f82bc6c8cb0ab345d3e2699a5c2e6b"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/broker_client.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "def03455ee0685b6be4dc00911f55e76",
+    "semantic_hash": "def03455ee0685b6be4dc00911f55e76"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/lib.rs": {
+    "mtime": 1778231697.0642018,
+    "ast_hash": "9487a771db44d37f33bf6406bfca5b7b",
+    "semantic_hash": "9487a771db44d37f33bf6406bfca5b7b"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/transformer.rs": {
+    "mtime": 1778085638.668689,
+    "ast_hash": "b7b041a10bc3aae24eaf2ce5185c65b7",
+    "semantic_hash": "b7b041a10bc3aae24eaf2ce5185c65b7"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/src/relay_tracker.rs": {
+    "mtime": 1778060534.7181911,
+    "ast_hash": "b9793990086e28d4c36af70089d6bba5",
+    "semantic_hash": "b9793990086e28d4c36af70089d6bba5"
+  },
+  "/home/kalteneb/work/RustyLox/crates/mqtt-gateway/tests/udp_miniserver_format_test.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "45f6ba7213da9b49907dc911d7dadb56",
+    "semantic_hash": "45f6ba7213da9b49907dc911d7dadb56"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/daemon.rs": {
+    "mtime": 1778101229.8616612,
+    "ast_hash": "d9dbc0f783f905697f7f733b7efe4acf",
+    "semantic_hash": "d9dbc0f783f905697f7f733b7efe4acf"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/directory_manager.rs": {
+    "mtime": 1778101229.8536615,
+    "ast_hash": "ba51f34c5c426733249220f944c41f2d",
+    "semantic_hash": "ba51f34c5c426733249220f944c41f2d"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/environment.rs": {
+    "mtime": 1778101229.8496616,
+    "ast_hash": "c33367e39b80687b644e9170b3475839",
+    "semantic_hash": "c33367e39b80687b644e9170b3475839"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/lifecycle.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "c4ad031ff7d08b6f3359f31d7b9f5dce",
+    "semantic_hash": "c4ad031ff7d08b6f3359f31d7b9f5dce"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/executor.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "8d936c0867fade71780b177297c7f08b",
+    "semantic_hash": "8d936c0867fade71780b177297c7f08b"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/config_parser.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "0f30080a4a3bedff7d0dd0d7d9c5c51a",
+    "semantic_hash": "0f30080a4a3bedff7d0dd0d7d9c5c51a"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/lib.rs": {
+    "mtime": 1778101250.3207679,
+    "ast_hash": "157c0947bf788414fb2279508017a397",
+    "semantic_hash": "157c0947bf788414fb2279508017a397"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/cron.rs": {
+    "mtime": 1778101390.3343005,
+    "ast_hash": "f952a2665cf602bcc34dfa719268fd02",
+    "semantic_hash": "f952a2665cf602bcc34dfa719268fd02"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/database.rs": {
+    "mtime": 1778085638.692689,
+    "ast_hash": "d2f3abc141e0e9e837fa49dacc9651db",
+    "semantic_hash": "d2f3abc141e0e9e837fa49dacc9651db"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/src/installer.rs": {
+    "mtime": 1778265666.450359,
+    "ast_hash": "613d6c53a3cdc719818b49d1df01ce30",
+    "semantic_hash": "613d6c53a3cdc719818b49d1df01ce30"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/tests/weather4lox_install.rs": {
+    "mtime": 1778060534.7221913,
+    "ast_hash": "646be01fbe5d977b90a9add9fd3e60b4",
+    "semantic_hash": "646be01fbe5d977b90a9add9fd3e60b4"
+  },
+  "/home/kalteneb/work/RustyLox/crates/plugin-manager/tests/sonos_install.rs": {
+    "mtime": 1778227562.6718512,
+    "ast_hash": "8a8f4648155b9c831e599f018466f768",
+    "semantic_hash": "8a8f4648155b9c831e599f018466f768"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/state.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "58ab9bf531d9e2947f9da8a3dd412542",
+    "semantic_hash": "58ab9bf531d9e2947f9da8a3dd412542"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/lib.rs": {
+    "mtime": 1778085638.784689,
+    "ast_hash": "9e05f1df81121684e8f60e5b8193da91",
+    "semantic_hash": "9e05f1df81121684e8f60e5b8193da91"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/weather.rs": {
+    "mtime": 1778226564.6327686,
+    "ast_hash": "bcb07106e3376ba473e56b97a083f4f4",
+    "semantic_hash": "bcb07106e3376ba473e56b97a083f4f4"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/middleware/security_headers.rs": {
+    "mtime": 1778069352.7851756,
+    "ast_hash": "62d53e56740750fc793e10e4d3d3fefc",
+    "semantic_hash": "62d53e56740750fc793e10e4d3d3fefc"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/middleware/mod.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "a1b1926dc99f913bcd74cf98828ec74b",
+    "semantic_hash": "a1b1926dc99f913bcd74cf98828ec74b"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/plugins.rs": {
+    "mtime": 1778085638.816689,
+    "ast_hash": "699fba7a5f75ce6035a84286ee493cc4",
+    "semantic_hash": "699fba7a5f75ce6035a84286ee493cc4"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/miniserver.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "16640d2f98dacfb785e5aa4cbd1bed77",
+    "semantic_hash": "16640d2f98dacfb785e5aa4cbd1bed77"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/email.rs": {
+    "mtime": 1778098234.997526,
+    "ast_hash": "fbf7de0bc4b8e51d73bb1439ea2afa9f",
+    "semantic_hash": "fbf7de0bc4b8e51d73bb1439ea2afa9f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/virtual_input.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "503ab410768c2569a15df23066de01dc",
+    "semantic_hash": "503ab410768c2569a15df23066de01dc"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/daemon.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "8fd62066ac62c0c8e6cda631bc8796fe",
+    "semantic_hash": "8fd62066ac62c0c8e6cda631bc8796fe"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/tasks.rs": {
+    "mtime": 1778098235.0015259,
+    "ast_hash": "d4e14c5b3f30e671f20caa664a14c618",
+    "semantic_hash": "d4e14c5b3f30e671f20caa664a14c618"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/backup.rs": {
+    "mtime": 1778085801.3166695,
+    "ast_hash": "f3703b1962580013fda78476332364a1",
+    "semantic_hash": "f3703b1962580013fda78476332364a1"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/network.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "b5b127697b585e205b22e87bd865eee2",
+    "semantic_hash": "b5b127697b585e205b22e87bd865eee2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/auth.rs": {
+    "mtime": 1778085638.796689,
+    "ast_hash": "4da21eec632960dbc855691f664499f6",
+    "semantic_hash": "4da21eec632960dbc855691f664499f6"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/mod.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "232e4e21f2441ffaf50e59015df25e2e",
+    "semantic_hash": "232e4e21f2441ffaf50e59015df25e2e"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/health.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "b24a736baa666fa0db9d43b55c29690f",
+    "semantic_hash": "b24a736baa666fa0db9d43b55c29690f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/config.rs": {
+    "mtime": 1778085638.800689,
+    "ast_hash": "1a4e5fdcf76ffc772a356ebddc7f70ee",
+    "semantic_hash": "1a4e5fdcf76ffc772a356ebddc7f70ee"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/mqtt_stats.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "f8e06b2567643cfff4386594576da43b",
+    "semantic_hash": "f8e06b2567643cfff4386594576da43b"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/system.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "de31c7a86dd949ea6c01121c0ca812f0",
+    "semantic_hash": "de31c7a86dd949ea6c01121c0ca812f0"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/mqtt.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "84846d711ae50f7ae09760abc2760340",
+    "semantic_hash": "84846d711ae50f7ae09760abc2760340"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/metrics.rs": {
+    "mtime": 1778085638.8086889,
+    "ast_hash": "dd21569cbd208732344b7b0f8f26731c",
+    "semantic_hash": "dd21569cbd208732344b7b0f8f26731c"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/system_update.rs": {
+    "mtime": 1778098235.005526,
+    "ast_hash": "d9f231723762c674e5d7441f6fbf59db",
+    "semantic_hash": "d9f231723762c674e5d7441f6fbf59db"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/src/routes/weather.rs": {
+    "mtime": 1778060534.7301912,
+    "ast_hash": "6a8780df46a619d9bca3183579cc800f",
+    "semantic_hash": "6a8780df46a619d9bca3183579cc800f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-api/tests/virtual_input_test.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "e9d713eefe91b3265c450c8783ce5174",
+    "semantic_hash": "e9d713eefe91b3265c450c8783ce5174"
+  },
+  "/home/kalteneb/work/RustyLox/crates/email-manager/src/smtp.rs": {
+    "mtime": 1778066424.2829418,
+    "ast_hash": "ba0723ac321e473e70b10745d5d83975",
+    "semantic_hash": "ba0723ac321e473e70b10745d5d83975"
+  },
+  "/home/kalteneb/work/RustyLox/crates/email-manager/src/config.rs": {
+    "mtime": 1778066419.1470468,
+    "ast_hash": "023a6de8d7123d58786897e853464cc0",
+    "semantic_hash": "023a6de8d7123d58786897e853464cc0"
+  },
+  "/home/kalteneb/work/RustyLox/crates/email-manager/src/templates.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "0a86dc5d3d88c92421051d47e9007567",
+    "semantic_hash": "0a86dc5d3d88c92421051d47e9007567"
+  },
+  "/home/kalteneb/work/RustyLox/crates/email-manager/src/lib.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "053a0f70b42ffa19533af530883a87f7",
+    "semantic_hash": "053a0f70b42ffa19533af530883a87f7"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/service.rs": {
+    "mtime": 1778085638.604689,
+    "ast_hash": "e6765ad0d72bc0960f335765bd7acbbe",
+    "semantic_hash": "e6765ad0d72bc0960f335765bd7acbbe"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/session.rs": {
+    "mtime": 1778060534.7101912,
+    "ast_hash": "790228d8d49113200b05fdad8cc81f02",
+    "semantic_hash": "790228d8d49113200b05fdad8cc81f02"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/store.rs": {
+    "mtime": 1778068658.3936288,
+    "ast_hash": "bdeb80d6471ff053c6dd26bac709e446",
+    "semantic_hash": "bdeb80d6471ff053c6dd26bac709e446"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/error.rs": {
+    "mtime": 1778068745.2851837,
+    "ast_hash": "8d4c3cb9b816273d89e162b8040f8421",
+    "semantic_hash": "8d4c3cb9b816273d89e162b8040f8421"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/models.rs": {
+    "mtime": 1778060534.7101912,
+    "ast_hash": "7bb46bd0c11b708a7717099bbde6960a",
+    "semantic_hash": "7bb46bd0c11b708a7717099bbde6960a"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/lib.rs": {
+    "mtime": 1778060534.7101912,
+    "ast_hash": "1d431790b703241b7765e82bebf0c6c5",
+    "semantic_hash": "1d431790b703241b7765e82bebf0c6c5"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/audit.rs": {
+    "mtime": 1778066431.5547931,
+    "ast_hash": "a89d03d8b48bdabd4dedb295defc7d0d",
+    "semantic_hash": "a89d03d8b48bdabd4dedb295defc7d0d"
+  },
+  "/home/kalteneb/work/RustyLox/crates/auth/src/jwt.rs": {
+    "mtime": 1778085638.596689,
+    "ast_hash": "135b4e9e3e59739ad7083595c4f1ee4e",
+    "semantic_hash": "135b4e9e3e59739ad7083595c4f1ee4e"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-core/src/error.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "0a531cd5b8778faa9fe3052d75ca9f93",
+    "semantic_hash": "0a531cd5b8778faa9fe3052d75ca9f93"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-core/src/types.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "adb9dd556a591dcf77ad443a50f409cc",
+    "semantic_hash": "adb9dd556a591dcf77ad443a50f409cc"
+  },
+  "/home/kalteneb/work/RustyLox/crates/rustylox-core/src/lib.rs": {
+    "mtime": 1778060534.7261913,
+    "ast_hash": "4d09dc5723a69633077b933537ea2834",
+    "semantic_hash": "4d09dc5723a69633077b933537ea2834"
+  },
+  "/home/kalteneb/work/RustyLox/crates/metrics/src/collector.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "67689993a1685cf89b6f6b751295da8f",
+    "semantic_hash": "67689993a1685cf89b6f6b751295da8f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/metrics/src/prometheus.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "1a7eb7da68a3dcc0ff93e39b00667896",
+    "semantic_hash": "1a7eb7da68a3dcc0ff93e39b00667896"
+  },
+  "/home/kalteneb/work/RustyLox/crates/metrics/src/health.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "aa3c793eba366a4872d8fe6e504dc186",
+    "semantic_hash": "aa3c793eba366a4872d8fe6e504dc186"
+  },
+  "/home/kalteneb/work/RustyLox/crates/metrics/src/lib.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "bef4f7f022cd6c52d7c3aa6f9e194e79",
+    "semantic_hash": "bef4f7f022cd6c52d7c3aa6f9e194e79"
+  },
+  "/home/kalteneb/work/RustyLox/crates/backup-manager/src/scheduler.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "3090997d818c95877a0ee7143e4d57ad",
+    "semantic_hash": "3090997d818c95877a0ee7143e4d57ad"
+  },
+  "/home/kalteneb/work/RustyLox/crates/backup-manager/src/backup.rs": {
+    "mtime": 1778088017.4281807,
+    "ast_hash": "48914a1befb57096283f4fe232dc490d",
+    "semantic_hash": "48914a1befb57096283f4fe232dc490d"
+  },
+  "/home/kalteneb/work/RustyLox/crates/backup-manager/src/restore.rs": {
+    "mtime": 1778085638.612689,
+    "ast_hash": "103cea36fd9f2ea6b3809f9a8a00b753",
+    "semantic_hash": "103cea36fd9f2ea6b3809f9a8a00b753"
+  },
+  "/home/kalteneb/work/RustyLox/crates/backup-manager/src/lib.rs": {
+    "mtime": 1778060534.7141912,
+    "ast_hash": "0aaba3d46caed52abae6f07da109c2a6",
+    "semantic_hash": "0aaba3d46caed52abae6f07da109c2a6"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/middleware.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "e7dd998d6c8e54e2ec6f40ca8fee88ee",
+    "semantic_hash": "e7dd998d6c8e54e2ec6f40ca8fee88ee"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/templates.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "284034050277ca95f36b9ee934f6c5a7",
+    "semantic_hash": "284034050277ca95f36b9ee934f6c5a7"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/lib.rs": {
+    "mtime": 1778272421.0553079,
+    "ast_hash": "c1e32ea8a541bf295f36fdaba41f5bb6",
+    "semantic_hash": "c1e32ea8a541bf295f36fdaba41f5bb6"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/plugins.rs": {
+    "mtime": 1778265519.5957336,
+    "ast_hash": "945cbf14e7919e526072d096bf2e8d3f",
+    "semantic_hash": "945cbf14e7919e526072d096bf2e8d3f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/miniserver.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "ffcc71ac60a737012cbe36a87855971f",
+    "semantic_hash": "ffcc71ac60a737012cbe36a87855971f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/email.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "c3de1fd464f8daf7b93e0f134e2ce321",
+    "semantic_hash": "c3de1fd464f8daf7b93e0f134e2ce321"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/tasks.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "d61375c860612e4c269c19d82fa38fd1",
+    "semantic_hash": "d61375c860612e4c269c19d82fa38fd1"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/mqtt_finder.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "90e256f7366d14583bfb5a4b9be847dd",
+    "semantic_hash": "90e256f7366d14583bfb5a4b9be847dd"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/mqtt_management.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "49fad0a4ba9be031a7a51eeee3e3816f",
+    "semantic_hash": "49fad0a4ba9be031a7a51eeee3e3816f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/security.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "f4df740a60ad44bab91552b861073e4a",
+    "semantic_hash": "f4df740a60ad44bab91552b861073e4a"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/backup.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "c8cd1574883098dd026a23e8affb91ba",
+    "semantic_hash": "c8cd1574883098dd026a23e8affb91ba"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/network.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "f4dc767e0ae5c2f0dd4afa567b8e8aa5",
+    "semantic_hash": "f4dc767e0ae5c2f0dd4afa567b8e8aa5"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/auth.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "b02185e7df334d5e79b01ebeac341f92",
+    "semantic_hash": "b02185e7df334d5e79b01ebeac341f92"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/mod.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "10b0f05de466ee556867416dcd914419",
+    "semantic_hash": "10b0f05de466ee556867416dcd914419"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/health.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "da4c849ee9708258116bd822995d44fe",
+    "semantic_hash": "da4c849ee9708258116bd822995d44fe"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/settings.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "136b30c36842b49ece098d95ce403df9",
+    "semantic_hash": "136b30c36842b49ece098d95ce403df9"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/dashboard.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "a9dfc7a996f5b965673a68441f986e06",
+    "semantic_hash": "a9dfc7a996f5b965673a68441f986e06"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/mqtt_stats.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "6348522385206b7e12dfe163278ad33d",
+    "semantic_hash": "6348522385206b7e12dfe163278ad33d"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/logs.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "2e90e3d5b73670edf92afc10d5ad0543",
+    "semantic_hash": "2e90e3d5b73670edf92afc10d5ad0543"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/mqtt.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "4f515abdef179cbb90a41386cd76f519",
+    "semantic_hash": "4f515abdef179cbb90a41386cd76f519"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/plugin_web.rs": {
+    "mtime": 1778272543.7029421,
+    "ast_hash": "e7fc7d96a11f985803685b6cad4d969c",
+    "semantic_hash": "e7fc7d96a11f985803685b6cad4d969c"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/miniserver_backup.rs": {
+    "mtime": 1778085844.8249717,
+    "ast_hash": "1845ecd48046c8eff9155a6b409dc6f7",
+    "semantic_hash": "1845ecd48046c8eff9155a6b409dc6f7"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/profile.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "853d8d4873cb2af13eef0f7a3703df53",
+    "semantic_hash": "853d8d4873cb2af13eef0f7a3703df53"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/system_update.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "eac1ecd02081f8f477bcb6a423698c7b",
+    "semantic_hash": "eac1ecd02081f8f477bcb6a423698c7b"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/weather.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "731611376964a031533f54281e29763f",
+    "semantic_hash": "731611376964a031533f54281e29763f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/database.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "4d3f601efe26cad9858463536c3f5a1c",
+    "semantic_hash": "4d3f601efe26cad9858463536c3f5a1c"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/src/handlers/api_docs.rs": {
+    "mtime": 1778060534.7341912,
+    "ast_hash": "89109f57a0f0637a8262dbcb177fac8a",
+    "semantic_hash": "89109f57a0f0637a8262dbcb177fac8a"
+  },
+  "/home/kalteneb/work/RustyLox/scripts/miniserver_sim.py": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "a696df66dbbb46f0e12a5d375b783a24",
+    "semantic_hash": "a696df66dbbb46f0e12a5d375b783a24"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/perllib/LoxBerry/testing/sqlite.php": {
+    "mtime": 1778060534.7581909,
+    "ast_hash": "ab48b125611d87e2c9f055e9bef32a15",
+    "semantic_hash": "ab48b125611d87e2c9f055e9bef32a15"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/perllib/LoxBerry/testing/jsontestdata2.json": {
+    "mtime": 1778060534.7581909,
+    "ast_hash": "0c96229c3745992b53cf350336f61fb9",
+    "semantic_hash": "0c96229c3745992b53cf350336f61fb9"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/bashlib/notify.sh": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "4a1516c78861fc997a37ab5ed301e0d6",
+    "semantic_hash": "4a1516c78861fc997a37ab5ed301e0d6"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/bashlib/loxberry_log.sh": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "187f3dce19f8754cc2a8739f25dfca4a",
+    "semantic_hash": "187f3dce19f8754cc2a8739f25dfca4a"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/bashlib/initlog.php": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "1272a711ab05cb417da46e1ec87b4e05",
+    "semantic_hash": "1272a711ab05cb417da46e1ec87b4e05"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/bashlib/iniparser.sh": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "474a3864eb4976fe3e2c9e5defb19f90",
+    "semantic_hash": "474a3864eb4976fe3e2c9e5defb19f90"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/bashlib/loxberry_system.sh": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "c9f3f09b38706a3ce0559107b3f4b3c6",
+    "semantic_hash": "c9f3f09b38706a3ce0559107b3f4b3c6"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/bashlib/testing/testlog.sh": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "0ee9e3254b7d88940ebc47b954f7d604",
+    "semantic_hash": "0ee9e3254b7d88940ebc47b954f7d604"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/bashlib/testing/testnotify.sh": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "dd3e6318c7f2470282b7f83b08af841d",
+    "semantic_hash": "dd3e6318c7f2470282b7f83b08af841d"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_json.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "cf0c65fd82147516b1111771ada75130",
+    "semantic_hash": "cf0c65fd82147516b1111771ada75130"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_system.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "f092c6aa22ea9ff200698db762253f36",
+    "semantic_hash": "f092c6aa22ea9ff200698db762253f36"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_XL.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "a32f29d07a4221492f2f6dac5dc20338",
+    "semantic_hash": "a32f29d07a4221492f2f6dac5dc20338"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_loxonetemplatebuilder.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "28778685782ffe3244d1cea5e1bd04d8",
+    "semantic_hash": "28778685782ffe3244d1cea5e1bd04d8"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_bootstrap.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "08d0b0b42bdd55992f6c8bb74f809b2f",
+    "semantic_hash": "08d0b0b42bdd55992f6c8bb74f809b2f"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_io.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "021bb0db263796fd3de4107971a1f334",
+    "semantic_hash": "021bb0db263796fd3de4107971a1f334"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_web.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "a2ffb84c4dc7e086979efd9f36672134",
+    "semantic_hash": "a2ffb84c4dc7e086979efd9f36672134"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_log.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "9f72d789d96ccaacfc87c97b6f1cf669",
+    "semantic_hash": "9f72d789d96ccaacfc87c97b6f1cf669"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/loxberry_storage.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "76d2f5cf2335ed221b88d82e10d56970",
+    "semantic_hash": "76d2f5cf2335ed221b88d82e10d56970"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/suncalc/composer.json": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "811bf02f2761ffce3aa9d0e109830711",
+    "semantic_hash": "811bf02f2761ffce3aa9d0e109830711"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/suncalc/suncalc.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "9e860698d47d0f9dddcad5f30a726eab",
+    "semantic_hash": "9e860698d47d0f9dddcad5f30a726eab"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/phpMQTT/phpMQTT.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "ee8f10afd24fe3db5861c32d7ae203d4",
+    "semantic_hash": "ee8f10afd24fe3db5861c32d7ae203d4"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/phpMQTT/composer.json": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "e1e74427ffb73f64315191855b4e9ea2",
+    "semantic_hash": "e1e74427ffb73f64315191855b4e9ea2"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/phpMQTT/examples/publish.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "4efb52f6a9c5636d02b5847470c80367",
+    "semantic_hash": "4efb52f6a9c5636d02b5847470c80367"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/phpMQTT/examples/subscribe.php": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "0534b183c5ab51766c2d5f775949d1c3",
+    "semantic_hash": "0534b183c5ab51766c2d5f775949d1c3"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testnotify_ext.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "f62e8a1a88061061bab3dc64ea8f0878",
+    "semantic_hash": "f62e8a1a88061061bab3dc64ea8f0878"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/msudp_send.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "21ba366d34cfcbeadddfa402214ffe32",
+    "semantic_hash": "21ba366d34cfcbeadddfa402214ffe32"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testlog_noobject.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "f92039abdf3d28455306e254f2fc6ed5",
+    "semantic_hash": "f92039abdf3d28455306e254f2fc6ed5"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/test_log_changeloglevel.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "afe726a271b3466fe66dee5f8cf117d6",
+    "semantic_hash": "afe726a271b3466fe66dee5f8cf117d6"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/test_loxonetemplatebuilder_udp.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "d2b57626fea283340ae5868603de40fa",
+    "semantic_hash": "d2b57626fea283340ae5868603de40fa"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testsystem_plugins.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "9c032742553140a0429c55b0af1060ba",
+    "semantic_hash": "9c032742553140a0429c55b0af1060ba"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/epoch2lox.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "d2c0d642a83112942cd82dde3deaa807",
+    "semantic_hash": "d2c0d642a83112942cd82dde3deaa807"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/test_get_miniservers.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "9c7e89831a5ceb0d71b40258378aeda3",
+    "semantic_hash": "9c7e89831a5ceb0d71b40258378aeda3"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testgetminiservers.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "417a1b799d68356f72a567f120c3b61b",
+    "semantic_hash": "417a1b799d68356f72a567f120c3b61b"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/jsonrpc-client-test.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "9f8f0c8143a4d3b0597222f165f95e70",
+    "semantic_hash": "9f8f0c8143a4d3b0597222f165f95e70"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/test_loxonetemplatebuilder_http.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "c3fb79a117bf4c53ecdb30db12ef1f46",
+    "semantic_hash": "c3fb79a117bf4c53ecdb30db12ef1f46"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/mqtt_connect.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "b00f94d8bc784ad95fa8a8190b41f473",
+    "semantic_hash": "b00f94d8bc784ad95fa8a8190b41f473"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/lbcountry.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "0908dca130db99a0f4cdbaf027be9cd9",
+    "semantic_hash": "0908dca130db99a0f4cdbaf027be9cd9"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testrebootrequired.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "49cdef27c3a267faadbe96d010049821",
+    "semantic_hash": "49cdef27c3a267faadbe96d010049821"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/currtime.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "20f8460ef2324a3992b174522e6c2952",
+    "semantic_hash": "20f8460ef2324a3992b174522e6c2952"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testlog_renew_session.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "6a2640f5a3417a7f61f257a622d8b601",
+    "semantic_hash": "6a2640f5a3417a7f61f257a622d8b601"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testlang.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "01b02eafb5f15a4fcb8a48f5da1d8063",
+    "semantic_hash": "01b02eafb5f15a4fcb8a48f5da1d8063"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testnotify.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "a996c9a8697a83bb0dd9e42ab2f17ef3",
+    "semantic_hash": "a996c9a8697a83bb0dd9e42ab2f17ef3"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testlbweb.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "c566e23dc61dd1e4304908063da3e42a",
+    "semantic_hash": "c566e23dc61dd1e4304908063da3e42a"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/xmlparse.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "8ae9f211802abc3bf2cc9fe9dbd78278",
+    "semantic_hash": "8ae9f211802abc3bf2cc9fe9dbd78278"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/mqtt_connectiondetails.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "35e1c6a2d743cfef7cedbf027efa4c69",
+    "semantic_hash": "35e1c6a2d743cfef7cedbf027efa4c69"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testlog_recreate.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "9187f665aa2d7791c2ef7e8c24c6ead6",
+    "semantic_hash": "9187f665aa2d7791c2ef7e8c24c6ead6"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/mshttp.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "91ce1a90a2599b577512831f3d4782d8",
+    "semantic_hash": "91ce1a90a2599b577512831f3d4782d8"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testlog.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "97c9503ef681d679004836b99b9004d4",
+    "semantic_hash": "97c9503ef681d679004836b99b9004d4"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/test_loxberryjson.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "3a00f817d6a9ffe2959e0667e4174ebe",
+    "semantic_hash": "3a00f817d6a9ffe2959e0667e4174ebe"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/mqtt_publish.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "a21f7ba60da1b6001146552c0c3ec646",
+    "semantic_hash": "a21f7ba60da1b6001146552c0c3ec646"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testlblog.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "5fc2d58f3035dfbab9a03c417d75518f",
+    "semantic_hash": "5fc2d58f3035dfbab9a03c417d75518f"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/testscript_loxberry_system.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "f100a079d58a640f9358bb5b71d98fb6",
+    "semantic_hash": "f100a079d58a640f9358bb5b71d98fb6"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/xl/test_xlmqtt.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "1b8b47b05aec06464727357245284488",
+    "semantic_hash": "1b8b47b05aec06464727357245284488"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/xl/test_xl.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "e13b2bbd7f9a0a6679f74a901fb6dd3a",
+    "semantic_hash": "e13b2bbd7f9a0a6679f74a901fb6dd3a"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/xl/test_xl_suncalc.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "ec812f9800216fd0f8dfe3885cb70ca8",
+    "semantic_hash": "ec812f9800216fd0f8dfe3885cb70ca8"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/xl/test_xl2.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "d952a2ec9df87ed5deccd274873cd118",
+    "semantic_hash": "d952a2ec9df87ed5deccd274873cd118"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/testing/xl/test_xl_constants.php": {
+    "mtime": 1778060534.7781909,
+    "ast_hash": "5a32917cf0a018b40105c42f6953f21a",
+    "semantic_hash": "5a32917cf0a018b40105c42f6953f21a"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Config/Lite.php": {
+    "mtime": 1778060534.766191,
+    "ast_hash": "26a759ce154841596c924e7628021b02",
+    "semantic_hash": "26a759ce154841596c924e7628021b02"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Config/Lite/Exception.php": {
+    "mtime": 1778060534.766191,
+    "ast_hash": "3e083271df4137353762ee23cd4074b2",
+    "semantic_hash": "3e083271df4137353762ee23cd4074b2"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Config/Lite/Exception/UnexpectedValue.php": {
+    "mtime": 1778060534.766191,
+    "ast_hash": "4c998ffa6d4158a33b99402e42588b1a",
+    "semantic_hash": "4c998ffa6d4158a33b99402e42588b1a"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Config/Lite/Exception/InvalidArgument.php": {
+    "mtime": 1778060534.766191,
+    "ast_hash": "cb0a0c13ef3cb38a48d32bada441b002",
+    "semantic_hash": "cb0a0c13ef3cb38a48d32bada441b002"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Config/Lite/Exception/Runtime.php": {
+    "mtime": 1778060534.766191,
+    "ast_hash": "542c5fbefab93cdf6ea506d3f4e92e7b",
+    "semantic_hash": "542c5fbefab93cdf6ea506d3f4e92e7b"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/XL/waze.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "0cbb150410e4c55a79064892e2caa1a2",
+    "semantic_hash": "0cbb150410e4c55a79064892e2caa1a2"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/LoxBerry/JsonRpcApi.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "67b31af2eb688fcebac17ad5c89b5693",
+    "semantic_hash": "67b31af2eb688fcebac17ad5c89b5693"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Response.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "3a0e29830a321c5e2a31eee7a573b013",
+    "semantic_hash": "3a0e29830a321c5e2a31eee7a573b013"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Server.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "14d1ab9a1ed148a23fe7c72b1fe3bc0c",
+    "semantic_hash": "14d1ab9a1ed148a23fe7c72b1fe3bc0c"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Client.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "844f46ef06d7d0111af4dd2cc3548b93",
+    "semantic_hash": "844f46ef06d7d0111af4dd2cc3548b93"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Evaluator.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "7ed76a26235bb8474ea61ab6bc14e7b9",
+    "semantic_hash": "7ed76a26235bb8474ea61ab6bc14e7b9"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Error.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "df9e1dc90381a16b0002f5989693c5b6",
+    "semantic_hash": "df9e1dc90381a16b0002f5989693c5b6"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Exceptions/ImplementationException.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "cf1475f266fbab47e2b3e9389af05472",
+    "semantic_hash": "cf1475f266fbab47e2b3e9389af05472"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Exceptions/MethodException.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "fe4da5be3f417843a3565e7053aa48aa",
+    "semantic_hash": "fe4da5be3f417843a3565e7053aa48aa"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Exceptions/ArgumentException.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "d35032247c5110c37a5458ffef977fda",
+    "semantic_hash": "d35032247c5110c37a5458ffef977fda"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Exceptions/ApplicationException.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "00b5642286e7a52a54fde78e0102eb73",
+    "semantic_hash": "00b5642286e7a52a54fde78e0102eb73"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/Datto/JsonRpc/Exceptions/Exception.php": {
+    "mtime": 1778060534.770191,
+    "ast_hash": "23f31d5b8261e44dc7443e86f1d3d765",
+    "semantic_hash": "23f31d5b8261e44dc7443e86f1d3d765"
+  },
+  "/home/kalteneb/work/RustyLox/README.md": {
+    "mtime": 1778068013.425367,
+    "ast_hash": "c068fbf5b6d4191d9e9d384be0e1851c",
+    "semantic_hash": "c068fbf5b6d4191d9e9d384be0e1851c"
+  },
+  "/home/kalteneb/work/RustyLox/ROADMAP.md": {
+    "mtime": 1778060534.7101912,
+    "ast_hash": "ae4cae515f123c2fc9ae24421e1ccf73",
+    "semantic_hash": "ae4cae515f123c2fc9ae24421e1ccf73"
+  },
+  "/home/kalteneb/work/RustyLox/CLAUDE.md": {
+    "mtime": 1778188056.0820816,
+    "ast_hash": "b74e19b45de75ad42b1721220b6f5ebe",
+    "semantic_hash": "b74e19b45de75ad42b1721220b6f5ebe"
+  },
+  "/home/kalteneb/work/RustyLox/docker-compose.example.yml": {
+    "mtime": 1778065649.225041,
+    "ast_hash": "a9d12184c28a8f9772591ec603538e5f",
+    "semantic_hash": "a9d12184c28a8f9772591ec603538e5f"
+  },
+  "/home/kalteneb/work/RustyLox/rustylox-recap.html": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "4e22181fdf71ca943ae9926a3a477a9d",
+    "semantic_hash": "4e22181fdf71ca943ae9926a3a477a9d"
+  },
+  "/home/kalteneb/work/RustyLox/CHANGELOG.md": {
+    "mtime": 1778272754.9183218,
+    "ast_hash": "c0b48a8fe431885ab8c47afd19a747e5",
+    "semantic_hash": "c0b48a8fe431885ab8c47afd19a747e5"
+  },
+  "/home/kalteneb/work/RustyLox/CONTRIBUTING.md": {
+    "mtime": 1778060534.7061913,
+    "ast_hash": "1d638812dfe9d4e589842c0991773edf",
+    "semantic_hash": "1d638812dfe9d4e589842c0991773edf"
+  },
+  "/home/kalteneb/work/RustyLox/docker-compose.yml": {
+    "mtime": 1778065643.601188,
+    "ast_hash": "05c2c64653f7ea8b81f742a1dd8be567",
+    "semantic_hash": "05c2c64653f7ea8b81f742a1dd8be567"
+  },
+  "/home/kalteneb/work/RustyLox/examples/sample-plugin/README.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "d632a00f3221b2bbd818aed1a07596cd",
+    "semantic_hash": "d632a00f3221b2bbd818aed1a07596cd"
+  },
+  "/home/kalteneb/work/RustyLox/examples/sample-plugin/webfrontend/htmlauth/index.html": {
+    "mtime": 1778060534.750191,
+    "ast_hash": "fb1c8209ea02b11c4b3b915c52357498",
+    "semantic_hash": "fb1c8209ea02b11c4b3b915c52357498"
+  },
+  "/home/kalteneb/work/RustyLox/.github/dependabot.yml": {
+    "mtime": 1778060534.7061913,
+    "ast_hash": "679472527894764ba074def08d393861",
+    "semantic_hash": "679472527894764ba074def08d393861"
+  },
+  "/home/kalteneb/work/RustyLox/.github/workflows/ci.yml": {
+    "mtime": 1778060534.7061913,
+    "ast_hash": "8cdf4e139438617d225059c0e0f9dec7",
+    "semantic_hash": "8cdf4e139438617d225059c0e0f9dec7"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/profile.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "1cb2a98eabe8ac7183a1c37cfdb3d27c",
+    "semantic_hash": "1cb2a98eabe8ac7183a1c37cfdb3d27c"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/settings.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "54ac41efadef43cd9ad2cc6f90efd71e",
+    "semantic_hash": "54ac41efadef43cd9ad2cc6f90efd71e"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/email.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "55d415bdd75f343557773251539da97f",
+    "semantic_hash": "55d415bdd75f343557773251539da97f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/network.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "cd32e452734391fe0a0f47f908192ab0",
+    "semantic_hash": "cd32e452734391fe0a0f47f908192ab0"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/system_update.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "126c075a74bc0f2e5156294ea64eebf2",
+    "semantic_hash": "126c075a74bc0f2e5156294ea64eebf2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/tasks.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "0e6339cba55e629499287e3bc9c9060e",
+    "semantic_hash": "0e6339cba55e629499287e3bc9c9060e"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/api_docs.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "3d459789cdf01f31b4a2e79b4d1171a8",
+    "semantic_hash": "3d459789cdf01f31b4a2e79b4d1171a8"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/health.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "f92e95eb7ce4639d11527c6505f8c34d",
+    "semantic_hash": "f92e95eb7ce4639d11527c6505f8c34d"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/backup.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "697c99a4913af8f26181d6feeda74329",
+    "semantic_hash": "697c99a4913af8f26181d6feeda74329"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/logs.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "416c024c3dcd7d7958b6dbc923fe0023",
+    "semantic_hash": "416c024c3dcd7d7958b6dbc923fe0023"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/base.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "c58e0d737084ccd221185d9f64e1de09",
+    "semantic_hash": "c58e0d737084ccd221185d9f64e1de09"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/dashboard.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "2054e773468c1ffd801ca8200ef363f9",
+    "semantic_hash": "2054e773468c1ffd801ca8200ef363f9"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/tasks_edit.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "bbccabec4d2cd6a32ee18521b3377cf9",
+    "semantic_hash": "bbccabec4d2cd6a32ee18521b3377cf9"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/login.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "d3e1ef698aefcb6f584e94266698de1d",
+    "semantic_hash": "d3e1ef698aefcb6f584e94266698de1d"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/weather/index.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "26eadb082e23cd327fe802ea13fbcdb2",
+    "semantic_hash": "26eadb082e23cd327fe802ea13fbcdb2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/weather/config.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "21109b38715bf7dd40b5ed7d6e01725f",
+    "semantic_hash": "21109b38715bf7dd40b5ed7d6e01725f"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/mqtt/stats.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "97228f37410ff86102bed4f0db66483d",
+    "semantic_hash": "97228f37410ff86102bed4f0db66483d"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/mqtt/monitor.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "c29247ac8ab99220d7cf5f65f4347da6",
+    "semantic_hash": "c29247ac8ab99220d7cf5f65f4347da6"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/mqtt/finder.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "6e903e5922e4fb13d22e3ba0ec18b424",
+    "semantic_hash": "6e903e5922e4fb13d22e3ba0ec18b424"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/mqtt/config.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "f8cfcb309794e9444e5860c906ae1599",
+    "semantic_hash": "f8cfcb309794e9444e5860c906ae1599"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/plugins/install.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "ca62cfa19c6db9ec9e294a5cea1a31b9",
+    "semantic_hash": "ca62cfa19c6db9ec9e294a5cea1a31b9"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/plugins/details.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "f27a859db6da375c7b74eb42e6b13239",
+    "semantic_hash": "f27a859db6da375c7b74eb42e6b13239"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/plugins/list.html": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "ae0dff997f40a6d86bdf906fe9d68589",
+    "semantic_hash": "ae0dff997f40a6d86bdf906fe9d68589"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/miniserver/monitor.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "61299f9aef6556b4a5d3ee1ba4be6661",
+    "semantic_hash": "61299f9aef6556b4a5d3ee1ba4be6661"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/miniserver/list.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "84e6d2db007328922d828aef715b62e2",
+    "semantic_hash": "84e6d2db007328922d828aef715b62e2"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/miniserver/edit.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "fd15a4ea980740ebbef65db11a5cc01e",
+    "semantic_hash": "fd15a4ea980740ebbef65db11a5cc01e"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/miniserver/backup.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "e8a8832d3e03d6f8e48ff0ce7335ab61",
+    "semantic_hash": "e8a8832d3e03d6f8e48ff0ce7335ab61"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/admin/database.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "b14239e97fc9f0c1fa3f6286a96b2000",
+    "semantic_hash": "b14239e97fc9f0c1fa3f6286a96b2000"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/admin/users.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "5068b838caf7b668235f59b553ca3da6",
+    "semantic_hash": "5068b838caf7b668235f59b553ca3da6"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/admin/api_keys.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "0487cecec6a498830fee054957863079",
+    "semantic_hash": "0487cecec6a498830fee054957863079"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/admin/audit.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "50d3355dbc34aaa66759166364f88b91",
+    "semantic_hash": "50d3355dbc34aaa66759166364f88b91"
+  },
+  "/home/kalteneb/work/RustyLox/crates/web-ui/templates/admin/security.html": {
+    "mtime": 1778060534.7381911,
+    "ast_hash": "804f92c278805623398d1349cd41d68a",
+    "semantic_hash": "804f92c278805623398d1349cd41d68a"
+  },
+  "/home/kalteneb/work/RustyLox/docs/architecture.md": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "682308f2e89b18191aac5207ee75b0e9",
+    "semantic_hash": "682308f2e89b18191aac5207ee75b0e9"
+  },
+  "/home/kalteneb/work/RustyLox/docs/api.md": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "2f31195068c101e74d7f8789816eba24",
+    "semantic_hash": "2f31195068c101e74d7f8789816eba24"
+  },
+  "/home/kalteneb/work/RustyLox/docs/configuration.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "36e8c3d5029aa65c742918118ceffbbb",
+    "semantic_hash": "36e8c3d5029aa65c742918118ceffbbb"
+  },
+  "/home/kalteneb/work/RustyLox/docs/miniserver-communication.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "7f31ad910d78453dab204da149eedbc4",
+    "semantic_hash": "7f31ad910d78453dab204da149eedbc4"
+  },
+  "/home/kalteneb/work/RustyLox/docs/development.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "4297a546d6e0667caa5062e2a115d48f",
+    "semantic_hash": "4297a546d6e0667caa5062e2a115d48f"
+  },
+  "/home/kalteneb/work/RustyLox/docs/vitoconnect-integration.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "14459365e2603228d2a25566d0b35ac6",
+    "semantic_hash": "14459365e2603228d2a25566d0b35ac6"
+  },
+  "/home/kalteneb/work/RustyLox/docs/plugins.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "ac0e25187b09855a079e3411ebe083a7",
+    "semantic_hash": "ac0e25187b09855a079e3411ebe083a7"
+  },
+  "/home/kalteneb/work/RustyLox/docs/loxone-api/README.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "16460d230554a64eb236d814f140d6b7",
+    "semantic_hash": "16460d230554a64eb236d814f140d6b7"
+  },
+  "/home/kalteneb/work/RustyLox/docs/loxone-api/pms-access-api.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "a42328f59e8bc475760632367c2ce684",
+    "semantic_hash": "a42328f59e8bc475760632367c2ce684"
+  },
+  "/home/kalteneb/work/RustyLox/docs/loxone-api/miniserver-communication.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "328de2cafb421ea81c4c712049337db2",
+    "semantic_hash": "328de2cafb421ea81c4c712049337db2"
+  },
+  "/home/kalteneb/work/RustyLox/docs/loxone-api/web-services.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "b41a962e13b71fe1dfedb6cbec472964",
+    "semantic_hash": "b41a962e13b71fe1dfedb6cbec472964"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE7_COMPLETE.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "0e2733d852f95c0a751cd5986f0525c6",
+    "semantic_hash": "0e2733d852f95c0a751cd5986f0525c6"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE7A_COMPLETE.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "6949c952f3c11f4625b28decdf6fd4ed",
+    "semantic_hash": "6949c952f3c11f4625b28decdf6fd4ed"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE3_COMPLETE.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "5a5232838e4c1770c63a65a34aa00a4f",
+    "semantic_hash": "5a5232838e4c1770c63a65a34aa00a4f"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE8_PLAN.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "4d1947729bb48e718b37dce05b0b27b3",
+    "semantic_hash": "4d1947729bb48e718b37dce05b0b27b3"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE1_COMPLETE.md": {
+    "mtime": 1778060534.742191,
+    "ast_hash": "d8b665c2106462651c8256f41a8ff25e",
+    "semantic_hash": "d8b665c2106462651c8256f41a8ff25e"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE5_COMPLETE.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "dbc123395c3e0aaf884b2ae527275b38",
+    "semantic_hash": "dbc123395c3e0aaf884b2ae527275b38"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE2_COMPLETE.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "7a740c1da95beb50d835cf62e924e25b",
+    "semantic_hash": "7a740c1da95beb50d835cf62e924e25b"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE4_COMPLETE.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "b530e00854f41c2aa04bc36036f6627c",
+    "semantic_hash": "b530e00854f41c2aa04bc36036f6627c"
+  },
+  "/home/kalteneb/work/RustyLox/docs/archive/PHASE6_COMPLETE.md": {
+    "mtime": 1778060534.746191,
+    "ast_hash": "57c0bbe386512342c3ff7c7b16ba0867",
+    "semantic_hash": "57c0bbe386512342c3ff7c7b16ba0867"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/templates/system/pageend.html": {
+    "mtime": 1778060534.7821908,
+    "ast_hash": "cc3a2f61c1c2adb87d48392479946ff0",
+    "semantic_hash": "cc3a2f61c1c2adb87d48392479946ff0"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/templates/system/pagestart.html": {
+    "mtime": 1778060534.7821908,
+    "ast_hash": "ccf9b38b6b2658cd79efdffc79c5f556",
+    "semantic_hash": "ccf9b38b6b2658cd79efdffc79c5f556"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/templates/system/foot.html": {
+    "mtime": 1778060534.7821908,
+    "ast_hash": "41749519b9a40fb7805ca9d2b335cc77",
+    "semantic_hash": "41749519b9a40fb7805ca9d2b335cc77"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/templates/system/head.html": {
+    "mtime": 1778060534.7821908,
+    "ast_hash": "3674ce9cccf57e610d21a4c35b79475d",
+    "semantic_hash": "3674ce9cccf57e610d21a4c35b79475d"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/suncalc/README.md": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "928ba244499ca088d91d78f2b935027a",
+    "semantic_hash": "928ba244499ca088d91d78f2b935027a"
+  },
+  "/home/kalteneb/work/RustyLox/sdk/phplib/phpMQTT/examples/README.md": {
+    "mtime": 1778060534.774191,
+    "ast_hash": "341d74a5f617512b438933df4ad7d470",
+    "semantic_hash": "341d74a5f617512b438933df4ad7d470"
+  },
+  "/home/kalteneb/work/RustyLox/static/favicon.svg": {
+    "mtime": 1778060534.7821908,
+    "ast_hash": "6ab27d5f1dc651b9283a455aed334a15",
+    "semantic_hash": "6ab27d5f1dc651b9283a455aed334a15"
+  },
+  "/home/kalteneb/work/RustyLox/static/logo.svg": {
+    "mtime": 1778060534.7861907,
+    "ast_hash": "4fb271d5f5cfbb2a69cbd29b98b32827",
+    "semantic_hash": "4fb271d5f5cfbb2a69cbd29b98b32827"
+  }
+}
