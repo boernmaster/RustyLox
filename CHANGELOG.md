@@ -7,12 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-06-10
+
+### Fixed
+- Public plugin pages (`webfrontend/html`) are now actually served without authentication, matching LoxBerry: the Loxone Miniserver can poll plugin endpoints (VirtualIn/Out) without cookies or API keys. Admin routes under `/plugins` (list, install, details, uninstall) remain protected
+- `QUERY_STRING` is now forwarded on the public plugin routes, so `$_GET` / `CGI->param()` work in public PHP/CGI scripts (previously only the authenticated routes received it)
+- `GET /plugins/<name>/` now serves the plugin index document (index.php → index.cgi → index.html fallback); previously it returned 404
+- Public plugin routes now accept POST requests, and Perl CGI scripts now receive the POST body on stdin (previously only PHP did)
+
+### Added
+- Unit tests for `REQUEST_URI` construction and path traversal protection; router-level tests pinning the public/protected boundary of the `/plugins` URL space
+
+### Changed
+- `graphify-out/cache/` and `graphify-out/cost.json` (~40 MB of derived analysis data) are no longer tracked in git
+
 ## [1.2.1] - 2026-05-08
 
 ### Fixed
 - Plugin public files now served at the LoxBerry-compatible URL `/plugins/<name>/<path>` (was `/plugins/web/<name>/<path>`); CSS, JS and images referenced by plugins such as Sonos now load correctly
 - `REQUEST_URI` and `QUERY_STRING` are now forwarded to the index handler so plugin forms see the correct query parameters
 - `REQUEST_URI` CGI environment variable set in both PHP and Perl execution contexts so plugins that use `$ENV{REQUEST_URI}` for form actions or SELFURL templates get the right value
+
+## [1.2.0] - 2026-05-08
+
+### Fixed
+- Plugin dependency installation now uses `sudo apt-get`/`sudo dpkg`, errors during install are logged, and a sudoers entry covers group users
+
+## [1.1.9] - 2026-05-08
+
+### Fixed
+- Docker image: `/opt/loxberry` is group-owned by gid 100 with `g+w`, so `--user` overrides keep write access
+
+## [1.1.8] - 2026-05-08
+
+### Fixed
+- Plugin installation falls back to the system `/tmp` when `lbhomedir/tmp` is not writable
+
+## [1.1.7] - 2026-05-08
+
+### Fixed
+- Logging defaults to global `info` level so `plugin_manager` and `web_ui` logs appear without an explicit `RUST_LOG`
+
+## [1.1.6] - 2026-05-08
+
+### Fixed
+- MQTT broadcast channel buffer increased to 4096 and receiver lag downgraded from error to warning
 
 ## [1.1.5] - 2026-05-08
 
@@ -300,7 +339,10 @@ Phase 7a complete — all web UI features for backend functionality delivered.
   manual_range_contains, unused_variables)
 - Re-enabled arm64 Docker image builds
 
-## [1.3.0] - 2026-03-17
+## [Phase 6-7 milestone] - 2026-03-17
+
+> Originally numbered 1.3.0 under the pre-release phase numbering scheme,
+> which does not correspond to the git release tags used since v1.0.0.
 
 ### Added - Phase 6: Performance & Monitoring
 - Database abstraction layer with PostgreSQL and SQLite support
@@ -334,7 +376,10 @@ Phase 7a complete — all web UI features for backend functionality delivered.
 - Security headers on all HTTP responses
 - Audit log for compliance and security monitoring
 
-## [1.2.0] - 2026-03-16
+## [Phase 5 milestone] - 2026-03-16
+
+> Originally numbered 1.2.0 under the pre-release phase numbering scheme;
+> renamed to avoid clashing with the real v1.2.0 release (2026-05-08).
 
 ### Added - Phase 5: Logging & SDK
 - Structured logging framework
