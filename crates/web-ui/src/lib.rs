@@ -97,21 +97,6 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/plugins/:md5/uninstall",
             post(handlers::plugins::uninstall),
         )
-        // Plugin web interfaces (public)
-        // LoxBerry-compatible URL: /plugins/<name>/<path> served from webfrontend/html/plugins/<name>/
-        .route(
-            "/plugins/:name/*path",
-            get(handlers::plugin_web::serve_plugin_public),
-        )
-        // Legacy /plugins/web/:name routes (kept for any internal links)
-        .route(
-            "/plugins/web/:name",
-            get(handlers::plugin_web::serve_plugin_public_index),
-        )
-        .route(
-            "/plugins/web/:name/*path",
-            get(handlers::plugin_web::serve_plugin_public),
-        )
         // Plugin web interfaces (authenticated)
         .route(
             "/admin/plugins/:name",
@@ -211,5 +196,30 @@ pub fn create_ui_router(state: AppState) -> Router {
             state.clone(),
             middleware::require_auth,
         ))
+        // Plugin web interfaces (public) — registered AFTER the auth layer so they
+        // bypass it: LoxBerry serves webfrontend/html without authentication so the
+        // Miniserver can poll plugin endpoints (VirtualIn/Out) without cookies.
+        // Static admin routes above (/plugins, /plugins/install, /plugins/:md5,
+        // /plugins/:md5/uninstall) win over the :name wildcard and stay protected.
+        // LoxBerry-compatible URL: /plugins/<name>/<path> served from webfrontend/html/plugins/<name>/
+        .route(
+            "/plugins/:name/",
+            get(handlers::plugin_web::serve_plugin_public_index),
+        )
+        .route(
+            "/plugins/:name/*path",
+            get(handlers::plugin_web::serve_plugin_public)
+                .post(handlers::plugin_web::serve_plugin_public_post),
+        )
+        // Legacy /plugins/web/:name routes (kept for any internal links)
+        .route(
+            "/plugins/web/:name",
+            get(handlers::plugin_web::serve_plugin_public_index),
+        )
+        .route(
+            "/plugins/web/:name/*path",
+            get(handlers::plugin_web::serve_plugin_public)
+                .post(handlers::plugin_web::serve_plugin_public_post),
+        )
         .with_state(state)
 }

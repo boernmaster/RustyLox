@@ -42,20 +42,32 @@ struct PhpRequest {
     query_string: String,
     content_type: String,
     body: Vec<u8>,
-    http_host: String,
     /// Full request URI including path and query string (e.g. /admin/plugins/foo/index.cgi?do=bar)
     request_uri: String,
 }
 
 impl PhpRequest {
-    fn get_only() -> Self {
+    fn from_get(uri: &Uri) -> Self {
         Self {
             method: "GET".to_string(),
-            query_string: String::new(),
+            query_string: uri.query().unwrap_or("").to_string(),
             content_type: String::new(),
             body: Vec::new(),
-            http_host: String::new(),
-            request_uri: String::new(),
+            request_uri: build_request_uri(uri.path(), uri.query()),
+        }
+    }
+
+    fn from_post(uri: &Uri, headers: &HeaderMap, body: Vec<u8>) -> Self {
+        Self {
+            method: "POST".to_string(),
+            query_string: uri.query().unwrap_or("").to_string(),
+            content_type: headers
+                .get(header::CONTENT_TYPE)
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("")
+                .to_string(),
+            body,
+            request_uri: build_request_uri(uri.path(), uri.query()),
         }
     }
 }
@@ -66,15 +78,6 @@ fn build_request_uri(path: &str, query: Option<&str>) -> String {
         Some(q) if !q.is_empty() => format!("{}?{}", path, q),
         _ => path.to_string(),
     }
-}
-
-/// Extract the HTTP Host header value from the request headers
-fn extract_http_host(headers: &HeaderMap) -> String {
-    headers
-        .get(header::HOST)
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("")
-        .to_string()
 }
 
 /// Serve public plugin web interface (no authentication required)
@@ -92,9 +95,35 @@ pub async fn serve_plugin_public(
         .join("webfrontend/html/plugins")
         .join(&plugin_name);
 
-    let mut req = PhpRequest::get_only();
-    req.http_host = extract_http_host(&headers);
-    req.request_uri = build_request_uri(uri.path(), uri.query());
+    let req = PhpRequest::from_get(&uri);
+    serve_plugin_file(
+        &base_dir,
+        &path,
+        &plugin_name,
+        req,
+        &state.lbhomedir,
+        &headers,
+    )
+    .await
+}
+
+/// Serve public plugin web interface (POST, no authentication required)
+///
+/// POST /plugins/:name/*path  (LoxBerry-compatible)
+/// POST /plugins/web/:name/*path  (legacy)
+pub async fn serve_plugin_public_post(
+    State(state): State<AppState>,
+    Path((plugin_name, path)): Path<(String, String)>,
+    uri: Uri,
+    headers: HeaderMap,
+    body: axum::body::Bytes,
+) -> Response {
+    let base_dir = state
+        .lbhomedir
+        .join("webfrontend/html/plugins")
+        .join(&plugin_name);
+
+    let req = PhpRequest::from_post(&uri, &headers, body.to_vec());
     serve_plugin_file(
         &base_dir,
         &path,
@@ -108,7 +137,8 @@ pub async fn serve_plugin_public(
 
 /// Serve public plugin index (no path specified)
 ///
-/// GET /plugins/web/:name/
+/// GET /plugins/:name/  (LoxBerry-compatible)
+/// GET /plugins/web/:name
 pub async fn serve_plugin_public_index(
     State(state): State<AppState>,
     Path(plugin_name): Path<String>,
@@ -120,18 +150,8 @@ pub async fn serve_plugin_public_index(
         .join("webfrontend/html/plugins")
         .join(&plugin_name);
 
-    let mut req = PhpRequest::get_only();
-    req.http_host = extract_http_host(&headers);
-    req.request_uri = build_request_uri(uri.path(), uri.query());
-    serve_plugin_file(
-        &base_dir,
-        "index.html",
-        &plugin_name,
-        req,
-        &state.lbhomedir,
-        &headers,
-    )
-    .await
+    let req = PhpRequest::from_get(&uri);
+    serve_plugin_index(&base_dir, &plugin_name, req, &state.lbhomedir, &headers).await
 }
 
 /// Serve authenticated plugin web interface (GET)
@@ -148,15 +168,7 @@ pub async fn serve_plugin_auth(
         .join("webfrontend/htmlauth/plugins")
         .join(&plugin_name);
 
-    let request_uri = build_request_uri(uri.path(), uri.query());
-    let php_req = PhpRequest {
-        method: "GET".to_string(),
-        query_string: uri.query().unwrap_or("").to_string(),
-        content_type: String::new(),
-        body: Vec::new(),
-        http_host: extract_http_host(&headers),
-        request_uri,
-    };
+    let php_req = PhpRequest::from_get(&uri);
 
     serve_plugin_file(
         &base_dir,
@@ -184,21 +196,7 @@ pub async fn serve_plugin_auth_post(
         .join("webfrontend/htmlauth/plugins")
         .join(&plugin_name);
 
-    let content_type = headers
-        .get(header::CONTENT_TYPE)
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("")
-        .to_string();
-
-    let request_uri = build_request_uri(uri.path(), uri.query());
-    let php_req = PhpRequest {
-        method: "POST".to_string(),
-        query_string: uri.query().unwrap_or("").to_string(),
-        content_type,
-        body: body.to_vec(),
-        http_host: extract_http_host(&headers),
-        request_uri,
-    };
+    let php_req = PhpRequest::from_post(&uri, &headers, body.to_vec());
 
     serve_plugin_file(
         &base_dir,
@@ -225,43 +223,30 @@ pub async fn serve_plugin_auth_index(
         .join("webfrontend/htmlauth/plugins")
         .join(&plugin_name);
 
-    let mut req = PhpRequest::get_only();
-    req.http_host = extract_http_host(&headers);
-    req.query_string = uri.query().unwrap_or("").to_string();
-    req.request_uri = build_request_uri(uri.path(), uri.query());
+    let req = PhpRequest::from_get(&uri);
+    serve_plugin_index(&base_dir, &plugin_name, req, &state.lbhomedir, &headers).await
+}
 
-    // Try index.php → index.cgi → index.html
-    if base_dir.join("index.php").exists() {
-        serve_plugin_file(
-            &base_dir,
-            "index.php",
-            &plugin_name,
-            req,
-            &state.lbhomedir,
-            &headers,
-        )
-        .await
-    } else if base_dir.join("index.cgi").exists() {
-        serve_plugin_file(
-            &base_dir,
-            "index.cgi",
-            &plugin_name,
-            req,
-            &state.lbhomedir,
-            &headers,
-        )
-        .await
-    } else {
-        serve_plugin_file(
-            &base_dir,
-            "index.html",
-            &plugin_name,
-            req,
-            &state.lbhomedir,
-            &headers,
-        )
-        .await
+/// Serve a plugin index document, trying index.php → index.cgi → index.html
+async fn serve_plugin_index(
+    base_dir: &PathBuf,
+    plugin_name: &str,
+    req: PhpRequest,
+    lbhomedir: &FsPath,
+    headers: &HeaderMap,
+) -> Response {
+    let mut index_file = "index.html";
+    for candidate in ["index.php", "index.cgi"] {
+        if tokio::fs::try_exists(base_dir.join(candidate))
+            .await
+            .unwrap_or(false)
+        {
+            index_file = candidate;
+            break;
+        }
     }
+
+    serve_plugin_file(base_dir, index_file, plugin_name, req, lbhomedir, headers).await
 }
 
 /// Core file serving logic with path traversal protection
@@ -286,7 +271,7 @@ async fn serve_plugin_file(
     let file_path = base_dir.join(&file_name);
 
     // Check base directory exists
-    if !base_dir.exists() {
+    if !tokio::fs::try_exists(base_dir).await.unwrap_or(false) {
         warn!("Plugin web directory not found: {}", base_dir.display());
         return not_found_response(&format!("Plugin '{}' has no web interface", plugin_name));
     }
@@ -303,7 +288,7 @@ async fn serve_plugin_file(
         }
     };
 
-    if !resolved.exists() {
+    if !tokio::fs::try_exists(&resolved).await.unwrap_or(false) {
         return not_found_response(&format!("File not found: {}", file_name));
     }
 
@@ -662,7 +647,28 @@ async fn serve_cgi_file(
                 .unwrap_or(""),
         );
 
-    match cmd.output().await {
+    // For POST requests, pipe the body via stdin
+    let output = if php_req.body.is_empty() {
+        cmd.output().await
+    } else {
+        cmd.stdin(std::process::Stdio::piped());
+        cmd.stdout(std::process::Stdio::piped());
+        cmd.stderr(std::process::Stdio::piped());
+
+        match cmd.spawn() {
+            Ok(mut child) => {
+                if let Some(mut stdin) = child.stdin.take() {
+                    use tokio::io::AsyncWriteExt;
+                    let _ = stdin.write_all(&php_req.body).await;
+                    drop(stdin);
+                }
+                child.wait_with_output().await
+            }
+            Err(e) => Err(e),
+        }
+    };
+
+    match output {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr);
             if !stderr.is_empty() {
@@ -800,4 +806,64 @@ fn error_response(status: StatusCode, message: &str) -> Response {
         .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
         .body(Body::from(message.to_string()))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Error").into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_uri_with_query() {
+        assert_eq!(
+            build_request_uri("/plugins/foo/bar.php", Some("a=1&b=2")),
+            "/plugins/foo/bar.php?a=1&b=2"
+        );
+    }
+
+    #[test]
+    fn request_uri_without_query() {
+        assert_eq!(
+            build_request_uri("/plugins/foo/bar.php", None),
+            "/plugins/foo/bar.php"
+        );
+        assert_eq!(
+            build_request_uri("/plugins/foo/bar.php", Some("")),
+            "/plugins/foo/bar.php"
+        );
+    }
+
+    #[test]
+    fn safe_path_accepts_paths_inside_base() {
+        let base = PathBuf::from("/opt/loxberry/webfrontend/html/plugins/foo");
+        let path = base.join("css/style.css");
+        assert_eq!(resolve_safe_path(&base, &path), Some(path.clone()));
+    }
+
+    #[test]
+    fn safe_path_rejects_parent_dir_components() {
+        let base = PathBuf::from("/opt/loxberry/webfrontend/html/plugins/foo");
+        // ".." anywhere in the path is rejected, even if it would still
+        // resolve inside the base directory
+        let path = base.join("css/../style.css");
+        assert_eq!(resolve_safe_path(&base, &path), None);
+        let path = base.join("../../../../etc/passwd");
+        assert_eq!(resolve_safe_path(&base, &path), None);
+    }
+
+    #[test]
+    fn safe_path_rejects_paths_outside_base() {
+        let base = PathBuf::from("/opt/loxberry/webfrontend/html/plugins/foo");
+        let path = PathBuf::from("/etc/passwd");
+        assert_eq!(resolve_safe_path(&base, &path), None);
+    }
+
+    #[test]
+    fn safe_path_strips_cur_dir_components() {
+        let base = PathBuf::from("/opt/loxberry/webfrontend/html/plugins/foo");
+        let path = base.join("./css/./style.css");
+        assert_eq!(
+            resolve_safe_path(&base, &path),
+            Some(base.join("css/style.css"))
+        );
+    }
 }
