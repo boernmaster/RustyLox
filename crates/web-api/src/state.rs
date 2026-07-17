@@ -172,7 +172,10 @@ impl AppState {
     }
 
     /// Attach a CatalogClient to the application state
-    pub fn with_catalog_client(mut self, catalog_client: Arc<addon_registry::CatalogClient>) -> Self {
+    pub fn with_catalog_client(
+        mut self,
+        catalog_client: Arc<addon_registry::CatalogClient>,
+    ) -> Self {
         self.catalog_client = Some(catalog_client);
         self
     }

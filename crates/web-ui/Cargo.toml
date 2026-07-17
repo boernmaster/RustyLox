@@ -15,6 +15,7 @@ web-api = { path = "../web-api" }
 email-manager = { path = "../email-manager" }
 task-scheduler = { path = "../task-scheduler" }
 auth = { path = "../auth" }
+addon-registry = { path = "../addon-registry" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }

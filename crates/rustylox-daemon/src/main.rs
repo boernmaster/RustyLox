@@ -172,8 +172,11 @@ async fn main() -> Result<()> {
     // Initialize the GHCR addon catalog client if configured
     let catalog_client = match std::env::var("GITHUB_PACKAGES_TOKEN") {
         Ok(token) if !token.trim().is_empty() => {
-            let user = std::env::var("GITHUB_PACKAGES_USER").unwrap_or_else(|_| "boernmaster".to_string());
-            Some(std::sync::Arc::new(addon_registry::CatalogClient::new(user, token)))
+            let user =
+                std::env::var("GITHUB_PACKAGES_USER").unwrap_or_else(|_| "boernmaster".to_string());
+            Some(std::sync::Arc::new(addon_registry::CatalogClient::new(
+                user, token,
+            )))
         }
         _ => {
             tracing::info!("GITHUB_PACKAGES_TOKEN not set - addon catalog disabled");

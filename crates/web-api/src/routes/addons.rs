@@ -158,7 +158,9 @@ pub async fn catalog(State(state): State<AppState>) -> impl IntoResponse {
             .into_response();
     };
     match client.list_addons().await {
-        Ok(entries) => Json(serde_json::json!({ "configured": true, "entries": entries })).into_response(),
+        Ok(entries) => {
+            Json(serde_json::json!({ "configured": true, "entries": entries })).into_response()
+        }
         Err(e) => {
             warn!("Catalog fetch failed: {}", e);
             (
