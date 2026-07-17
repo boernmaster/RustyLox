@@ -79,6 +79,10 @@ pub struct AppState {
     /// under lbhomedir) - set whenever addon_registry is attached.
     pub addon_registry_path: Option<std::path::PathBuf>,
 
+    /// GHCR-backed addon discovery catalog - None if GITHUB_PACKAGES_TOKEN
+    /// isn't configured, in which case the catalog tab just says so.
+    pub catalog_client: Option<Arc<addon_registry::CatalogClient>>,
+
     /// Long-lived metrics collector — kept alive so sysinfo has a prior
     /// measurement interval and can return real CPU usage values.
     pub metrics_collector: Arc<Mutex<MetricsCollector>>,
@@ -130,6 +134,7 @@ impl AppState {
             weather_service: None,
             addon_registry: None,
             addon_registry_path: None,
+            catalog_client: None,
             metrics_collector: Arc::new(Mutex::new(MetricsCollector::with_default_counters())),
         }
     }
@@ -163,6 +168,12 @@ impl AppState {
     ) -> Self {
         self.addon_registry = Some(addon_registry);
         self.addon_registry_path = Some(addon_registry_path);
+        self
+    }
+
+    /// Attach a CatalogClient to the application state
+    pub fn with_catalog_client(mut self, catalog_client: Arc<addon_registry::CatalogClient>) -> Self {
+        self.catalog_client = Some(catalog_client);
         self
     }
 

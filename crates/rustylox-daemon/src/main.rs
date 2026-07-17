@@ -169,8 +169,20 @@ async fn main() -> Result<()> {
             }),
     );
 
+    // Initialize the GHCR addon catalog client if configured
+    let catalog_client = match std::env::var("GITHUB_PACKAGES_TOKEN") {
+        Ok(token) if !token.trim().is_empty() => {
+            let user = std::env::var("GITHUB_PACKAGES_USER").unwrap_or_else(|_| "boernmaster".to_string());
+            Some(std::sync::Arc::new(addon_registry::CatalogClient::new(user, token)))
+        }
+        _ => {
+            tracing::info!("GITHUB_PACKAGES_TOKEN not set - addon catalog disabled");
+            None
+        }
+    };
+
     // Create application state
-    let state = AppState::new_with_shared_config(
+    let mut state = AppState::new_with_shared_config(
         lbhomedir.clone(),
         version.to_string(),
         config_manager,
@@ -181,6 +193,10 @@ async fn main() -> Result<()> {
     .with_auth(auth_service)
     .with_weather(Arc::clone(&weather_service))
     .with_addon_registry(addon_registry, addon_registry_path);
+
+    if let Some(client) = catalog_client {
+        state = state.with_catalog_client(client);
+    }
 
     // Apply the log level that was persisted in general.json (if any).
     // Legacy numeric values (e.g. "6") are not valid EnvFilter directives and

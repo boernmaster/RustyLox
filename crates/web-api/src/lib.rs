@@ -51,6 +51,7 @@ pub fn create_router(state: AppState) -> Router {
         // Addon routes
         .route("/api/addons/register", post(routes::addons::register))
         .route("/api/addons", get(routes::addons::list))
+        .route("/api/addons/catalog", get(routes::addons::catalog))
         .route("/api/addons/:name/schema", get(routes::addons::schema))
         .route(
             "/api/addons/:name/config",

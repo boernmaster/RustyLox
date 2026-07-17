@@ -147,3 +147,25 @@ pub async fn save_config(
         }
     }
 }
+
+/// GET /api/addons/catalog
+pub async fn catalog(State(state): State<AppState>) -> impl IntoResponse {
+    let Some(client) = &state.catalog_client else {
+        return (
+            StatusCode::OK,
+            Json(serde_json::json!({ "configured": false, "entries": [] })),
+        )
+            .into_response();
+    };
+    match client.list_addons().await {
+        Ok(entries) => Json(serde_json::json!({ "configured": true, "entries": entries })).into_response(),
+        Err(e) => {
+            warn!("Catalog fetch failed: {}", e);
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(serde_json::json!({ "configured": true, "entries": [], "error": e.to_string() })),
+            )
+                .into_response()
+        }
+    }
+}
