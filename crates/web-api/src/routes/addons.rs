@@ -76,18 +76,25 @@ pub async fn list(State(state): State<AppState>) -> impl IntoResponse {
 
 /// GET /api/addons/:name/schema
 pub async fn schema(State(state): State<AppState>, Path(name): Path<String>) -> impl IntoResponse {
-    proxy_get(&state, &name, proxy::fetch_schema).await
+    proxy_get(&state, &name, |url| Box::pin(proxy::fetch_schema(url))).await
 }
 
 /// GET /api/addons/:name/config
 pub async fn config(State(state): State<AppState>, Path(name): Path<String>) -> impl IntoResponse {
-    proxy_get(&state, &name, proxy::fetch_config).await
+    proxy_get(&state, &name, |url| Box::pin(proxy::fetch_config(url))).await
 }
 
-async fn proxy_get<F, Fut>(state: &AppState, name: &str, call: F) -> axum::response::Response
+/// A `proxy::fetch_*` call boxed so it can be passed around as a value - the
+/// higher-ranked lifetime on `&str` doesn't play nicely with a bare generic
+/// `Fut` associated type (the two `async fn`s each produce a distinct opaque
+/// type tied to the borrowed lifetime), so we erase it behind `dyn Future`.
+type ProxyFuture<'a> = std::pin::Pin<
+    Box<dyn std::future::Future<Output = Result<serde_json::Value, proxy::ProxyError>> + Send + 'a>,
+>;
+
+async fn proxy_get<F>(state: &AppState, name: &str, call: F) -> axum::response::Response
 where
-    F: FnOnce(&str) -> Fut,
-    Fut: std::future::Future<Output = Result<serde_json::Value, proxy::ProxyError>>,
+    F: for<'a> FnOnce(&'a str) -> ProxyFuture<'a>,
 {
     let Some(registry) = &state.addon_registry else {
         return (

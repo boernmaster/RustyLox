@@ -64,7 +64,7 @@ pub async fn save_config(base_url: &str, payload: &Value) -> Result<(), ProxyErr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::routing::{get, post};
+    use axum::routing::get;
     use axum::{Json, Router};
     use serde_json::json;
     use tokio::net::TcpListener;
