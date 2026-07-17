@@ -19,6 +19,13 @@ pub enum ProxyError {
 fn client() -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
+        // Never follow redirects: an addon's server is proxied to at exactly the
+        // config_api_base_url it registered. Without this, a malicious/compromised
+        // addon could respond with a redirect to an internal host (e.g. Node-RED,
+        // InfluxDB) and RustyLox would follow it, forwarding the response back to
+        // the web UI (or, for save_config, POSTing an attacker-controlled body
+        // wherever the redirect points) — a confused-deputy / SSRF primitive.
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .expect("failed to build addon proxy HTTP client")
 }
