@@ -13,15 +13,18 @@ use axum::{Json, Router};
 use http_body_util::BodyExt;
 use serde_json::json;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 use tower::util::ServiceExt;
 use web_api::{create_router, AppState};
 
 /// Spawns a minimal fake addon server that answers the same three endpoints
-/// a real containerized addon (e.g. kia-connect-bridge) exposes, and returns
-/// its base URL (e.g. "http://127.0.0.1:54321").
-async fn spawn_fake_addon() -> String {
+/// a real containerized addon (e.g. kia-connect-bridge) exposes. Returns its
+/// base URL (e.g. "http://127.0.0.1:54321") plus a handle to the JSON body
+/// most recently received by the `save` (config POST) handler, so tests can
+/// assert the proxy forwarded the payload byte-for-byte rather than just
+/// checking the fake server returned 200.
+async fn spawn_fake_addon() -> (String, Arc<Mutex<Option<serde_json::Value>>>) {
     async fn schema() -> Json<serde_json::Value> {
         Json(
             json!([{"key": "MQTT_HOST", "label": "MQTT Host", "type": "text", "help": "", "secret": false}]),
@@ -30,9 +33,16 @@ async fn spawn_fake_addon() -> String {
     async fn config() -> Json<serde_json::Value> {
         Json(json!({"MQTT_HOST": {"value": "10.0.0.32", "secret_set": false}}))
     }
-    async fn save(Json(_body): Json<serde_json::Value>) -> Json<serde_json::Value> {
-        Json(json!({"saved": true}))
-    }
+
+    let captured_body: Arc<Mutex<Option<serde_json::Value>>> = Arc::new(Mutex::new(None));
+    let captured_body_for_handler = captured_body.clone();
+    let save = move |Json(body): Json<serde_json::Value>| {
+        let captured_body = captured_body_for_handler.clone();
+        async move {
+            *captured_body.lock().unwrap() = Some(body);
+            Json(json!({"saved": true}))
+        }
+    };
 
     let app = Router::new()
         .route("/addon/schema", get(schema))
@@ -42,7 +52,7 @@ async fn spawn_fake_addon() -> String {
     tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
     });
-    format!("http://{}", addr)
+    (format!("http://{}", addr), captured_body)
 }
 
 fn test_state(registry: Arc<Registry>) -> AppState {
@@ -70,7 +80,7 @@ async fn body_string(response: axum::response::Response) -> String {
 
 #[tokio::test]
 async fn full_register_discover_configure_loop() {
-    let fake_addon_url = spawn_fake_addon().await;
+    let (fake_addon_url, captured_save_body) = spawn_fake_addon().await;
     let registry = Arc::new(Registry::new());
     let app = create_router(test_state(registry));
 
@@ -139,4 +149,9 @@ async fn full_register_discover_configure_loop() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
+
+    // The fake addon must have received exactly the payload we sent, proving
+    // proxy::save_config forwards the real body (not empty/wrong/mangled).
+    let received_body = captured_save_body.lock().unwrap().clone();
+    assert_eq!(received_body, Some(json!({"MQTT_HOST": "10.0.0.99"})));
 }
