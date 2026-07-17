@@ -48,6 +48,9 @@ pub fn create_router(state: AppState) -> Router {
             "/api/miniserver/:id/status",
             get(routes::miniserver::check_status),
         )
+        // Addon routes
+        .route("/api/addons/register", post(routes::addons::register))
+        .route("/api/addons", get(routes::addons::list))
         // Plugin routes
         .route("/api/plugins", get(routes::plugins::list_plugins))
         .route("/api/plugins/:md5", get(routes::plugins::get_plugin))

@@ -157,9 +157,21 @@ async fn main() -> Result<()> {
             }
         });
 
+    // Load the addon registry (self-registered containerized addons, e.g.
+    // kia-connect-bridge) from disk, starting empty if it doesn't exist yet.
+    let addon_registry_path = lbhomedir.join("data/system/addonregistry.json");
+    let addon_registry = std::sync::Arc::new(
+        addon_registry::Registry::load(&addon_registry_path)
+            .await
+            .unwrap_or_else(|e| {
+                warn!("Failed to load addon registry, starting empty: {}", e);
+                addon_registry::Registry::new()
+            }),
+    );
+
     // Create application state
     let state = AppState::new_with_shared_config(
-        lbhomedir,
+        lbhomedir.clone(),
         version.to_string(),
         config_manager,
         config,
@@ -167,7 +179,8 @@ async fn main() -> Result<()> {
     )
     .with_log_level_updater(log_level_updater)
     .with_auth(auth_service)
-    .with_weather(Arc::clone(&weather_service));
+    .with_weather(Arc::clone(&weather_service))
+    .with_addon_registry(addon_registry, addon_registry_path);
 
     // Apply the log level that was persisted in general.json (if any).
     // Legacy numeric values (e.g. "6") are not valid EnvFilter directives and

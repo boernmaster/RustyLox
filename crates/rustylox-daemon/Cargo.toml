@@ -18,6 +18,7 @@ task-scheduler = { path = "../task-scheduler" }
 web-api = { path = "../web-api" }
 web-ui = { path = "../web-ui" }
 plugin-manager = { path = "../plugin-manager" }
+addon-registry = { path = "../addon-registry" }
 
 chrono = "0.4"
 
