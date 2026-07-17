@@ -15,7 +15,7 @@ To query: `/graphify query "<question>"` — To update after changes: `/graphify
 Rust 1.80+ · Axum 0.7 · Askama templates · HTMX · Tokio · rumqttc · JSON file storage (no SQL) · Docker multi-stage
 
 **Crate dependency order (bottom-up)**:
-`rustylox-core` → `rustylox-config` → service crates (mqtt-gateway, plugin-manager, miniserver-client, auth, metrics, email-manager, task-scheduler, backup-manager) → `web-api` → `web-ui` → `rustylox-daemon`
+`rustylox-core` → `rustylox-config` → service crates (mqtt-gateway, plugin-manager, miniserver-client, auth, metrics, email-manager, task-scheduler, backup-manager, addon-registry) → `web-api` → `web-ui` → `rustylox-daemon`
 
 ## Code Rules
 
@@ -48,3 +48,16 @@ Types: `feat` `fix` `docs` `style` `refactor` `test` `chore`
 - `data/system/miniserver-backups/` is excluded from system backups
 - CSP allows `'unsafe-inline'` — required because 26 inline `<script>` blocks exist in templates
 - `libdbi-perl` + `libdbd-sqlite3-perl` are installed in Docker so `LoxBerry::Log` SQLite sessions work
+- **Containerized addons** (since v1.3.0, `addon-registry` crate): external processes self-register
+  via unauthenticated `POST /api/addons/register` (LAN-trust model, matching the rest of the app),
+  are proxied through `addon_registry::proxy` for schema/config/save, and get a generic settings page
+  at `/addons/:name/settings` rendered from whatever schema/config JSON the addon returns. The
+  addon-proxy HTTP client has redirects explicitly disabled (`Policy::none()`) — this is a deliberate
+  SSRF mitigation, not an oversight; don't "fix" a future addon integration bug by re-enabling
+  redirect-following without re-reading why it's off (final review, PR #71). Secret-value blanking is
+  the *addon's own* responsibility (its `config` response returns `value: ""` + `secret_set` for
+  secret fields) — RustyLox's proxy layer is a pure pass-through with no blanking of its own; don't
+  assume the web-api layer sanitizes secrets on an addon's behalf. The GHCR catalog client
+  (`CatalogClient`, `GET /api/addons/catalog`) is a separate HTTP client that intentionally *does*
+  follow redirects (GHCR's blob storage legitimately redirects) — only trusted, hardcoded hosts
+  (`api.github.com`, `ghcr.io`), never an addon-controlled URL, go through that client.
