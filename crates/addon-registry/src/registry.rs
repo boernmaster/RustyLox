@@ -2,6 +2,7 @@
 
 use chrono::{DateTime, Duration, Utc};
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -52,9 +53,6 @@ impl Registry {
         guard.get(name).cloned()
     }
 
-    // Not called yet within this crate - Task 5 (persistence) wires these
-    // into periodic save/load-on-startup. Silences dead_code until then.
-    #[allow(dead_code)]
     pub(crate) async fn snapshot(&self) -> HashMap<String, AddonInstance> {
         self.instances.lock().await.clone()
     }
@@ -63,6 +61,18 @@ impl Registry {
     pub(crate) async fn replace_all(&self, instances: HashMap<String, AddonInstance>) {
         let mut guard = self.instances.lock().await;
         *guard = instances;
+    }
+
+    pub async fn load(path: &Path) -> rustylox_core::Result<Self> {
+        let instances = crate::persistence::load(path).await?;
+        Ok(Self {
+            instances: Arc::new(Mutex::new(instances)),
+        })
+    }
+
+    pub async fn save(&self, path: &Path) -> rustylox_core::Result<()> {
+        let snapshot = self.snapshot().await;
+        crate::persistence::save(path, &snapshot).await
     }
 }
 
@@ -136,5 +146,33 @@ mod tests {
 
         assert_eq!(views[0].name, "aaa-addon");
         assert_eq!(views[1].name, "zzz-addon");
+    }
+
+    #[tokio::test]
+    async fn save_then_load_round_trips_instances() {
+        let dir = tempfile::TempDir::new().expect("create temp dir");
+        let path = dir.path().join("addonregistry.json");
+        let now = Utc::now();
+
+        let registry = Registry::new();
+        registry.register(sample("kia-connect-bridge", now)).await;
+        registry.save(&path).await.expect("save should succeed");
+
+        let loaded = Registry::load(&path).await.expect("load should succeed");
+        let views = loaded.list(now).await;
+
+        assert_eq!(views.len(), 1);
+        assert_eq!(views[0].name, "kia-connect-bridge");
+    }
+
+    #[tokio::test]
+    async fn load_returns_empty_registry_when_file_missing() {
+        let dir = tempfile::TempDir::new().expect("create temp dir");
+        let path = dir.path().join("does-not-exist.json");
+
+        let registry = Registry::load(&path).await.expect("load should succeed");
+        let views = registry.list(Utc::now()).await;
+
+        assert!(views.is_empty());
     }
 }
