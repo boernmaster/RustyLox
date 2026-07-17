@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-17
+
+### Added
+- Containerized addons: external addon processes (piloted by `kia-connect-bridge`) can self-register with RustyLox over HTTP, are discovered via a GHCR-backed catalog (`GET /api/addons/catalog`, filtered by the `io.rustylox.addon` OCI label), and get a generic settings page (`/addons/:name/settings`) rendered from each addon's own JSON schema/config
+- New `addon-registry` crate: `Registry` (JSON-persisted, atomic tmp+rename), `proxy` (schema/config/save proxying to a registered addon's `config_api_base_url`), `CatalogClient` (GHCR discovery, 10-minute cache)
+- Addons page in the web UI (Installed / Catalog tabs)
+
+### Security
+- The addon proxy client no longer follows HTTP redirects — closes an SSRF/confused-deputy path where a malicious or compromised addon could use a redirect response to pivot a proxied request to an internal host
+
 ## [1.2.2] - 2026-06-10
 
 ### Fixed

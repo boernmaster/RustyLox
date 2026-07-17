@@ -214,8 +214,12 @@ jobs:
           body: |
             ## RustyLox ${{ steps.version.outputs.version }}
 
-            ### Changed
-            - Weather config UI: add warning banner that the cloud emulator is Miniserver Gen 1 only
+            ### Added
+            - Containerized addons: external addon processes (piloted by `kia-connect-bridge`) can self-register with RustyLox, are discovered via a GHCR-backed catalog, and get a generic settings page rendered from each addon's own schema/config
+            - New `addon-registry` crate and Addons page in the web UI (Installed / Catalog tabs)
+
+            ### Security
+            - The addon proxy client no longer follows HTTP redirects, closing an SSRF/confused-deputy path via a malicious/compromised addon
 
             ### Installation
             ```bash
