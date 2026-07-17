@@ -97,6 +97,12 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/plugins/:md5/uninstall",
             post(handlers::plugins::uninstall),
         )
+        // Addon management (containerized addons)
+        .route("/addons", get(handlers::addons::list))
+        .route(
+            "/addons/:name/settings",
+            get(handlers::addons::settings).post(handlers::addons::settings_submit),
+        )
         // Plugin web interfaces (authenticated)
         .route(
             "/admin/plugins/:name",

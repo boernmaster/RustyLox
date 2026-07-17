@@ -14,6 +14,7 @@ members = [
     "crates/web-api",
     "crates/web-ui",
     "crates/rustylox-daemon",
+    "crates/addon-registry",
 ]
 resolver = "2"
 
@@ -52,3 +53,6 @@ tempfile = "3.8"
 
 # Base64 encoding/decoding
 base64 = "0.22"
+
+# Date/time (addon last-seen timestamps)
+chrono = { version = "0.4", features = ["serde"] }

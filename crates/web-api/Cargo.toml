@@ -14,6 +14,7 @@ miniserver-client = { path = "../miniserver-client" }
 plugin-manager = { path = "../plugin-manager" }
 mqtt-gateway = { path = "../mqtt-gateway" }
 backup-manager = { path = "../backup-manager" }
+addon-registry = { path = "../addon-registry" }
 
 serde = { workspace = true }
 serde_json = { workspace = true }
