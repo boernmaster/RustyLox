@@ -27,7 +27,9 @@ pub async fn register(
             warn!("Rejected malformed addon registration: {}", e);
             return (
                 StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({ "error": format!("Invalid registration payload: {}", e) })),
+                Json(
+                    serde_json::json!({ "error": format!("Invalid registration payload: {}", e) }),
+                ),
             )
                 .into_response();
         }

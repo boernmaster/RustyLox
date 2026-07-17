@@ -3,6 +3,23 @@
 version = 4
 
 [[package]]
+name = "addon-registry"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono",
+ "reqwest",
+ "rustylox-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2379,6 +2396,7 @@ dependencies = [
 name = "rustylox-daemon"
 version = "0.1.0"
 dependencies = [
+ "addon-registry",
  "anyhow",
  "auth",
  "axum",
@@ -3390,6 +3408,7 @@ dependencies = [
 name = "web-api"
 version = "0.1.0"
 dependencies = [
+ "addon-registry",
  "anyhow",
  "auth",
  "axum",

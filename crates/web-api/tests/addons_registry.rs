@@ -17,8 +17,14 @@ fn test_state(registry: Arc<Registry>) -> AppState {
     let config_manager = rustylox_config::ConfigManager::new(&config_dir);
     let config = rustylox_config::GeneralConfig::default();
 
-    AppState::new(tmp.clone(), "test".to_string(), config_manager, config, None)
-        .with_addon_registry(registry, tmp.join("data/system/addonregistry.json"))
+    AppState::new(
+        tmp.clone(),
+        "test".to_string(),
+        config_manager,
+        config,
+        None,
+    )
+    .with_addon_registry(registry, tmp.join("data/system/addonregistry.json"))
 }
 
 /// Helper: read a response body to a String (matches virtual_input_test.rs's convention).
