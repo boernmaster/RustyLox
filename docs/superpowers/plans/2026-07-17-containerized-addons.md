@@ -2254,6 +2254,7 @@ git commit -m "feat(web-api): expose GHCR addon catalog via /api/addons/catalog"
 
 **Interfaces:**
 - Consumes: `AppState.addon_registry`/`catalog_client` (Tasks 6/9) directly — web-ui runs in the same process as web-api, so it calls `Registry::list()`/`CatalogClient::list_addons()` in-process rather than over HTTP.
+- Note: this task's "Settings" link (`/addons/{{ addon.name }}/settings`, in Step 4's template) does not build its own target route — that route is built by **Task 12**, added after Task 11. Task 10 only needs to emit the correct `href`; no other change is required here once Task 12 exists.
 
 - [ ] **Step 1: Add the path dependency**
 
@@ -2781,6 +2782,344 @@ Expected: all green, no clippy warnings
 cd /home/boern/apps/RustyLox
 git add crates/web-api/tests/addons_end_to_end.rs
 git commit -m "test: add end-to-end register/discover/configure integration test"
+```
+
+---
+
+### Task 12: Addon settings page (`/addons/:name/settings`)
+
+**Why this task exists:** the design spec promises the Installed tab renders "a generic settings form rendered from schema + config" for each registered addon. Task 10 built the Installed tab's card with a "Settings" link pointing at `/addons/{{ addon.name }}/settings`, but no task built that route or the form itself — Task 10's own brief only produces the link, and Task 11's capstone test only exercises the raw JSON proxy endpoints directly via HTTP requests, never through a UI page. This task closes that gap: it is the only place in the whole plan that actually renders schema-driven fields as an editable form and honors kia-connect-bridge's full-object-replace `save_config` contract (recorded in `.superpowers/sdd/progress.md`'s cross-task notes) — every field gets its own `<input>` pre-filled with its current value, so a plain browser form submission always sends the complete object, never a partial one.
+
+**Files:**
+- Modify: `crates/web-ui/src/templates.rs`
+- Create: `crates/web-ui/templates/addons/settings.html`
+- Modify: `crates/web-ui/src/handlers/addons.rs`
+- Modify: `crates/web-ui/src/lib.rs`
+
+**Interfaces:**
+- Consumes: `addon_registry::proxy::{fetch_schema, fetch_config, save_config}` (Task 7) and `AppState.addon_registry`/`Registry::find` (Tasks 4/7) — same in-process access pattern Task 10 uses for `Registry::list()`, called directly rather than over HTTP since web-ui and web-api share a process.
+- Produces: nothing new consumed elsewhere — this is the final leaf of the Installed tab's UI.
+
+- [ ] **Step 1: Add template structs**
+
+Modify `crates/web-ui/src/templates.rs`, adding after the `AddonsTemplate`/`InstalledAddonDisplay`/`CatalogEntryDisplay` structs from Task 10:
+
+```rust
+#[derive(Template)]
+#[template(path = "addons/settings.html")]
+pub struct AddonSettingsTemplate {
+    pub addon_name: String,
+    pub offline: bool,
+    pub fields: Vec<AddonSettingsFieldDisplay>,
+    pub version: String,
+    pub lang: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddonSettingsFieldDisplay {
+    pub key: String,
+    pub label: String,
+    pub help: String,
+    pub input_type: String,
+    pub value: String,
+    pub secret: bool,
+    pub secret_set: bool,
+}
+```
+
+- [ ] **Step 2: Write the handlers**
+
+Modify `crates/web-ui/src/handlers/addons.rs`, appending to the `list` handler Task 10 created:
+
+```rust
+use std::collections::HashMap;
+
+use axum::extract::Path;
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
+use axum::Form;
+
+use addon_registry::proxy;
+
+use crate::templates::{AddonSettingsFieldDisplay, AddonSettingsTemplate};
+
+/// GET /addons/:name/settings
+pub async fn settings(State(state): State<AppState>, Path(name): Path<String>) -> impl IntoResponse {
+    let lang = state.config.read().await.base.lang.clone();
+
+    let Some(registry) = &state.addon_registry else {
+        return Html("<h1>Addons</h1><p>Addon registry not configured.</p>".to_string()).into_response();
+    };
+    let Some(instance) = registry.find(&name).await else {
+        return (
+            StatusCode::NOT_FOUND,
+            Html(format!(
+                "<h1>Addon not found</h1><p>No addon named '{}' is registered.</p>",
+                name
+            )),
+        )
+            .into_response();
+    };
+
+    let schema_result = proxy::fetch_schema(&instance.config_api_base_url).await;
+    let config_result = proxy::fetch_config(&instance.config_api_base_url).await;
+
+    let (offline, fields) = match (schema_result, config_result) {
+        (Ok(schema), Ok(config)) => {
+            let fields = schema
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|field| {
+                    let key = field["key"].as_str().unwrap_or_default().to_string();
+                    let secret = field["secret"].as_bool().unwrap_or(false);
+                    let entry = config.get(&key).cloned().unwrap_or_default();
+                    let value = if secret {
+                        String::new()
+                    } else {
+                        entry["value"].as_str().unwrap_or_default().to_string()
+                    };
+                    AddonSettingsFieldDisplay {
+                        label: field["label"].as_str().unwrap_or_default().to_string(),
+                        help: field["help"].as_str().unwrap_or_default().to_string(),
+                        input_type: if secret { "password".to_string() } else { "text".to_string() },
+                        value,
+                        secret_set: entry["secret_set"].as_bool().unwrap_or(false),
+                        secret,
+                        key,
+                    }
+                })
+                .collect();
+            (false, fields)
+        }
+        _ => (true, Vec::new()),
+    };
+
+    let template = AddonSettingsTemplate {
+        addon_name: name,
+        offline,
+        fields,
+        version: state.version.clone(),
+        lang,
+    };
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
+    .into_response()
+}
+
+/// POST /addons/:name/settings
+///
+/// Every field on the settings page has its own `<input>` pre-filled with its
+/// current value (Step 1's `settings` handler), so a plain form submission
+/// always contains every schema key - satisfying kia-connect-bridge's
+/// full-object-replace `save_config` contract without any server-side merge
+/// logic here. This handler is a pure forward, same as Task 7's proxy itself.
+pub async fn settings_submit(
+    State(state): State<AppState>,
+    Path(name): Path<String>,
+    Form(fields): Form<HashMap<String, String>>,
+) -> Html<String> {
+    let Some(registry) = &state.addon_registry else {
+        return Html("<div class=\"alert alert-danger\">Addon registry not configured.</div>".to_string());
+    };
+    let Some(instance) = registry.find(&name).await else {
+        return Html(format!(
+            "<div class=\"alert alert-danger\">No addon named '{}' is registered.</div>",
+            name
+        ));
+    };
+
+    let payload = serde_json::Value::Object(
+        fields
+            .into_iter()
+            .map(|(k, v)| (k, serde_json::Value::String(v)))
+            .collect(),
+    );
+
+    match proxy::save_config(&instance.config_api_base_url, &payload).await {
+        Ok(()) => Html("<div class=\"alert alert-success\">Settings saved.</div>".to_string()),
+        Err(e) => Html(format!(
+            "<div class=\"alert alert-danger\">Save failed: addon offline or unreachable ({}).</div>",
+            e
+        )),
+    }
+}
+```
+
+- [ ] **Step 3: Write the template**
+
+Create `crates/web-ui/templates/addons/settings.html` as a standalone document, following the exact nav-bar/head/footer structure `addons/list.html` (Task 10) uses, with the `<nav>` block copied verbatim from there (the "Addons" `nav-group` already carries the `active` class in that copy):
+
+```html
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ addon_name }} Settings - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/i18n.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                    <li><a href="/miniserver/backup">MS Backup</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/config">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/addons">Addons</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/addons">Installed &amp; Catalog</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/system-update">Update</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <h1>{{ addon_name }} Settings</h1>
+            <a href="/addons" class="btn btn-secondary">Back to Addons</a>
+        </div>
+
+        {% if offline %}
+        <div class="alert alert-danger">This addon is offline or unreachable - settings cannot be loaded or saved right now.</div>
+        {% else %}
+        <div id="save-result"></div>
+
+        <form hx-post="/addons/{{ addon_name }}/settings"
+              hx-target="#save-result"
+              hx-swap="innerHTML">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-body">
+                    {% for field in fields %}
+                    <div class="form-group">
+                        <label for="{{ field.key }}">{{ field.label }}</label>
+                        <input type="{{ field.input_type }}" id="{{ field.key }}" class="form-control"
+                               name="{{ field.key }}" value="{{ field.value }}"
+                               {% if field.secret %}
+                               placeholder="{% if field.secret_set %}(unchanged - currently set){% else %}(not set){% endif %}"
+                               {% endif %}>
+                        {% if !field.help.is_empty() %}
+                        <small class="form-text">{{ field.help }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
+    </footer>
+</body>
+</html>
+```
+
+- [ ] **Step 4: Register the routes**
+
+Modify `crates/web-ui/src/lib.rs`, extending the `/addons` route registration Task 10 added:
+
+```rust
+        .route("/addons", get(handlers::addons::list))
+        .route(
+            "/addons/:name/settings",
+            get(handlers::addons::settings).post(handlers::addons::settings_submit),
+        )
+```
+
+- [ ] **Step 5: Build**
+
+```bash
+cd /home/boern/apps/RustyLox
+cargo build --workspace
+```
+
+Expected: builds clean (Askama compiles templates at build time, so a template syntax error will fail here)
+
+- [ ] **Step 6: Manual verification**
+
+```bash
+cd /home/boern/apps/RustyLox
+docker compose up -d --build
+# with a real kia-connect-bridge instance already registered (see "Manual
+# verification after both tracks are done" below):
+curl -s http://localhost:8080/addons/kia-connect-bridge/settings | grep -o '<h1>kia-connect-bridge Settings</h1>'
+```
+
+Expected: `<h1>kia-connect-bridge Settings</h1>` printed. With a browser: open the page, confirm every field is pre-filled with its current value (secret fields blank with a "(unchanged - currently set)" placeholder), edit `KIA_POLL_INTERVAL_SECONDS`, click Save, confirm the success banner appears and `kia-connect-bridge`'s `.env` file is updated on disk without any secret field being blanked out.
+
+- [ ] **Step 7: Commit**
+
+```bash
+cd /home/boern/apps/RustyLox
+git add crates/web-ui
+git commit -m "feat(web-ui): add addon settings page rendered from schema + config"
 ```
 
 ---
