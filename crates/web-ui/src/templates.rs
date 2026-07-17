@@ -165,6 +165,55 @@ pub struct PluginDisplay {
     pub install_date: String,
 }
 
+/// Addons list template (Catalog + Installed tabs)
+#[derive(Template)]
+#[template(path = "addons/list.html")]
+pub struct AddonsTemplate {
+    pub installed: Vec<InstalledAddonDisplay>,
+    pub catalog_configured: bool,
+    pub catalog_entries: Vec<CatalogEntryDisplay>,
+    pub version: String,
+    pub lang: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InstalledAddonDisplay {
+    pub name: String,
+    pub addon_version: String,
+    pub online: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CatalogEntryDisplay {
+    pub name: String,
+    pub title: String,
+    pub description: String,
+    pub source: String,
+    pub deploy_snippet: String,
+}
+
+/// Addon settings template (generic form rendered from schema + config)
+#[derive(Template)]
+#[template(path = "addons/settings.html")]
+pub struct AddonSettingsTemplate {
+    pub addon_name: String,
+    pub offline: bool,
+    pub fields: Vec<AddonSettingsFieldDisplay>,
+    pub version: String,
+    pub lang: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddonSettingsFieldDisplay {
+    pub key: String,
+    pub label: String,
+    pub help: String,
+    pub input_type: String,
+    pub value: String,
+    pub secret: bool,
+    pub secret_set: bool,
+}
+
 /// MQTT config template
 #[derive(Template)]
 #[template(path = "mqtt/config.html")]

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Viewer - RustyLox</title>
+    <title>{{ addon_name }} Settings - RustyLox</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
@@ -48,13 +48,13 @@
                 </ul>
             </li>
             <li class="nav-group">
-                <a class="nav-group-label" href="/addons">Addons</a>
+                <a class="nav-group-label active" href="/addons">Addons</a>
                 <ul class="nav-dropdown">
                     <li><a href="/addons">Installed &amp; Catalog</a></li>
                 </ul>
             </li>
             <li class="nav-group">
-                <a class="nav-group-label active" href="/system-health">System</a>
+                <a class="nav-group-label" href="/system-health">System</a>
                 <ul class="nav-dropdown">
                     <li><a href="/system-health">Health</a></li>
                     <li><a href="/logs">Logs</a></li>
@@ -82,62 +82,38 @@
     </nav>
 
     <main class="container">
-        <h1>Log Viewer</h1>
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <h1>{{ addon_name }} Settings</h1>
+            <a href="/addons" class="btn btn-secondary">Back to Addons</a>
+        </div>
 
-        <div class="card" style="margin-bottom: 20px;">
-            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                <div>
-                    <label for="log-select"><strong>Log File:</strong></label>
-                    <select id="log-select"
-                            hx-get="/logs/view"
-                            hx-target="#log-content"
-                            hx-trigger="change"
-                            hx-include="[name='lines'],[name='search']"
-                            name="file"
-                            style="margin-left: 8px; padding: 6px 10px;">
-                        <option value="">-- Select a log file --</option>
-                        {% for file in log_files %}
-                        <option value="{{ file.name }}">{{ file.name }} ({{ file.size_human }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="lines-select"><strong>Lines:</strong></label>
-                    <select id="lines-select"
-                            name="lines"
-                            hx-get="/logs/view"
-                            hx-target="#log-content"
-                            hx-trigger="change"
-                            hx-include="[name='file'],[name='search']"
-                            style="margin-left: 8px; padding: 6px 10px;">
-                        <option value="100">Last 100</option>
-                        <option value="500">Last 500</option>
-                        <option value="1000">Last 1000</option>
-                    </select>
-                </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <label for="search-input"><strong>Filter:</strong></label>
-                    <input id="search-input"
-                           type="text"
-                           name="search"
-                           placeholder="Search log lines..."
-                           hx-get="/logs/view"
-                           hx-target="#log-content"
-                           hx-trigger="input changed delay:400ms"
-                           hx-include="[name='file'],[name='lines']"
-                           style="margin-left: 8px; padding: 6px 10px; width: calc(100% - 80px);">
+        {% if offline %}
+        <div class="alert alert-danger">This addon is offline or unreachable - settings cannot be loaded or saved right now.</div>
+        {% else %}
+        <div id="save-result"></div>
+
+        <form hx-post="/addons/{{ addon_name }}/settings"
+              hx-target="#save-result"
+              hx-swap="innerHTML">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-body">
+                    {% for field in fields %}
+                    <div class="form-group">
+                        <label for="{{ field.key }}">{{ field.label }}</label>
+                        <input type="{{ field.input_type }}" id="{{ field.key }}" class="form-control"
+                               name="{{ field.key }}" value="{{ field.value }}"
+                               {% if field.secret %}
+                               placeholder="{% if field.secret_set %}(unchanged - currently set){% else %}(not set){% endif %}"
+                               {% endif %}>
+                        {% if !field.help.is_empty() %}
+                        <small class="form-text">{{ field.help }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
-        </div>
-
-        {% if log_files.is_empty() %}
-        <div class="card">
-            <p>No log files found.</p>
-        </div>
-        {% else %}
-        <div id="log-content" class="card">
-            <p style="color: #888;">Select a log file above to view its contents.</p>
-        </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
         {% endif %}
     </main>
 

@@ -1,5 +1,6 @@
 //! Application state for the web API
 
+use addon_registry::Registry as AddonRegistry;
 use auth::AuthService;
 use dashmap::DashMap;
 use miniserver_client::MiniserverClient;
@@ -70,6 +71,18 @@ pub struct AppState {
     /// Native weather service (optional - only if enabled in config)
     pub weather_service: Option<Arc<WeatherService>>,
 
+    /// Addon registry (self-registered containerized addons) - optional,
+    /// only present once the daemon has loaded it from disk at startup.
+    pub addon_registry: Option<Arc<AddonRegistry>>,
+
+    /// Path to the addon registry JSON file (data/system/addonregistry.json
+    /// under lbhomedir) - set whenever addon_registry is attached.
+    pub addon_registry_path: Option<std::path::PathBuf>,
+
+    /// GHCR-backed addon discovery catalog - None if GITHUB_PACKAGES_TOKEN
+    /// isn't configured, in which case the catalog tab just says so.
+    pub catalog_client: Option<Arc<addon_registry::CatalogClient>>,
+
     /// Long-lived metrics collector — kept alive so sysinfo has a prior
     /// measurement interval and can return real CPU usage values.
     pub metrics_collector: Arc<Mutex<MetricsCollector>>,
@@ -119,6 +132,9 @@ impl AppState {
             log_level_updater: None,
             auth_service: None,
             weather_service: None,
+            addon_registry: None,
+            addon_registry_path: None,
+            catalog_client: None,
             metrics_collector: Arc::new(Mutex::new(MetricsCollector::with_default_counters())),
         }
     }
@@ -141,6 +157,26 @@ impl AppState {
     /// Attach a WeatherService to the application state
     pub fn with_weather(mut self, weather_service: Arc<WeatherService>) -> Self {
         self.weather_service = Some(weather_service);
+        self
+    }
+
+    /// Attach an AddonRegistry to the application state
+    pub fn with_addon_registry(
+        mut self,
+        addon_registry: Arc<AddonRegistry>,
+        addon_registry_path: std::path::PathBuf,
+    ) -> Self {
+        self.addon_registry = Some(addon_registry);
+        self.addon_registry_path = Some(addon_registry_path);
+        self
+    }
+
+    /// Attach a CatalogClient to the application state
+    pub fn with_catalog_client(
+        mut self,
+        catalog_client: Arc<addon_registry::CatalogClient>,
+    ) -> Self {
+        self.catalog_client = Some(catalog_client);
         self
     }
 
