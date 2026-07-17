@@ -94,3 +94,49 @@ async fn register_rejects_malformed_payload() {
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
+
+#[tokio::test]
+async fn proxy_returns_bad_gateway_when_addon_offline() {
+    let registry = Arc::new(Registry::new());
+    registry
+        .register(addon_registry::AddonInstance {
+            name: "dead-addon".to_string(),
+            version: "1.0.0".to_string(),
+            config_api_base_url: "http://127.0.0.1:1".to_string(),
+            last_seen: chrono::Utc::now(),
+        })
+        .await;
+    let app = create_router(test_state(registry));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/addons/dead-addon/schema")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+}
+
+// (test_state and body_string are already defined earlier in this file, see Task 6.)
+
+#[tokio::test]
+async fn proxy_returns_not_found_for_unknown_addon() {
+    let registry = Arc::new(Registry::new());
+    let app = create_router(test_state(registry));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/addons/nonexistent/schema")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
