@@ -192,6 +192,28 @@ pub struct CatalogEntryDisplay {
     pub deploy_snippet: String,
 }
 
+/// Addon settings template (generic form rendered from schema + config)
+#[derive(Template)]
+#[template(path = "addons/settings.html")]
+pub struct AddonSettingsTemplate {
+    pub addon_name: String,
+    pub offline: bool,
+    pub fields: Vec<AddonSettingsFieldDisplay>,
+    pub version: String,
+    pub lang: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddonSettingsFieldDisplay {
+    pub key: String,
+    pub label: String,
+    pub help: String,
+    pub input_type: String,
+    pub value: String,
+    pub secret: bool,
+    pub secret_set: bool,
+}
+
 /// MQTT config template
 #[derive(Template)]
 #[template(path = "mqtt/config.html")]

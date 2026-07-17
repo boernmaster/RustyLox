@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ addon_name }} Settings - RustyLox</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/i18n.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                <img src="/static/logo.svg" alt="RustyLox" style="height: 36px;">
+            </a>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Dashboard</a></li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/miniserver">Miniserver</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/miniserver">Overview</a></li>
+                    <li><a href="/miniserver/monitor">Comm. Monitor</a></li>
+                    <li><a href="/miniserver/backup">MS Backup</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/mqtt/config">MQTT</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/mqtt/config">Configuration</a></li>
+                    <li><a href="/mqtt/stats">Statistics</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/weather">Weather</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/weather">Current &amp; Forecast</a></li>
+                    <li><a href="/weather/config">Configuration</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/plugins">Plugins</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/plugins">Installed</a></li>
+                    <li><a href="/plugins/install">Install Plugin</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label active" href="/addons">Addons</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/addons">Installed &amp; Catalog</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/system-health">System</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/system-health">Health</a></li>
+                    <li><a href="/logs">Logs</a></li>
+                    <li><a href="/backup">Backup</a></li>
+                    <li><a href="/tasks">Tasks</a></li>
+                    <li><a href="/network">Network</a></li>
+                    <li><a href="/email">Email</a></li>
+                    <li><a href="/system-update">Update</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </li>
+            <li class="nav-group">
+                <a class="nav-group-label" href="/admin/users">Admin</a>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/users">Users</a></li>
+                    <li><a href="/admin/api-keys">API Keys</a></li>
+                    <li><a href="/admin/audit">Audit Log</a></li>
+                    <li><a href="/admin/security">Security</a></li>
+                    <li><a href="/admin/database">Database</a></li>
+                    <li><a href="/api-docs">API Docs</a></li>
+                </ul>
+            </li>
+            <li><a href="/profile">Profile</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <h1>{{ addon_name }} Settings</h1>
+            <a href="/addons" class="btn btn-secondary">Back to Addons</a>
+        </div>
+
+        {% if offline %}
+        <div class="alert alert-danger">This addon is offline or unreachable - settings cannot be loaded or saved right now.</div>
+        {% else %}
+        <div id="save-result"></div>
+
+        <form hx-post="/addons/{{ addon_name }}/settings"
+              hx-target="#save-result"
+              hx-swap="innerHTML">
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-body">
+                    {% for field in fields %}
+                    <div class="form-group">
+                        <label for="{{ field.key }}">{{ field.label }}</label>
+                        <input type="{{ field.input_type }}" id="{{ field.key }}" class="form-control"
+                               name="{{ field.key }}" value="{{ field.value }}"
+                               {% if field.secret %}
+                               placeholder="{% if field.secret_set %}(unchanged - currently set){% else %}(not set){% endif %}"
+                               {% endif %}>
+                        {% if !field.help.is_empty() %}
+                        <small class="form-text">{{ field.help }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+        {% endif %}
+    </main>
+
+    <footer class="footer">
+        <p>RustyLox {{ version }} | &copy; 2026</p>
+    </footer>
+</body>
+</html>
