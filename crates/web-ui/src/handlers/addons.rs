@@ -28,6 +28,7 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
                 name: view.name,
                 addon_version: view.version,
                 online: view.online,
+                dashboard_url: view.config_api_base_url,
             })
             .collect(),
         None => Vec::new(),

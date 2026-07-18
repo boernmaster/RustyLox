@@ -182,6 +182,7 @@ pub struct InstalledAddonDisplay {
     pub name: String,
     pub addon_version: String,
     pub online: bool,
+    pub dashboard_url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
