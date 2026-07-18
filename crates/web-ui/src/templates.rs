@@ -22,6 +22,7 @@ pub struct DashboardTemplate {
     pub system_status: SystemStatus,
     pub miniserver_count: usize,
     pub plugin_count: usize,
+    pub addon_count: usize,
     pub mqtt_connected: bool,
     pub lang: String,
 }

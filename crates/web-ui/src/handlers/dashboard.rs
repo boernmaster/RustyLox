@@ -3,6 +3,7 @@
 use crate::templates::{DashboardTemplate, SystemStatus};
 use askama::Template;
 use axum::{extract::State, response::Html};
+use chrono::Utc;
 use web_api::AppState;
 
 /// Read system uptime from /proc/uptime and format as human-readable string.
@@ -49,6 +50,12 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         Err(_) => 0,
     };
 
+    // Get addon count
+    let addon_count = match &state.addon_registry {
+        Some(registry) => registry.list(Utc::now()).await.len(),
+        None => 0,
+    };
+
     // Get MQTT status
     let mqtt_connected = if let Some(gateway) = &state.mqtt_gateway {
         gateway.status().connected
@@ -61,6 +68,7 @@ pub async fn index(State(state): State<AppState>) -> Html<String> {
         system_status,
         miniserver_count,
         plugin_count,
+        addon_count,
         mqtt_connected,
         lang,
     };
