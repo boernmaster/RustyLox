@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-07-18
+
+### Added
+- Dashboard now shows an Addons card (installed count + link to `/addons`), matching the existing Plugins card
+- Installed addon cards on `/addons` now have an "Open Dashboard" link to the addon's own self-registered `config_api_base_url`, alongside the existing Settings link
+
 ## [1.3.0] - 2026-07-17
 
 ### Added
