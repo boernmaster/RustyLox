@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-07-19
+
+### Changed
+- Installed addon cards on `/addons` now link to a new `/addons/:name/ui` route that embeds the addon's own web UI in an iframe inside RustyLox's navbar/footer chrome, instead of linking straight out to the addon's raw URL. Button renamed "Open Dashboard" -> "Addon UI"
+
 ## [1.3.2] - 2026-07-19
 
 ### Fixed
