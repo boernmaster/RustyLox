@@ -103,6 +103,7 @@ pub fn create_ui_router(state: AppState) -> Router {
             "/addons/:name/settings",
             get(handlers::addons::settings).post(handlers::addons::settings_submit),
         )
+        .route("/addons/:name/ui", get(handlers::addons::ui))
         // Plugin web interfaces (authenticated)
         .route(
             "/admin/plugins/:name",

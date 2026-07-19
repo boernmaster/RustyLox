@@ -11,8 +11,8 @@ use chrono::Utc;
 use addon_registry::proxy;
 
 use crate::templates::{
-    AddonSettingsFieldDisplay, AddonSettingsTemplate, AddonsTemplate, CatalogEntryDisplay,
-    InstalledAddonDisplay,
+    AddonSettingsFieldDisplay, AddonSettingsTemplate, AddonUiTemplate, AddonsTemplate,
+    CatalogEntryDisplay, InstalledAddonDisplay,
 };
 use askama::Template;
 use web_api::AppState;
@@ -28,7 +28,6 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
                 name: view.name,
                 addon_version: view.version,
                 online: view.online,
-                dashboard_url: view.config_api_base_url,
             })
             .collect(),
         None => Vec::new(),
@@ -70,6 +69,39 @@ pub async fn list(State(state): State<AppState>) -> Html<String> {
             .render()
             .unwrap_or_else(|_| "Error rendering template".to_string()),
     )
+}
+
+/// GET /addons/:name/ui
+pub async fn ui(State(state): State<AppState>, Path(name): Path<String>) -> impl IntoResponse {
+    let lang = state.config.read().await.base.lang.clone();
+
+    let Some(registry) = &state.addon_registry else {
+        return Html("<h1>Addons</h1><p>Addon registry not configured.</p>".to_string())
+            .into_response();
+    };
+    let Some(instance) = registry.find(&name).await else {
+        return (
+            StatusCode::NOT_FOUND,
+            Html(format!(
+                "<h1>Addon not found</h1><p>No addon named '{}' is registered.</p>",
+                name
+            )),
+        )
+            .into_response();
+    };
+
+    let template = AddonUiTemplate {
+        addon_name: name,
+        dashboard_url: instance.config_api_base_url,
+        version: state.version.clone(),
+        lang,
+    };
+    Html(
+        template
+            .render()
+            .unwrap_or_else(|_| "Error rendering template".to_string()),
+    )
+    .into_response()
 }
 
 /// GET /addons/:name/settings

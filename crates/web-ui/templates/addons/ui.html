@@ -3,52 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Addons - RustyLox</title>
+    <title>{{ addon_name }} - RustyLox</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/htmx.min.js"></script>
     <script src="/static/js/i18n.js"></script>
     <style>
-        .addons-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid var(--border-color, #ddd);
-        }
-        .tab-button {
-            padding: 8px 16px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 1rem;
-            border-bottom: 2px solid transparent;
-        }
-        .tab-button.active {
-            border-bottom-color: var(--primary-color, #007bff);
-            font-weight: 600;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .addons-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-        .addon-card {
+        .addon-ui-frame {
+            width: 100%;
+            height: 75vh;
             border: 1px solid var(--border-color, #ddd);
             border-radius: 8px;
-            padding: 16px;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #666);
         }
     </style>
 </head>
@@ -125,72 +90,16 @@
     </nav>
 
     <main class="container">
-        <div class="addons-header">
-            <h1>Addons</h1>
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <h1>{{ addon_name }}</h1>
+            <a href="/addons" class="btn btn-secondary">Back to Addons</a>
         </div>
 
-        <div class="tabs">
-            <button class="tab-button active" onclick="showAddonsTab('installed', this)">Installed</button>
-            <button class="tab-button" onclick="showAddonsTab('catalog', this)">Catalog</button>
-        </div>
-
-        <div id="installed" class="tab-content active">
-            {% if installed.is_empty() %}
-            <div class="empty-state">
-                <p>No addons have registered yet. Start a containerized addon with RUSTYLOX_URL set to this instance's address.</p>
-            </div>
-            {% else %}
-            <div class="addons-grid">
-                {% for addon in installed %}
-                <div class="addon-card">
-                    <h3>{{ addon.name }}</h3>
-                    <span class="badge {% if addon.online %}badge-success{% else %}badge-danger{% endif %}">
-                        {% if addon.online %}online{% else %}offline{% endif %}
-                    </span>
-                    <p>version {{ addon.addon_version }}</p>
-                    <a href="/addons/{{ addon.name }}/settings" class="btn-sm btn-primary">Settings</a>
-                    <a href="/addons/{{ addon.name }}/ui" class="btn-sm btn-secondary">Addon UI</a>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-
-        <div id="catalog" class="tab-content">
-            {% if !catalog_configured %}
-            <div class="empty-state">
-                <p>Catalog not configured - set GITHUB_PACKAGES_TOKEN to enable addon discovery from ghcr.io.</p>
-            </div>
-            {% else if catalog_entries.is_empty() %}
-            <div class="empty-state">
-                <p>No addon images found under ghcr.io/boernmaster with the io.rustylox.addon label.</p>
-            </div>
-            {% else %}
-            <div class="addons-grid">
-                {% for entry in catalog_entries %}
-                <div class="addon-card">
-                    <h3>{{ entry.title }}</h3>
-                    <p>{{ entry.description }}</p>
-                    <a href="{{ entry.source }}">{{ entry.source }}</a>
-                    <pre>{{ entry.deploy_snippet }}</pre>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
+        <iframe class="addon-ui-frame" src="{{ dashboard_url }}" title="{{ addon_name }} UI"></iframe>
     </main>
 
     <footer class="footer">
         <p>RustyLox {{ version }} | &copy; 2026</p>
     </footer>
-
-    <script>
-        function showAddonsTab(id, button) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            button.classList.add('active');
-        }
-    </script>
 </body>
 </html>

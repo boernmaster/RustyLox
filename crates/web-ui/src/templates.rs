@@ -182,7 +182,6 @@ pub struct InstalledAddonDisplay {
     pub name: String,
     pub addon_version: String,
     pub online: bool,
-    pub dashboard_url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -192,6 +191,16 @@ pub struct CatalogEntryDisplay {
     pub description: String,
     pub source: String,
     pub deploy_snippet: String,
+}
+
+/// Addon UI template (embeds the addon's own web UI in an iframe, RustyLox chrome kept around it)
+#[derive(Template)]
+#[template(path = "addons/ui.html")]
+pub struct AddonUiTemplate {
+    pub addon_name: String,
+    pub dashboard_url: String,
+    pub version: String,
+    pub lang: String,
 }
 
 /// Addon settings template (generic form rendered from schema + config)
