@@ -276,6 +276,22 @@ pub async fn add_subscription(
         ));
     }
 
+    // Activate the new subscription on the broker right away. Writing the .cfg alone does
+    // not register it: the gateway loads mqtt_subscriptions.cfg once at startup and nothing
+    // watches the file, so the topic would sit in the config (and be rendered "Active" by
+    // this very handler, which reads the file rather than the gateway) while the broker
+    // never delivers it - until a restart or a manual
+    // POST /api/mqtt/subscriptions/reload.
+    if let Some(gateway) = &state.mqtt_gateway {
+        if let Err(e) = gateway.reload_subscriptions().await {
+            return Html(format!(
+                "<div class='alert alert-danger'>Subscription saved but activation failed \
+                 (retry with POST /api/mqtt/subscriptions/reload): {}</div>",
+                e
+            ));
+        }
+    }
+
     let enabled = form.enabled.is_some();
     let enabled_class = if enabled {
         "subscription-item"

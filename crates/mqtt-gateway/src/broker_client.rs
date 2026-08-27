@@ -1,7 +1,7 @@
 //! MQTT broker client using rumqttc
 
 use crate::GatewayMessage;
-use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, Packet, QoS};
+use rumqttc::{AsyncClient, Event, EventLoop, MqttOptions, Packet, QoS, SubscribeReasonCode};
 use rustylox_config::MqttConfig;
 use rustylox_core::{Error, Result};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -91,6 +91,31 @@ impl BrokerClient {
                 Ok(Event::Incoming(Packet::Disconnect)) => {
                     warn!("Disconnected from MQTT broker");
                     self.connected.store(false, Ordering::Relaxed);
+                }
+                Ok(Event::Incoming(Packet::SubAck(suback))) => {
+                    // The broker answers every SUBSCRIBE with a per-filter result code.
+                    // A `Failure` means the subscription was refused (broker ACL denial,
+                    // invalid topic filter) and *no message will ever arrive* for it.
+                    // rumqttc does not surface this: `client.subscribe()` only queues the
+                    // request and returns Ok, so without this arm a refused subscription is
+                    // completely silent while /api/mqtt/status keeps counting it.
+                    if suback
+                        .return_codes
+                        .iter()
+                        .any(|rc| matches!(rc, SubscribeReasonCode::Failure))
+                    {
+                        warn!(
+                            "Broker REJECTED a subscription (pkid={}, codes={:?}); no messages \
+                             will be received for it - check the broker ACL for this user and \
+                             the topic filter syntax",
+                            suback.pkid, suback.return_codes
+                        );
+                    } else {
+                        debug!(
+                            "Subscription confirmed (pkid={}, codes={:?})",
+                            suback.pkid, suback.return_codes
+                        );
+                    }
                 }
                 Ok(_) => {}
                 Err(e) => {
