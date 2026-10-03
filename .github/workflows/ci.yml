@@ -207,36 +207,37 @@ jobs:
           docker rm "${container_id}"
           tar czf rustylox-daemon-${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz rustylox-daemon
 
+      # The notes come from the CHANGELOG.md section of the released version,
+      # so a release can never ship with another version's text.
+      - name: Build release notes from CHANGELOG.md
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          IMAGE: ghcr.io/${{ env.IMAGE_NAME }}
+        run: |
+          awk -v version="$VERSION" '
+            /^## \[/ { in_section = (index($0, "## [" version "]") == 1); next }
+            in_section { print }
+          ' CHANGELOG.md > changelog_section.md
+          if ! grep -q '[^[:space:]]' changelog_section.md; then
+            echo "CHANGELOG.md has no entry for version $VERSION" >&2
+            exit 1
+          fi
+          {
+            echo "## RustyLox $VERSION"
+            cat changelog_section.md
+            echo
+            echo "### Installation"
+            echo '```bash'
+            echo "docker pull $IMAGE:$VERSION"
+            echo '```'
+          } > release_notes.md
+          cat release_notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.version.outputs.version }}
-          body: |
-            ## RustyLox ${{ steps.version.outputs.version }}
-
-            ### Added
-            - Containerized addons: external addon processes (piloted by `kia-connect-bridge`) can self-register with RustyLox, are discovered via a GHCR-backed catalog, and get a generic settings page rendered from each addon's own schema/config
-            - New `addon-registry` crate and Addons page in the web UI (Installed / Catalog tabs)
-
-            ### Security
-            - The addon proxy client no longer follows HTTP redirects, closing an SSRF/confused-deputy path via a malicious/compromised addon
-
-            ### Installation
-            ```bash
-            docker pull ghcr.io/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
-            ```
-
-            ### Docker Compose
-            ```yaml
-            services:
-              rustylox:
-                image: ghcr.io/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
-                ports:
-                  - "80:80"
-                  - "6066:6066/udp"
-                  - "8090:8090/udp"
-                  - "11884:11884/udp"
-            ```
+          body_path: release_notes.md
           draft: false
           prerelease: false
           files: rustylox-daemon-${{ steps.version.outputs.version }}-x86_64-unknown-linux-gnu.tar.gz
