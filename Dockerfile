@@ -19,6 +19,10 @@ ARG GIT_HASH=unknown
 ARG GIT_TAG=
 ARG GIT_DIRTY=false
 
+# Debian 11 is past end of life: its security packages were removed from
+# deb.debian.org and are only served from archive.debian.org now.
+RUN sed -i 's|deb.debian.org/debian-security|archive.debian.org/debian-security|' /etc/apt/sources.list
+
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
     pkg-config \
@@ -50,6 +54,10 @@ LABEL org.opencontainers.image.description="Modern Rust rewrite of LoxBerry smar
 LABEL org.opencontainers.image.vendor="RustyLox Contributors"
 LABEL org.opencontainers.image.source="https://github.com/boernmaster/RustyLox"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
+
+# Debian 11 is past end of life: its security packages were removed from
+# deb.debian.org and are only served from archive.debian.org now.
+RUN sed -i 's|deb.debian.org/debian-security|archive.debian.org/debian-security|' /etc/apt/sources.list
 
 # Install runtime dependencies
 # Including Perl, PHP, Bash for plugin SDK compatibility
