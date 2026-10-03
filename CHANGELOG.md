@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-03
+
+### Security
+- **Breaking for unauthenticated callers:** every `/api/*` route now requires authentication (session cookie, JWT or API key). Still public: `/health`, `/api/health`, `/api/auth/login`, `/api/addons/register`, `/forecast` and the Miniserver virtual-input path `/dev/sps/io/*`. Scripts or plugins that called the API without credentials now get `401`
+- The post-login redirect no longer accepts protocol-relative targets (`//host`, `/\host`), closing an open redirect
+- The log viewer HTML-escapes file names, paths and the search term
+- Unknown addon names are HTML-escaped on the addon pages
+- Addon registration validates the addon name (1-64 characters of letters, digits, `-`, `_`, `.`) and requires an `http`/`https` URL with a host
+- The local IP is validated before it is written into the dnsmasq configuration
+
+### Fixed
+- The log viewer no longer panics when highlighting a search term in lines containing multi-byte characters
+- The MQTT statistics page and API answer `503` instead of panicking when the MQTT gateway is not running
+- When an addon rejects a configuration, its reason is shown (API `400` with the reason, UI "Not saved: ...") instead of "addon offline"
+
 ## [1.3.3] - 2026-07-19
 
 ### Changed
