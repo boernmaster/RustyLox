@@ -1,21 +1,31 @@
 //! MQTT Gateway statistics API routes
 
-use axum::{extract::State, Json};
+use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
 use crate::AppState;
 
+type ApiError = (StatusCode, Json<serde_json::Value>);
+
+/// The gateway is optional: it is absent when MQTT could not be started.
+fn gateway_unavailable() -> ApiError {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(serde_json::json!({"error": "MQTT gateway is not running"})),
+    )
+}
+
 /// Get MQTT Gateway statistics
-pub async fn get_stats(State(state): State<AppState>) -> Json<StatsResponse> {
+pub async fn get_stats(State(state): State<AppState>) -> Result<Json<StatsResponse>, ApiError> {
     let mqtt_gateway = state
         .mqtt_gateway
         .as_ref()
-        .expect("MQTT Gateway not initialized");
+        .ok_or_else(gateway_unavailable)?;
     let stats = mqtt_gateway.stats();
     let snapshot = stats.snapshot();
 
-    Json(StatsResponse {
+    Ok(Json(StatsResponse {
         messages_received: snapshot.messages_received,
         messages_relayed: snapshot.messages_relayed,
         messages_filtered: snapshot.messages_filtered,
@@ -24,15 +34,17 @@ pub async fn get_stats(State(state): State<AppState>) -> Json<StatsResponse> {
         success_rate: snapshot.success_rate(),
         messages_per_second: snapshot.messages_per_second(),
         uptime_seconds: snapshot.uptime_seconds,
-    })
+    }))
 }
 
 /// Get top rejected parameters
-pub async fn get_rejected_params(State(state): State<AppState>) -> Json<RejectedParamsResponse> {
+pub async fn get_rejected_params(
+    State(state): State<AppState>,
+) -> Result<Json<RejectedParamsResponse>, ApiError> {
     let mqtt_gateway = state
         .mqtt_gateway
         .as_ref()
-        .expect("MQTT Gateway not initialized");
+        .ok_or_else(gateway_unavailable)?;
     let stats = mqtt_gateway.stats();
     let top_rejected = stats.top_rejected(50); // Get top 50
 
@@ -50,22 +62,22 @@ pub async fn get_rejected_params(State(state): State<AppState>) -> Json<Rejected
         })
         .collect();
 
-    Json(RejectedParamsResponse { rejected: params })
+    Ok(Json(RejectedParamsResponse { rejected: params }))
 }
 
 /// Reset statistics
-pub async fn reset_stats(State(state): State<AppState>) -> Json<StatusMessage> {
+pub async fn reset_stats(State(state): State<AppState>) -> Result<Json<StatusMessage>, ApiError> {
     let mqtt_gateway = state
         .mqtt_gateway
         .as_ref()
-        .expect("MQTT Gateway not initialized");
+        .ok_or_else(gateway_unavailable)?;
     let stats = mqtt_gateway.stats();
     stats.reset();
 
-    Json(StatusMessage {
+    Ok(Json(StatusMessage {
         success: true,
         message: "Statistics reset successfully".to_string(),
-    })
+    }))
 }
 
 #[derive(Debug, Serialize)]

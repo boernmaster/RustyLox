@@ -67,11 +67,7 @@ pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<Login
             );
 
             // Redirect to original destination or dashboard
-            let destination = creds
-                .redirect
-                .as_deref()
-                .filter(|r| !r.is_empty() && r.starts_with('/'))
-                .unwrap_or("/");
+            let destination = post_login_destination(creds.redirect.as_deref());
 
             let mut response = Redirect::to(destination).into_response();
             if let Ok(cookie_value) = HeaderValue::from_str(&cookie) {
@@ -93,6 +89,16 @@ pub async fn handle_login(State(state): State<AppState>, Form(creds): Form<Login
             Redirect::to(&format!("/login?error={}{}", encoded_msg, redirect_param)).into_response()
         }
     }
+}
+
+/// Where to send the browser after a successful login: the page it was
+/// originally asking for, as long as that is a path on this site.
+fn post_login_destination(redirect: Option<&str>) -> &str {
+    redirect
+        // "//host" and "/\\host" start with a slash too, but browsers resolve
+        // them to another site.
+        .filter(|r| r.starts_with('/') && !r.starts_with("//") && !r.starts_with("/\\"))
+        .unwrap_or("/")
 }
 
 /// POST /logout - clear session cookie and redirect to login
@@ -162,4 +168,32 @@ fn urlencoding_encode(s: &str) -> String {
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn login_returns_to_the_originally_requested_page() {
+        assert_eq!(post_login_destination(Some("/plugins")), "/plugins");
+        assert_eq!(
+            post_login_destination(Some("/logs/view?file=a.log")),
+            "/logs/view?file=a.log"
+        );
+    }
+
+    #[test]
+    fn login_without_a_redirect_goes_to_the_dashboard() {
+        assert_eq!(post_login_destination(None), "/");
+        assert_eq!(post_login_destination(Some("")), "/");
+    }
+
+    #[test]
+    fn login_never_redirects_to_another_site() {
+        assert_eq!(post_login_destination(Some("https://evil.example/")), "/");
+        // Browsers treat both of these as "//host", i.e. another site.
+        assert_eq!(post_login_destination(Some("//evil.example/")), "/");
+        assert_eq!(post_login_destination(Some("/\\evil.example/")), "/");
+    }
 }

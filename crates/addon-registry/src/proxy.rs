@@ -14,6 +14,10 @@ pub enum ProxyError {
     BadStatus(reqwest::StatusCode),
     #[error("failed to parse addon response: {0}")]
     InvalidResponse(String),
+    /// The addon was reached and refused the submitted config (4xx); the
+    /// string is its own explanation, meant for the user.
+    #[error("{0}")]
+    Rejected(String),
 }
 
 fn client() -> reqwest::Client {
@@ -62,10 +66,30 @@ pub async fn save_config(base_url: &str, payload: &Value) -> Result<(), ProxyErr
         .send()
         .await
         .map_err(|e| ProxyError::Unreachable(e.to_string()))?;
-    if !response.status().is_success() {
-        return Err(ProxyError::BadStatus(response.status()));
+    let status = response.status();
+    if status.is_client_error() {
+        // The addon looked at the config and said no; tell the user why.
+        let body = response.text().await.unwrap_or_default();
+        return Err(ProxyError::Rejected(rejection_reason(status, &body)));
+    }
+    if !status.is_success() {
+        return Err(ProxyError::BadStatus(status));
     }
     Ok(())
+}
+
+/// Extracts the human-readable reason from an addon's 4xx response: the
+/// `error` field of a JSON body, else the body itself as plain text.
+fn rejection_reason(status: reqwest::StatusCode, body: &str) -> String {
+    const MAX_REASON_CHARS: usize = 300;
+    let reason = serde_json::from_str::<Value>(body)
+        .ok()
+        .and_then(|json| json.get("error")?.as_str().map(str::to_string))
+        .unwrap_or_else(|| body.trim().to_string());
+    if reason.is_empty() {
+        return format!("addon rejected the settings ({status})");
+    }
+    reason.chars().take(MAX_REASON_CHARS).collect()
 }
 
 #[cfg(test)]
@@ -125,6 +149,74 @@ mod tests {
         let result = save_config(&base_url, &json!({"MQTT_HOST": "10.0.0.99"})).await;
 
         assert!(result.is_ok());
+    }
+
+    async fn spawn_addon_answering_save_with(
+        status: axum::http::StatusCode,
+        body: &'static str,
+    ) -> String {
+        let app = Router::new().route(
+            "/addon/config",
+            axum::routing::post(move || async move { (status, body) }),
+        );
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        format!("http://{addr}")
+    }
+
+    #[tokio::test]
+    async fn save_config_passes_on_the_reason_an_addon_gives_for_rejecting_it() {
+        let base_url = spawn_addon_answering_save_with(
+            axum::http::StatusCode::BAD_REQUEST,
+            r#"{"saved": false, "error": "Changing MQTT_HOST requires re-entering MQTT_PASSWORD"}"#,
+        )
+        .await;
+
+        let result = save_config(&base_url, &json!({"MQTT_HOST": "10.0.0.99"})).await;
+
+        match result {
+            Err(ProxyError::Rejected(reason)) => {
+                assert_eq!(
+                    reason,
+                    "Changing MQTT_HOST requires re-entering MQTT_PASSWORD"
+                )
+            }
+            other => panic!("expected Rejected, got {other:?}"),
+        }
+    }
+
+    /// kia-connect-bridge answers with a plain-text body.
+    #[tokio::test]
+    async fn save_config_passes_on_a_plain_text_rejection_reason() {
+        let base_url = spawn_addon_answering_save_with(
+            axum::http::StatusCode::BAD_REQUEST,
+            "MQTT Port: must be a whole number",
+        )
+        .await;
+
+        let result = save_config(&base_url, &json!({"MQTT_PORT": "abc"})).await;
+
+        assert!(
+            matches!(&result, Err(ProxyError::Rejected(reason)) if reason == "MQTT Port: must be a whole number"),
+            "{result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn save_config_keeps_reporting_a_server_error_as_bad_status() {
+        let base_url =
+            spawn_addon_answering_save_with(axum::http::StatusCode::INTERNAL_SERVER_ERROR, "boom")
+                .await;
+
+        let result = save_config(&base_url, &json!({})).await;
+
+        assert!(
+            matches!(result, Err(ProxyError::BadStatus(_))),
+            "{result:?}"
+        );
     }
 
     #[tokio::test]

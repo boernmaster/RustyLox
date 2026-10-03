@@ -228,6 +228,11 @@ pub fn create_router(state: AppState) -> Router {
             "/api/users/:id/password",
             put(routes::auth::change_password),
         )
+        // Inside the CORS layer, so preflight requests are answered without credentials
+        .layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            middleware::require_auth::require_auth,
+        ))
         .with_state(state)
         // Middleware (innermost first)
         .layer(axum_middleware::from_fn(

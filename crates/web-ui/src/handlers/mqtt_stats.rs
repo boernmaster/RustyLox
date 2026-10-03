@@ -1,7 +1,11 @@
 //! MQTT Statistics page handler
 
 use askama::Template;
-use axum::{extract::State, response::Html};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::{Html, IntoResponse, Response},
+};
 use std::time::SystemTime;
 use web_api::AppState;
 
@@ -31,11 +35,15 @@ pub struct RejectedParamDisplay {
 }
 
 /// GET /mqtt/stats - MQTT statistics page
-pub async fn stats(State(state): State<AppState>) -> Html<String> {
-    let mqtt_gateway = state
-        .mqtt_gateway
-        .as_ref()
-        .expect("MQTT Gateway not initialized");
+pub async fn stats(State(state): State<AppState>) -> Response {
+    // The gateway is optional: it is absent when MQTT could not be started.
+    let Some(mqtt_gateway) = state.mqtt_gateway.as_ref() else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Html("<p>The MQTT gateway is not running, so there are no statistics to show.</p>"),
+        )
+            .into_response();
+    };
     let stats = mqtt_gateway.stats();
     let snapshot = stats.snapshot();
     let rejected = stats.top_rejected(50);
@@ -76,6 +84,7 @@ pub async fn stats(State(state): State<AppState>) -> Html<String> {
             .render()
             .unwrap_or_else(|_| "Error rendering template".to_string()),
     )
+    .into_response()
 }
 
 /// Format uptime in human-readable form

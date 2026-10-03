@@ -80,14 +80,7 @@ pub async fn ui(State(state): State<AppState>, Path(name): Path<String>) -> impl
             .into_response();
     };
     let Some(instance) = registry.find(&name).await else {
-        return (
-            StatusCode::NOT_FOUND,
-            Html(format!(
-                "<h1>Addon not found</h1><p>No addon named '{}' is registered.</p>",
-                name
-            )),
-        )
-            .into_response();
+        return (StatusCode::NOT_FOUND, Html(addon_not_found_page(&name))).into_response();
     };
 
     let template = AddonUiTemplate {
@@ -116,14 +109,7 @@ pub async fn settings(
             .into_response();
     };
     let Some(instance) = registry.find(&name).await else {
-        return (
-            StatusCode::NOT_FOUND,
-            Html(format!(
-                "<h1>Addon not found</h1><p>No addon named '{}' is registered.</p>",
-                name
-            )),
-        )
-            .into_response();
+        return (StatusCode::NOT_FOUND, Html(addon_not_found_page(&name))).into_response();
     };
 
     let schema_result = proxy::fetch_schema(&instance.config_api_base_url).await;
@@ -198,10 +184,7 @@ pub async fn settings_submit(
         );
     };
     let Some(instance) = registry.find(&name).await else {
-        return Html(format!(
-            "<div class=\"alert alert-danger\">No addon named '{}' is registered.</div>",
-            name
-        ));
+        return Html(addon_not_found_alert(&name));
     };
 
     let payload = serde_json::Value::Object(
@@ -213,9 +196,93 @@ pub async fn settings_submit(
 
     match proxy::save_config(&instance.config_api_base_url, &payload).await {
         Ok(()) => Html("<div class=\"alert alert-success\">Settings saved.</div>".to_string()),
-        Err(e) => Html(format!(
+        Err(e) => Html(save_failure_html(&e)),
+    }
+}
+
+/// The alert shown on the settings page when saving did not work.
+fn save_failure_html(error: &proxy::ProxyError) -> String {
+    match error {
+        proxy::ProxyError::Rejected(reason) => format!(
+            "<div class=\"alert alert-danger\">Not saved: {}</div>",
+            html_escape(reason)
+        ),
+        other => format!(
             "<div class=\"alert alert-danger\">Save failed: addon offline or unreachable ({}).</div>",
-            e
-        )),
+            html_escape(&other.to_string())
+        ),
+    }
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+/// Full-page answer for an addon name taken from the URL that is not registered.
+fn addon_not_found_page(name: &str) -> String {
+    format!(
+        "<h1>Addon not found</h1><p>No addon named '{}' is registered.</p>",
+        html_escape(name)
+    )
+}
+
+/// Same as [`addon_not_found_page`], as an alert for the HTMX save target.
+fn addon_not_found_alert(name: &str) -> String {
+    format!(
+        "<div class=\"alert alert-danger\">No addon named '{}' is registered.</div>",
+        html_escape(name)
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_rejected_save_shows_the_addons_reason_instead_of_claiming_it_is_offline() {
+        let html = save_failure_html(&proxy::ProxyError::Rejected(
+            "Changing MQTT_HOST requires re-entering MQTT_PASSWORD".to_string(),
+        ));
+
+        assert!(html.contains("Changing MQTT_HOST requires re-entering MQTT_PASSWORD"));
+        assert!(!html.contains("offline"), "{html}");
+    }
+
+    /// The reason comes from the addon, i.e. from outside RustyLox.
+    #[test]
+    fn the_addons_reason_is_html_escaped() {
+        let html = save_failure_html(&proxy::ProxyError::Rejected(
+            "<script>alert(1)</script>".to_string(),
+        ));
+
+        assert!(!html.contains("<script>"), "{html}");
+    }
+
+    /// The name is whatever was typed into the URL.
+    #[test]
+    fn an_unknown_addon_name_is_html_escaped_on_the_not_found_page() {
+        let html = addon_not_found_page("<script>alert(1)</script>");
+
+        assert!(!html.contains("<script>"), "{html}");
+        assert!(html.contains("&lt;script&gt;"));
+    }
+
+    #[test]
+    fn an_unknown_addon_name_is_html_escaped_in_the_save_alert() {
+        let html = addon_not_found_alert("<script>alert(1)</script>");
+
+        assert!(!html.contains("<script>"), "{html}");
+        assert!(html.contains("&lt;script&gt;"));
+    }
+
+    #[test]
+    fn an_unreachable_addon_is_still_reported_as_offline() {
+        let html = save_failure_html(&proxy::ProxyError::Unreachable("timeout".to_string()));
+
+        assert!(html.contains("offline or unreachable"));
     }
 }

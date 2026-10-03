@@ -140,3 +140,52 @@ async fn proxy_returns_not_found_for_unknown_addon() {
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
+
+async fn register_status(body: serde_json::Value) -> StatusCode {
+    let app = create_router(test_state(Arc::new(Registry::new())));
+    app.oneshot(
+        Request::builder()
+            .method("POST")
+            .uri("/api/addons/register")
+            .header("content-type", "application/json")
+            .body(Body::from(body.to_string()))
+            .unwrap(),
+    )
+    .await
+    .unwrap()
+    .status()
+}
+
+/// The base URL ends up as a link/iframe target in the admin UI, so it must
+/// not be able to carry script.
+#[tokio::test]
+async fn register_rejects_a_base_url_that_is_not_http() {
+    for url in ["javascript:alert(1)", "file:///etc/passwd", "not a url"] {
+        let status = register_status(serde_json::json!({
+            "name": "evil", "version": "1.0.0", "config_api_base_url": url
+        }))
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{url}");
+    }
+}
+
+/// The name is used as a URL path segment (/addons/:name/settings).
+#[tokio::test]
+async fn register_rejects_a_name_that_is_not_a_plain_identifier() {
+    for name in ["../admin", "a b", "<script>", "a/b"] {
+        let status = register_status(serde_json::json!({
+            "name": name, "version": "1.0.0", "config_api_base_url": "http://10.0.0.5:8090"
+        }))
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{name}");
+    }
+}
+
+#[tokio::test]
+async fn register_accepts_the_names_and_urls_real_addons_use() {
+    let status = register_status(serde_json::json!({
+        "name": "kia-connect-bridge", "version": "1.0.0", "config_api_base_url": "http://10.0.0.5:8090"
+    }))
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+}

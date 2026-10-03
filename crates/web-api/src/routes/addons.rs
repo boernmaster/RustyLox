@@ -44,6 +44,14 @@ pub async fn register(
         )
             .into_response();
     }
+    if let Err(reason) = request.validate() {
+        warn!("Rejected addon registration: {}", reason);
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": reason })),
+        )
+            .into_response();
+    }
 
     let Some(registry) = &state.addon_registry else {
         return (
@@ -137,6 +145,11 @@ pub async fn save_config(
     };
     match proxy::save_config(&instance.config_api_base_url, &payload).await {
         Ok(()) => StatusCode::OK.into_response(),
+        Err(proxy::ProxyError::Rejected(reason)) => (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": reason })),
+        )
+            .into_response(),
         Err(e) => {
             warn!("Proxy save to addon '{}' failed: {}", name, e);
             (

@@ -155,3 +155,62 @@ async fn full_register_discover_configure_loop() {
     let received_body = captured_save_body.lock().unwrap().clone();
     assert_eq!(received_body, Some(json!({"MQTT_HOST": "10.0.0.99"})));
 }
+
+/// An addon may refuse a config (e.g. a bridge that will not send a stored
+/// password to a new host). The caller has to learn why, not just "offline".
+#[tokio::test]
+async fn config_rejected_by_the_addon_is_reported_with_its_reason() {
+    async fn reject() -> (StatusCode, Json<serde_json::Value>) {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(
+                json!({"saved": false, "error": "Changing MQTT_HOST requires re-entering MQTT_PASSWORD"}),
+            ),
+        )
+    }
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        let app = Router::new().route("/addon/config", axum::routing::post(reject));
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let app = create_router(test_state(Arc::new(Registry::new())));
+    let register_body = json!({
+        "name": "strict-addon",
+        "version": "1.0.0",
+        "config_api_base_url": format!("http://{addr}")
+    });
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/addons/register")
+                .header("content-type", "application/json")
+                .body(Body::from(register_body.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/addons/strict-addon/config")
+                .header("content-type", "application/json")
+                .body(Body::from(json!({"MQTT_HOST": "203.0.113.5"}).to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let body: serde_json::Value = serde_json::from_str(&body_string(response).await).unwrap();
+    assert_eq!(
+        body["error"],
+        "Changing MQTT_HOST requires re-entering MQTT_PASSWORD"
+    );
+}
