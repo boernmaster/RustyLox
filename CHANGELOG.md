@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-10-03
+
+First published image of the 1.4 line: the `v1.4.0` tag exists, but its Docker image never built. See 1.4.0 below for the functional changes.
+
+### Fixed
+- Docker image build: Debian 11 security packages are now fetched from `archive.debian.org`, since they were removed from `deb.debian.org` after Debian 11 reached end of life. The image stays on Debian 11 for PHP 7.4 plugin compatibility; note that Debian 11 no longer receives security updates
+
 ## [1.4.0] - 2026-10-03
 
 ### Security
