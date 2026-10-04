@@ -18,7 +18,9 @@ tracing = { workspace = true }
 tokio = { workspace = true }
 
 # MQTT client
-rumqttc = "0.24"
+# No default features: the gateway speaks plain TCP to the broker, and the
+# default TLS stack pulls in a rustls-webpki release with open advisories.
+rumqttc = { version = "0.24", default-features = false }
 
 # Subscription parsing
 serde_ini = "0.2"
