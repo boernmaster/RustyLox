@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-10-04
+
+### Security
+- Updated dependencies with security advisories: `rustls` 0.23.45, `rustls-webpki` 0.103.15, `lettre` 0.11.23, `quinn-proto` 0.11.19, `crossbeam-epoch` 0.9.21, `anyhow` 1.0.104. Still open: `quick-xml` 0.36 and the `rustls-webpki` 0.102 pulled in by `rumqttc` 0.24
+
+### Changed
+- GitHub Release notes are now taken from the `CHANGELOG.md` section of the released version instead of a hard-coded text
+
 ## [1.4.1] - 2026-10-03
 
 First published image of the 1.4 line: the `v1.4.0` tag exists, but its Docker image never built. See 1.4.0 below for the functional changes.
