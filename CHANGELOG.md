@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-10-04
+
+### Security
+- Cleared the remaining dependency advisories; the security audit in CI is green again. The unused `quick-xml` dependency is removed, and `rumqttc` is built without its default TLS stack, which pulled in `rustls` 0.22 and `rustls-webpki` 0.102. The MQTT gateway connects to the broker over plain TCP as before; MQTT over TLS was not available before and is not available now
+
 ## [1.4.2] - 2026-10-04
 
 ### Security
