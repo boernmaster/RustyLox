@@ -228,5 +228,8 @@ pub fn create_ui_router(state: AppState) -> Router {
             get(handlers::plugin_web::serve_plugin_public)
                 .post(handlers::plugin_web::serve_plugin_public_post),
         )
+        .layer(axum_middleware::from_fn(
+            web_api::middleware::security_headers::add_ui_security_headers,
+        ))
         .with_state(state)
 }

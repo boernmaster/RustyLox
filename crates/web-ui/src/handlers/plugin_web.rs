@@ -652,18 +652,18 @@ enum ScriptError {
     /// The interpreter could not be started or its output could not be read.
     Failed(std::io::Error),
     /// The script was still running when the time limit ran out.
-    #[allow(dead_code)]
     TimedOut,
 }
 
 /// Run a plugin script and collect its output, feeding it `body` on stdin
-/// when there is one.
+/// when there is one. A script still running after `time_limit` is killed.
 async fn run_script(
     mut cmd: Command,
     body: &[u8],
     time_limit: Duration,
 ) -> Result<Output, ScriptError> {
-    let _ = time_limit;
+    // Dropping the unfinished run on timeout is what kills the script
+    cmd.kill_on_drop(true);
     let run = async {
         if body.is_empty() {
             return cmd.output().await;
@@ -681,7 +681,10 @@ async fn run_script(
         child.wait_with_output().await
     };
 
-    run.await.map_err(ScriptError::Failed)
+    match tokio::time::timeout(time_limit, run).await {
+        Ok(output) => output.map_err(ScriptError::Failed),
+        Err(_) => Err(ScriptError::TimedOut),
+    }
 }
 
 /// The answer for a plugin script that produced no output.
