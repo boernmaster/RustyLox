@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-10-04
+
+### Security
+- UI and plugin pages now send `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` and `Content-Security-Policy: frame-ancestors 'self'`; so far only API responses carried security headers. RustyLox pages can no longer be framed by another site. A header a plugin script sets itself is kept. The content restrictions of the API's Content-Security-Policy are not applied to the UI, because the addon page frames the addon's own dashboard and plugin pages are third-party code
+
+### Changed
+- Plugin PHP and Perl scripts are killed after 60 seconds and the request is answered with `504 Gateway Timeout`; before, a hanging script kept its process and the request open without limit. A plugin page that legitimately works longer than 60 seconds within one request is now cut off
+
 ## [1.4.3] - 2026-10-04
 
 ### Security
