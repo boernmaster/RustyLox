@@ -12,6 +12,8 @@ use axum::{
 };
 use std::collections::HashMap;
 use std::path::{Path as FsPath, PathBuf};
+use std::process::{Output, Stdio};
+use std::time::Duration;
 use tokio::process::Command;
 use tracing::{debug, error, warn};
 use web_api::AppState;
@@ -464,36 +466,7 @@ async fn serve_php_file(
                 .unwrap_or(""),
         );
 
-    // For POST requests, pipe the body via stdin and capture stdout
-    if !php_req.body.is_empty() {
-        cmd.stdin(std::process::Stdio::piped());
-        cmd.stdout(std::process::Stdio::piped());
-        cmd.stderr(std::process::Stdio::piped());
-    }
-
-    let output = if php_req.body.is_empty() {
-        cmd.output().await
-    } else {
-        // Spawn and write body to stdin
-        let mut child = match cmd.spawn() {
-            Ok(c) => c,
-            Err(e) => {
-                warn!("Failed to spawn PHP for plugin {}: {}", plugin_name, e);
-                return error_response(
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    "PHP runtime not available (php-cgi)",
-                );
-            }
-        };
-
-        if let Some(mut stdin) = child.stdin.take() {
-            use tokio::io::AsyncWriteExt;
-            let _ = stdin.write_all(&php_req.body).await;
-            drop(stdin);
-        }
-
-        child.wait_with_output().await
-    };
+    let output = run_script(cmd, &php_req.body, SCRIPT_TIME_LIMIT).await;
 
     match output {
         Ok(out) => {
@@ -525,16 +498,7 @@ async fn serve_php_file(
                 error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error")
             })
         }
-        Err(e) => {
-            warn!(
-                "Failed to execute PHP for plugin {} (is php installed?): {}",
-                plugin_name, e
-            );
-            error_response(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "PHP runtime not available (php-cgi)",
-            )
-        }
+        Err(e) => script_failure_response(&e, plugin_name, "PHP runtime not available (php-cgi)"),
     }
 }
 
@@ -647,26 +611,7 @@ async fn serve_cgi_file(
                 .unwrap_or(""),
         );
 
-    // For POST requests, pipe the body via stdin
-    let output = if php_req.body.is_empty() {
-        cmd.output().await
-    } else {
-        cmd.stdin(std::process::Stdio::piped());
-        cmd.stdout(std::process::Stdio::piped());
-        cmd.stderr(std::process::Stdio::piped());
-
-        match cmd.spawn() {
-            Ok(mut child) => {
-                if let Some(mut stdin) = child.stdin.take() {
-                    use tokio::io::AsyncWriteExt;
-                    let _ = stdin.write_all(&php_req.body).await;
-                    drop(stdin);
-                }
-                child.wait_with_output().await
-            }
-            Err(e) => Err(e),
-        }
-    };
+    let output = run_script(cmd, &php_req.body, SCRIPT_TIME_LIMIT).await;
 
     match output {
         Ok(out) => {
@@ -694,14 +639,71 @@ async fn serve_cgi_file(
                 error_response(StatusCode::INTERNAL_SERVER_ERROR, "Build error")
             })
         }
-        Err(e) => {
+        Err(e) => script_failure_response(&e, plugin_name, "Perl runtime not available"),
+    }
+}
+
+/// How long a plugin script may run before it is killed.
+const SCRIPT_TIME_LIMIT: Duration = Duration::from_secs(60);
+
+/// Why a plugin script produced no output.
+#[derive(Debug)]
+enum ScriptError {
+    /// The interpreter could not be started or its output could not be read.
+    Failed(std::io::Error),
+    /// The script was still running when the time limit ran out.
+    #[allow(dead_code)]
+    TimedOut,
+}
+
+/// Run a plugin script and collect its output, feeding it `body` on stdin
+/// when there is one.
+async fn run_script(
+    mut cmd: Command,
+    body: &[u8],
+    time_limit: Duration,
+) -> Result<Output, ScriptError> {
+    let _ = time_limit;
+    let run = async {
+        if body.is_empty() {
+            return cmd.output().await;
+        }
+
+        cmd.stdin(Stdio::piped());
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+        let mut child = cmd.spawn()?;
+        if let Some(mut stdin) = child.stdin.take() {
+            use tokio::io::AsyncWriteExt;
+            let _ = stdin.write_all(body).await;
+            drop(stdin);
+        }
+        child.wait_with_output().await
+    };
+
+    run.await.map_err(ScriptError::Failed)
+}
+
+/// The answer for a plugin script that produced no output.
+fn script_failure_response(
+    error: &ScriptError,
+    plugin_name: &str,
+    runtime_unavailable: &str,
+) -> Response {
+    match error {
+        ScriptError::Failed(e) => {
+            warn!("Failed to execute script for plugin {}: {}", plugin_name, e);
+            error_response(StatusCode::SERVICE_UNAVAILABLE, runtime_unavailable)
+        }
+        ScriptError::TimedOut => {
             warn!(
-                "Failed to execute CGI for plugin {} (is perl installed?): {}",
-                plugin_name, e
+                "Script of plugin {} was killed after {} seconds",
+                plugin_name,
+                SCRIPT_TIME_LIMIT.as_secs()
             );
             error_response(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "Perl runtime not available",
+                StatusCode::GATEWAY_TIMEOUT,
+                "Plugin script did not finish in time",
             )
         }
     }
@@ -865,5 +867,17 @@ mod tests {
             resolve_safe_path(&base, &path),
             Some(base.join("css/style.css"))
         );
+    }
+
+    #[tokio::test]
+    async fn a_script_that_never_finishes_is_given_up_after_the_time_limit() {
+        let mut cmd = Command::new("sleep");
+        cmd.arg("5");
+        let started = std::time::Instant::now();
+
+        let result = run_script(cmd, &[], Duration::from_millis(200)).await;
+
+        assert!(matches!(result, Err(ScriptError::TimedOut)), "{result:?}");
+        assert!(started.elapsed() < Duration::from_secs(3));
     }
 }
