@@ -186,8 +186,13 @@ pub async fn download_backup(
         return Err(auth_err("Auth not configured"));
     };
     extract_identity(&headers, service).await?;
-    // Prevent path traversal
-    if name.contains('/') || name.contains("..") {
+    // Prevent path traversal, and keep the name usable inside the quoted
+    // filename of the Content-Disposition header
+    if name.contains('/')
+        || name.contains("..")
+        || name.contains('"')
+        || name.chars().any(char::is_control)
+    {
         return Err((
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({"error": "Invalid backup name"})),
@@ -197,7 +202,7 @@ pub async fn download_backup(
     let backup_dir = backup_manager::backup_dir(&state.lbhomedir);
     let path = backup_dir.join(&name);
 
-    if !path.exists() {
+    if !tokio::fs::try_exists(&path).await.unwrap_or(false) {
         return Err((
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({"error": "Backup not found"})),
@@ -214,14 +219,19 @@ pub async fn download_backup(
     let stream = ReaderStream::new(file);
     let body = Body::from_stream(stream);
 
-    Ok(Response::builder()
+    Response::builder()
         .header(header::CONTENT_TYPE, "application/zip")
         .header(
             header::CONTENT_DISPOSITION,
             format!("attachment; filename=\"{}\"", name),
         )
         .body(body)
-        .unwrap())
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": e.to_string()})),
+            )
+        })
 }
 
 /// Restore from a backup
