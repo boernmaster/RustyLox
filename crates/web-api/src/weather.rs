@@ -227,7 +227,9 @@ impl WeatherService {
             return false;
         }
         let Some(publisher) = &self.publisher else {
-            warn!("Weather: SendMqtt is on but the MQTT gateway is not running - nothing published");
+            warn!(
+                "Weather: SendMqtt is on but the MQTT gateway is not running - nothing published"
+            );
             return false;
         };
         match mqtt_forecast_payload(
@@ -952,8 +954,12 @@ pub fn mqtt_forecast_payload(
         if hours.len() == MQTT_FORECAST_HOURS {
             break;
         }
-        let Some(naive) = parse_iso_dt_naive(&h.datetime) else { continue };
-        let Some(local) = tz.from_local_datetime(&naive).earliest() else { continue };
+        let Some(naive) = parse_iso_dt_naive(&h.datetime) else {
+            continue;
+        };
+        let Some(local) = tz.from_local_datetime(&naive).earliest() else {
+            continue;
+        };
         let utc = local.with_timezone(&Utc);
         if last.is_some_and(|prev| utc <= prev) {
             continue;
@@ -1096,7 +1102,10 @@ mod mqtt_payload_tests {
         }
     }
 
-    fn recorder() -> (ForecastPublisher, Arc<std::sync::Mutex<Vec<(String, String)>>>) {
+    fn recorder() -> (
+        ForecastPublisher,
+        Arc<std::sync::Mutex<Vec<(String, String)>>>,
+    ) {
         let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
         let sink = Arc::clone(&seen);
         let publisher: ForecastPublisher = Arc::new(move |topic, payload| {
@@ -1109,7 +1118,10 @@ mod mqtt_payload_tests {
     fn publishes_on_prefix_forecast_hourly_when_send_mqtt_is_on() {
         let (publisher, seen) = recorder();
         let svc = WeatherService::new(WeatherConfig::default()).with_publisher(publisher);
-        let cfg = WeatherConfig { send_mqtt: true, ..WeatherConfig::default() };
+        let cfg = WeatherConfig {
+            send_mqtt: true,
+            ..WeatherConfig::default()
+        };
         assert!(svc.publish_forecast(&sample_data(), &cfg));
         let seen = seen.lock().unwrap();
         assert_eq!(seen.len(), 1);
@@ -1121,7 +1133,10 @@ mod mqtt_payload_tests {
     fn nothing_is_published_with_send_mqtt_off() {
         let (publisher, seen) = recorder();
         let svc = WeatherService::new(WeatherConfig::default()).with_publisher(publisher);
-        let cfg = WeatherConfig { send_mqtt: false, ..WeatherConfig::default() };
+        let cfg = WeatherConfig {
+            send_mqtt: false,
+            ..WeatherConfig::default()
+        };
         assert!(!svc.publish_forecast(&sample_data(), &cfg));
         assert!(seen.lock().unwrap().is_empty());
     }
@@ -1129,7 +1144,10 @@ mod mqtt_payload_tests {
     #[test]
     fn without_a_publisher_nothing_happens() {
         let svc = WeatherService::new(WeatherConfig::default());
-        let cfg = WeatherConfig { send_mqtt: true, ..WeatherConfig::default() };
+        let cfg = WeatherConfig {
+            send_mqtt: true,
+            ..WeatherConfig::default()
+        };
         assert!(!svc.publish_forecast(&sample_data(), &cfg));
     }
 
@@ -1140,14 +1158,22 @@ mod mqtt_payload_tests {
 
     #[test]
     fn local_hours_become_utc_in_winter_and_summer() {
-        let hourly = vec![hour("2026-11-06T18:00", 4.0), hour("2026-07-01T12:00", 25.0)];
-        let p = mqtt_forecast_payload("Judendorf", "Europe/Vienna", 1_793_900_000, &hourly).unwrap();
+        // Rows must rise in UTC, so the summer row comes first.
+        let hourly = vec![
+            hour("2026-07-01T12:00", 25.0),
+            hour("2026-11-06T18:00", 4.0),
+        ];
+        let p =
+            mqtt_forecast_payload("Judendorf", "Europe/Vienna", 1_793_900_000, &hourly).unwrap();
         let hours = hours_of(&p);
-        assert_eq!(hours[0]["t"], "2026-11-06T17:00:00Z");
-        assert_eq!(hours[0]["temp_c"], 4.0);
-        assert_eq!(hours[0]["cloud_pct"], 50.0);
-        // Second row is earlier in UTC than the first - dropped, the series must rise.
-        assert_eq!(hours.len(), 1);
+        assert_eq!(hours.len(), 2);
+        // CEST, UTC+2
+        assert_eq!(hours[0]["t"], "2026-07-01T10:00:00Z");
+        assert_eq!(hours[0]["temp_c"], 25.0);
+        // CET, UTC+1
+        assert_eq!(hours[1]["t"], "2026-11-06T17:00:00Z");
+        assert_eq!(hours[1]["temp_c"], 4.0);
+        assert_eq!(hours[1]["cloud_pct"], 50.0);
     }
 
     #[test]
@@ -1160,8 +1186,20 @@ mod mqtt_payload_tests {
             hour("2026-10-25T03:00", 3.0),
         ];
         let p = mqtt_forecast_payload("x", "Europe/Vienna", 0, &hourly).unwrap();
-        let ts: Vec<String> = hours_of(&p).iter().map(|h| h["t"].as_str().unwrap().to_string()).collect();
-        assert_eq!(ts, vec!["2026-10-24T23:00:00Z", "2026-10-25T00:00:00Z", "2026-10-25T02:00:00Z"]);
+        let ts: Vec<String> = hours_of(&p)
+            .iter()
+            .map(|h| h["t"].as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(
+            ts,
+            vec![
+                "2026-10-24T23:00:00Z",
+                "2026-10-25T00:00:00Z",
+                "2026-10-25T02:00:00Z"
+            ]
+        );
+        // The earlier duplicate 02:00 row (2.0) wins over the later one (2.5).
+        assert_eq!(hours_of(&p)[1]["temp_c"], 2.0);
     }
 
     #[test]
@@ -1173,20 +1211,27 @@ mod mqtt_payload_tests {
             hour("2026-03-29T03:00", 3.0),
         ];
         let p = mqtt_forecast_payload("x", "Europe/Vienna", 0, &hourly).unwrap();
-        let ts: Vec<String> = hours_of(&p).iter().map(|h| h["t"].as_str().unwrap().to_string()).collect();
+        let ts: Vec<String> = hours_of(&p)
+            .iter()
+            .map(|h| h["t"].as_str().unwrap().to_string())
+            .collect();
         assert_eq!(ts, vec!["2026-03-29T00:00:00Z", "2026-03-29T01:00:00Z"]);
     }
 
     #[test]
     fn capped_at_48_hours_and_well_under_the_mqtt_packet_limit() {
-        let start = chrono::NaiveDate::from_ymd_opt(2026, 11, 6).unwrap().and_hms_opt(0, 0, 0).unwrap();
+        let start = chrono::NaiveDate::from_ymd_opt(2026, 11, 6)
+            .unwrap()
+            .and_hms_opt(0, 0, 0)
+            .unwrap();
         let hourly: Vec<_> = (0..168)
             .map(|i| {
                 let dt = start + chrono::Duration::hours(i);
                 hour(&dt.format("%Y-%m-%dT%H:%M").to_string(), -12.34)
             })
             .collect();
-        let p = mqtt_forecast_payload("Judendorf", "Europe/Vienna", 1_793_900_000, &hourly).unwrap();
+        let p =
+            mqtt_forecast_payload("Judendorf", "Europe/Vienna", 1_793_900_000, &hourly).unwrap();
         assert_eq!(hours_of(&p).len(), MQTT_FORECAST_HOURS);
         assert!(p.len() < 8 * 1024, "payload {} bytes", p.len());
     }
@@ -1201,6 +1246,9 @@ mod mqtt_payload_tests {
 
     #[test]
     fn an_unknown_zone_is_an_error_not_a_guess() {
-        assert!(mqtt_forecast_payload("x", "Mars/Olympus", 0, &[hour("2026-11-06T18:00", 4.0)]).is_err());
+        assert!(
+            mqtt_forecast_payload("x", "Mars/Olympus", 0, &[hour("2026-11-06T18:00", 4.0)])
+                .is_err()
+        );
     }
 }
