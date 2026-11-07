@@ -53,6 +53,7 @@ sysinfo = "0.32"
 
 # HTTP client (for Open-Meteo weather API)
 reqwest = { workspace = true }
+chrono-tz = "0.10"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }

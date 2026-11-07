@@ -105,6 +105,9 @@ pub struct HourlyForecast {
     pub visibility: f64,
     /// W/m² (from Open-Meteo shortwave_radiation)
     pub shortwave_radiation: f64,
+    /// Total cloud cover in % (Open-Meteo `cloud_cover`)
+    #[serde(default)]
+    pub cloud_cover: f64,
     pub loxone_code: u8,
 }
 
@@ -180,6 +183,8 @@ struct OpenMeteoHourly {
     surface_pressure: Vec<f64>,
     visibility: Vec<f64>,
     shortwave_radiation: Vec<f64>,
+    #[serde(default)]
+    cloud_cover: Vec<f64>,
 }
 
 // ─── WeatherService ───────────────────────────────────────────────────────────
@@ -246,7 +251,7 @@ impl WeatherService {
              &hourly=temperature_2m,apparent_temperature,relative_humidity_2m,\
              precipitation,precipitation_probability,weather_code,\
              wind_speed_10m,wind_direction_10m,wind_gusts_10m,\
-             surface_pressure,visibility,shortwave_radiation\
+             surface_pressure,visibility,shortwave_radiation,cloud_cover\
              &timezone=auto&forecast_days=7&wind_speed_unit=kmh",
             lat = cfg.latitude,
             lon = cfg.longitude,
@@ -428,6 +433,7 @@ impl WeatherService {
                         .get(i)
                         .copied()
                         .unwrap_or(0.0),
+                    cloud_cover: raw.hourly.cloud_cover.get(i).copied().unwrap_or(0.0),
                     loxone_code: wmo_to_loxone(code, is_day),
                 }
             })
@@ -862,6 +868,79 @@ fn time_hm(s: &str) -> String {
     s.get(11..16).unwrap_or("00:00").to_string()
 }
 
+// ─── MQTT forecast payload ────────────────────────────────────────────────────
+
+/// Hours carried in the retained `<MqttTopic>/forecast/hourly` message.
+/// rumqttc reads packets only up to 10 KB by default; 168 hours would exceed
+/// that and be dropped by every subscriber, 48 stay around 4 KB.
+pub const MQTT_FORECAST_HOURS: usize = 48;
+
+#[derive(Serialize)]
+struct MqttHour {
+    t: String,
+    temp_c: f64,
+    rad_w_m2: f64,
+    cloud_pct: f64,
+    precip_mm: f64,
+}
+
+#[derive(Serialize)]
+struct MqttForecast<'a> {
+    fetched_at: String,
+    location: &'a str,
+    hours: Vec<MqttHour>,
+}
+
+/// The forecast as published over MQTT: up to [`MQTT_FORECAST_HOURS`] hours
+/// with UTC timestamps.
+///
+/// Open-Meteo (`timezone=auto`) lists hours in local time without an offset.
+/// They are converted through the named zone, not the single
+/// `utc_offset_seconds`, because that offset is wrong for every hour past a
+/// clock change inside the window. The repeated autumn hour maps to its
+/// earlier instance; a row that does not move forward in UTC is dropped, and
+/// the spring hour that does not exist is skipped.
+pub fn mqtt_forecast_payload(
+    location_name: &str,
+    timezone: &str,
+    fetched_at_unix: i64,
+    hourly: &[HourlyForecast],
+) -> Result<String, String> {
+    use chrono::{SecondsFormat, TimeZone};
+    let tz: chrono_tz::Tz = timezone
+        .parse()
+        .map_err(|_| format!("unknown timezone {timezone:?}"))?;
+    let fetched_at = DateTime::<Utc>::from_timestamp(fetched_at_unix, 0)
+        .ok_or_else(|| format!("fetched_at {fetched_at_unix} out of range"))?;
+    let mut last: Option<DateTime<Utc>> = None;
+    let mut hours = Vec::with_capacity(MQTT_FORECAST_HOURS);
+    for h in hourly {
+        if hours.len() == MQTT_FORECAST_HOURS {
+            break;
+        }
+        let Some(naive) = parse_iso_dt_naive(&h.datetime) else { continue };
+        let Some(local) = tz.from_local_datetime(&naive).earliest() else { continue };
+        let utc = local.with_timezone(&Utc);
+        if last.is_some_and(|prev| utc <= prev) {
+            continue;
+        }
+        last = Some(utc);
+        hours.push(MqttHour {
+            t: utc.to_rfc3339_opts(SecondsFormat::Secs, true),
+            temp_c: h.temperature,
+            rad_w_m2: h.shortwave_radiation,
+            cloud_pct: h.cloud_cover,
+            precip_mm: h.precipitation,
+        });
+    }
+    serde_json::to_string(&MqttForecast {
+        fetched_at: fetched_at.to_rfc3339_opts(SecondsFormat::Secs, true),
+        location: location_name,
+        hours,
+    })
+    .map_err(|e| e.to_string())
+}
+
 // ─── chrono helper ────────────────────────────────────────────────────────────
 
 use chrono::Datelike;
@@ -919,5 +998,101 @@ mod dnsmasq_tests {
     fn config_is_refused_when_local_ip_is_not_an_ip_address() {
         assert!(dnsmasq_config_content("my-host.lan").is_err());
         assert!(dnsmasq_config_content("10.0.0.7 ").is_err());
+    }
+}
+
+#[cfg(test)]
+mod mqtt_payload_tests {
+    use super::*;
+
+    fn hour(datetime: &str, temperature: f64) -> HourlyForecast {
+        HourlyForecast {
+            datetime: datetime.to_string(),
+            temperature,
+            feels_like: temperature,
+            humidity: 80,
+            precipitation: 0.0,
+            precipitation_probability: 0,
+            weather_code: 0,
+            wind_speed: 0.0,
+            wind_direction: 0,
+            wind_gusts: 0.0,
+            pressure: 1000.0,
+            visibility: 10000.0,
+            shortwave_radiation: 0.0,
+            cloud_cover: 50.0,
+            loxone_code: 0,
+        }
+    }
+
+    fn hours_of(payload: &str) -> Vec<serde_json::Value> {
+        let v: serde_json::Value = serde_json::from_str(payload).unwrap();
+        v["hours"].as_array().unwrap().clone()
+    }
+
+    #[test]
+    fn local_hours_become_utc_in_winter_and_summer() {
+        let hourly = vec![hour("2026-11-06T18:00", 4.0), hour("2026-07-01T12:00", 25.0)];
+        let p = mqtt_forecast_payload("Judendorf", "Europe/Vienna", 1_793_900_000, &hourly).unwrap();
+        let hours = hours_of(&p);
+        assert_eq!(hours[0]["t"], "2026-11-06T17:00:00Z");
+        assert_eq!(hours[0]["temp_c"], 4.0);
+        assert_eq!(hours[0]["cloud_pct"], 50.0);
+        // Second row is earlier in UTC than the first - dropped, the series must rise.
+        assert_eq!(hours.len(), 1);
+    }
+
+    #[test]
+    fn autumn_switch_keeps_the_earlier_hour_once_and_shifts_nothing_after_it() {
+        // 2026-10-25: 03:00 CEST -> 02:00 CET in Vienna; Open-Meteo lists 02:00 twice.
+        let hourly = vec![
+            hour("2026-10-25T01:00", 1.0),
+            hour("2026-10-25T02:00", 2.0),
+            hour("2026-10-25T02:00", 2.5),
+            hour("2026-10-25T03:00", 3.0),
+        ];
+        let p = mqtt_forecast_payload("x", "Europe/Vienna", 0, &hourly).unwrap();
+        let ts: Vec<String> = hours_of(&p).iter().map(|h| h["t"].as_str().unwrap().to_string()).collect();
+        assert_eq!(ts, vec!["2026-10-24T23:00:00Z", "2026-10-25T00:00:00Z", "2026-10-25T02:00:00Z"]);
+    }
+
+    #[test]
+    fn spring_switch_skips_the_hour_that_does_not_exist() {
+        // 2026-03-29: 02:00 CET -> 03:00 CEST, 02:00 local does not exist.
+        let hourly = vec![
+            hour("2026-03-29T01:00", 1.0),
+            hour("2026-03-29T02:00", 2.0),
+            hour("2026-03-29T03:00", 3.0),
+        ];
+        let p = mqtt_forecast_payload("x", "Europe/Vienna", 0, &hourly).unwrap();
+        let ts: Vec<String> = hours_of(&p).iter().map(|h| h["t"].as_str().unwrap().to_string()).collect();
+        assert_eq!(ts, vec!["2026-03-29T00:00:00Z", "2026-03-29T01:00:00Z"]);
+    }
+
+    #[test]
+    fn capped_at_48_hours_and_well_under_the_mqtt_packet_limit() {
+        let start = chrono::NaiveDate::from_ymd_opt(2026, 11, 6).unwrap().and_hms_opt(0, 0, 0).unwrap();
+        let hourly: Vec<_> = (0..168)
+            .map(|i| {
+                let dt = start + chrono::Duration::hours(i);
+                hour(&dt.format("%Y-%m-%dT%H:%M").to_string(), -12.34)
+            })
+            .collect();
+        let p = mqtt_forecast_payload("Judendorf", "Europe/Vienna", 1_793_900_000, &hourly).unwrap();
+        assert_eq!(hours_of(&p).len(), MQTT_FORECAST_HOURS);
+        assert!(p.len() < 8 * 1024, "payload {} bytes", p.len());
+    }
+
+    #[test]
+    fn carries_fetched_at_and_location() {
+        let p = mqtt_forecast_payload("Judendorf", "Europe/Vienna", 1_793_900_000, &[]).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&p).unwrap();
+        assert_eq!(v["location"], "Judendorf");
+        assert_eq!(v["fetched_at"], "2026-11-05T17:33:20Z");
+    }
+
+    #[test]
+    fn an_unknown_zone_is_an_error_not_a_guess() {
+        assert!(mqtt_forecast_payload("x", "Mars/Olympus", 0, &[hour("2026-11-06T18:00", 4.0)]).is_err());
     }
 }
