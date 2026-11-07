@@ -253,6 +253,19 @@ curl -X POST http://localhost/api/mqtt/transformers/reload
 
 ---
 
+## Weather
+
+The weather service has its own settings (`/api/weather/config`, Weather page in the UI). Two of them control MQTT output:
+
+| Setting | Meaning |
+|---------|---------|
+| `SendMqtt` | When on, every refresh publishes the next 48 hours as one retained JSON message on `<MqttTopic>/forecast/hourly`. Off by default |
+| `MqttTopic` | Topic prefix, default `weather`; the forecast lands on `weather/forecast/hourly` |
+
+The payload holds `fetched_at`, `location` and `hours[]` with `t` (UTC), `temp_c`, `rad_w_m2`, `cloud_pct` and `precip_mm`. Local Open-Meteo hours are converted to UTC through the configured zone, so hours after a clock change are not shifted.
+
+No RustyLox subscription pattern may match `<MqttTopic>/#` (for example `#` or `weather/#`). Otherwise the JSON is relayed to a Loxone `VirtualIn`.
+
 ## Backup Schedule
 
 Configured via the UI at **Backup → Schedule** or via the API:

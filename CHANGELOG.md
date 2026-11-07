@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-07
+
+### Added
+- Weather: with `SendMqtt` on, every refresh publishes the next 48 hours as one retained JSON message on `<MqttTopic>/forecast/hourly` (default `weather/forecast/hourly`): `fetched_at`, `location` and `hours[]` with `t` (UTC), `temp_c`, `rad_w_m2`, `cloud_pct`, `precip_mm`. Until now the switch only logged that it would publish. Local Open-Meteo hours are converted to UTC through the named zone, so hours after a clock change are not shifted. The forecast also requests `cloud_cover`.
+
 ## [1.4.4] - 2026-10-04
 
 ### Security
