@@ -1102,10 +1102,9 @@ mod mqtt_payload_tests {
         }
     }
 
-    fn recorder() -> (
-        ForecastPublisher,
-        Arc<std::sync::Mutex<Vec<(String, String)>>>,
-    ) {
+    type Published = Arc<std::sync::Mutex<Vec<(String, String)>>>;
+
+    fn recorder() -> (ForecastPublisher, Published) {
         let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
         let sink = Arc::clone(&seen);
         let publisher: ForecastPublisher = Arc::new(move |topic, payload| {
