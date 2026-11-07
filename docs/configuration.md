@@ -255,7 +255,7 @@ curl -X POST http://localhost/api/mqtt/transformers/reload
 
 ## Weather
 
-The weather service has its own settings (`/api/weather/config`, Weather page in the UI). Two of them control MQTT output:
+The weather service has its own settings (Weather page in the UI, `/weather/config`). Two of them control MQTT output:
 
 | Setting | Meaning |
 |---------|---------|
