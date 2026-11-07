@@ -189,11 +189,16 @@ struct OpenMeteoHourly {
 
 // ─── WeatherService ───────────────────────────────────────────────────────────
 
+/// Hands a (topic, payload) pair to the MQTT side. A plain closure keeps
+/// this crate free of the gateway and makes the publish testable.
+pub type ForecastPublisher = Arc<dyn Fn(String, String) + Send + Sync>;
+
 #[derive(Clone)]
 pub struct WeatherService {
     pub config: Arc<RwLock<WeatherConfig>>,
     pub data: Arc<RwLock<Option<WeatherData>>>,
     client: reqwest::Client,
+    publisher: Option<ForecastPublisher>,
 }
 
 impl WeatherService {
@@ -205,6 +210,41 @@ impl WeatherService {
                 .timeout(std::time::Duration::from_secs(30))
                 .build()
                 .expect("reqwest client"),
+            publisher: None,
+        }
+    }
+
+    /// Wires the MQTT publisher; without one, `SendMqtt` has nothing to send through.
+    pub fn with_publisher(mut self, publisher: ForecastPublisher) -> Self {
+        self.publisher = Some(publisher);
+        self
+    }
+
+    /// Publishes the hourly forecast on `<MqttTopic>/forecast/hourly`.
+    /// Returns whether a message was handed to the publisher.
+    fn publish_forecast(&self, data: &WeatherData, cfg: &WeatherConfig) -> bool {
+        if !cfg.send_mqtt {
+            return false;
+        }
+        let Some(publisher) = &self.publisher else {
+            warn!("Weather: SendMqtt is on but the MQTT gateway is not running - nothing published");
+            return false;
+        };
+        match mqtt_forecast_payload(
+            &data.location.name,
+            &data.location.timezone,
+            data.fetched_at,
+            &data.hourly,
+        ) {
+            Ok(payload) => {
+                let topic = format!("{}/forecast/hourly", cfg.mqtt_topic.trim_end_matches('/'));
+                publisher(topic, payload);
+                true
+            }
+            Err(e) => {
+                warn!("Weather MQTT payload not built: {}", e);
+                false
+            }
         }
     }
 
@@ -295,14 +335,8 @@ impl WeatherService {
             }
         }
 
-        // Optional: publish to MQTT
-        if cfg.send_mqtt {
-            // MQTT publishing happens through the gateway; log intent here
-            info!(
-                "Weather MQTT publish would go to topic '{}'",
-                cfg.mqtt_topic
-            );
-        }
+        // Optional: publish to MQTT (retained, see `mqtt_forecast_payload`)
+        self.publish_forecast(&data, &cfg);
 
         // Optional: dnsmasq config
         if cfg.dnsmasq_enabled {
@@ -1023,6 +1057,80 @@ mod mqtt_payload_tests {
             cloud_cover: 50.0,
             loxone_code: 0,
         }
+    }
+
+    fn sample_data() -> WeatherData {
+        WeatherData {
+            location: LocationInfo {
+                name: "Judendorf".into(),
+                latitude: 47.1,
+                longitude: 15.3,
+                elevation: 491.0,
+                timezone: "Europe/Vienna".into(),
+                utc_offset_seconds: 3600,
+            },
+            current: CurrentWeather {
+                timestamp: 0,
+                temperature: 0.0,
+                feels_like: 0.0,
+                humidity: 0,
+                pressure: 0.0,
+                wind_speed: 0.0,
+                wind_direction: 0,
+                wind_gusts: 0.0,
+                precipitation: 0.0,
+                weather_code: 0,
+                weather_description: String::new(),
+                weather_icon: String::new(),
+                is_day: true,
+                uv_index: 0.0,
+                visibility: 0.0,
+                dew_point: 0.0,
+                loxone_code: 0,
+                sunrise: String::new(),
+                sunset: String::new(),
+            },
+            daily: vec![],
+            hourly: vec![hour("2026-11-06T18:00", 4.0)],
+            fetched_at: 1_793_900_000,
+        }
+    }
+
+    fn recorder() -> (ForecastPublisher, Arc<std::sync::Mutex<Vec<(String, String)>>>) {
+        let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = Arc::clone(&seen);
+        let publisher: ForecastPublisher = Arc::new(move |topic, payload| {
+            sink.lock().unwrap().push((topic, payload));
+        });
+        (publisher, seen)
+    }
+
+    #[test]
+    fn publishes_on_prefix_forecast_hourly_when_send_mqtt_is_on() {
+        let (publisher, seen) = recorder();
+        let svc = WeatherService::new(WeatherConfig::default()).with_publisher(publisher);
+        let cfg = WeatherConfig { send_mqtt: true, ..WeatherConfig::default() };
+        assert!(svc.publish_forecast(&sample_data(), &cfg));
+        let seen = seen.lock().unwrap();
+        assert_eq!(seen.len(), 1);
+        assert_eq!(seen[0].0, "weather/forecast/hourly");
+        assert!(seen[0].1.contains("\"temp_c\":4.0"));
+    }
+
+    #[test]
+    fn nothing_is_published_with_send_mqtt_off() {
+        let (publisher, seen) = recorder();
+        let svc = WeatherService::new(WeatherConfig::default()).with_publisher(publisher);
+        let cfg = WeatherConfig { send_mqtt: false, ..WeatherConfig::default() };
+        assert!(!svc.publish_forecast(&sample_data(), &cfg));
+        assert!(seen.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn without_a_publisher_nothing_happens() {
+        let svc = WeatherService::new(WeatherConfig::default());
+        let cfg = WeatherConfig { send_mqtt: true, ..WeatherConfig::default() };
+        assert!(!svc.publish_forecast(&sample_data(), &cfg));
     }
 
     fn hours_of(payload: &str) -> Vec<serde_json::Value> {

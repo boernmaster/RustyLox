@@ -64,6 +64,11 @@ pub struct MqttGateway {
 }
 
 impl MqttGateway {
+    /// The broker connection, for components outside the gateway that publish on their own.
+    pub fn broker_client(&self) -> Arc<BrokerClient> {
+        Arc::clone(&self.broker_client)
+    }
+
     /// Create a new MQTT gateway
     pub fn new(config: Arc<RwLock<GeneralConfig>>, lbhomedir: PathBuf) -> Result<Self> {
         info!("Initializing MQTT Gateway");

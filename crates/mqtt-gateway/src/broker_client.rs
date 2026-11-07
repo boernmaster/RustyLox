@@ -160,6 +160,19 @@ impl BrokerClient {
         Ok(())
     }
 
+    /// Publish a retained message - for state such as the weather forecast,
+    /// never for commands (a retained command replays on every reconnect).
+    pub async fn publish_retained(&self, topic: &str, payload: &str) -> Result<()> {
+        debug!("Publishing retained to MQTT: {} ({} bytes)", topic, payload.len());
+
+        self.client
+            .publish(topic, QoS::AtLeastOnce, true, payload.as_bytes())
+            .await
+            .map_err(|e| Error::gateway(format!("Failed to publish to {}: {}", topic, e)))?;
+
+        Ok(())
+    }
+
     /// Check if connected to broker
     pub fn is_connected(&self) -> bool {
         self.connected.load(Ordering::Relaxed)

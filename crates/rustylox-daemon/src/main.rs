@@ -143,7 +143,19 @@ async fn main() -> Result<()> {
         }
         w
     };
-    let weather_service = Arc::new(WeatherService::new(weather_cfg));
+    let mut weather_service = WeatherService::new(weather_cfg);
+    if let Some(gw) = &mqtt_gateway {
+        let broker = gw.broker_client();
+        weather_service = weather_service.with_publisher(Arc::new(move |topic, payload| {
+            let broker = Arc::clone(&broker);
+            tokio::spawn(async move {
+                if let Err(e) = broker.publish_retained(&topic, &payload).await {
+                    tracing::warn!("Weather MQTT publish to {} failed: {}", topic, e);
+                }
+            });
+        }));
+    }
+    let weather_service = Arc::new(weather_service);
 
     // Spawn background refresh loop (shares the same Arc)
     Arc::clone(&weather_service).spawn_background_task();
